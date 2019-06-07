@@ -1,0 +1,6 @@
+a.out
+*.o
+*.gch
+/bin
+/stage
+/find_and_replace.sh
