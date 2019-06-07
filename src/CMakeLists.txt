@@ -1,5 +1,5 @@
 set(Coffee_src
-  "utils/logger.cpp"
+  # "utils/logger.cpp"
   "utils/timer.cpp")
 
 add_library(Coffee ${Coffee_src})
