@@ -1,7 +1,6 @@
 add_custom_target(check)
 
-add_executable(tests "test.cpp")
-target_sources(tests PRIVATE
+add_executable(tests "test.cpp"
   "test_stagger.cpp"
   )
 target_link_libraries(tests

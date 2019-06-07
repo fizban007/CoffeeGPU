@@ -41,9 +41,9 @@ if (use_cuda)
     include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${CUDA_INCLUDE_DIRS})
     macro(add_cuda_target cuda_target)
       cuda_add_library(${cuda_target} ${${cuda_target}_src}
-        OPTIONS --compiler-options '-fPIC' -lineinfo
-        RELEASE -DNDEBUG -O3
-        DEBUG -g -G -Xcompiler -rdynamic -lineinfo)
+        OPTIONS --compiler-options '-fPIC'
+        RELEASE -DNDEBUG -O3 -lineinfo
+        DEBUG -g -G -Xcompiler -rdynamic)
       # target_compile_options(${cuda_target} PRIVATE "-arch=compute_61;-code=sm_61;-lineinfo")
     endmacro()
   endif()
