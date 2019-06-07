@@ -1,0 +1,17 @@
+.ccls-cache
+*.png
+*.mp4
+*.ipynb
+*.el
+*.out
+*.un~
+build
+bin
+ninja
+compile_commands.json
+.cquery_cached_index
+*.nvvp
+GPATH
+GRTAGS
+GTAGS
+ID
