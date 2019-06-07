@@ -59,6 +59,9 @@ class Stagger {
 
   /// Flip the stagger of a given direcion.
   HD_INLINE void flip(int n) { stagger ^= (1UL << n); }
+
+  /// Return the complement of this stagger configuration.
+  HD_INLINE Stagger complement() { return Stagger(~stagger); }
 };
 
 }  // namespace Coffee

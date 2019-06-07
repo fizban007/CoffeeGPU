@@ -19,10 +19,14 @@ endif()
 set(CMAKE_CXX_FLAGS_DEBUG "-std=c++11 -g3 -O0 ${CXX_EXTRA_FLAGS}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
 find_package(MPI REQUIRED)
 find_package(HDF5 REQUIRED COMPONENTS CXX)
 
 # set(FMT_INCLUDE_DIR deps/fmt)
+set(CATCH_INCLUDE_DIR deps/catch/single_include/catch2)
 
 include_directories(${MPI_INCLUDE_PATH} ${CPPTOML_INCLUDE_DIR} ${CATCH_INCLUDE_DIR}
   ${HIGHFIVE_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} src)
@@ -32,7 +36,7 @@ if (use_cuda)
   find_package(CUDA REQUIRED)
   if (CUDA_FOUND)
     message("Enabling Cuda")
-    set(CUDA_NVCC_FLAGS "--expt-extended-lambda -lcublas -lcurand -Xcompiler -fPIC -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored -Xcudafe --diag_suppress=code_is_unreachable")
+    set(CUDA_NVCC_FLAGS --expt-extended-lambda;-lcublas;-lcurand;-Xcompiler -fPIC;-Xcudafe --diag_suppress=esa_on_defaulted_function_ignored;-Xcudafe --diag_suppress=code_is_unreachable)
     set(CUDA_SEPARABLE_COMPILATION ON)
     include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${CUDA_INCLUDE_DIRS})
     macro(add_cuda_target cuda_target)
