@@ -1,6 +1,6 @@
 #include "utils/logger.h"
 
-namespace Aperture {
+namespace Coffee {
 
 int Logger::m_rank = 0;
 LogLevel Logger::m_level = LogLevel::info;
