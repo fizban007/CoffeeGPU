@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 
 project (Coffee)
+if (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
 message ("CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 
 option(build_tests "Build the test suite." ON)
