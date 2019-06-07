@@ -12,7 +12,7 @@ compile this on `tigergpu`, use the following module load:
 
     module load rh/devtoolset
     module load cudatoolkit
-    module load openmpi/cuda-9.0/gcc
+    module load openmpi/gcc/1.10.2
     module load hdf5/gcc
     
 Now go into the cloned repo:
@@ -25,7 +25,11 @@ Now go into the cloned repo:
     
 The default build type is `Debug`, which is bad for performance. For production
 one should use `cmake .. -DCMAKE_BUILD_TYPE=Release`.
+
+To run unit tests in the `tests` directory, run `make check` in the `build`
+directory. Every time you make, all the tests are compiled but not run. You'll
+need to manually run them using `make check`. The first unit test
+`test_stagger.cpp` should be a good indication of how to write unit tests. For
+further information please look at the official documentation at
+[[https://github.com/catchorg/Catch2/blob/master/docs/tutorial.md]].
     
-This is currently a barebone repo. The only thing included is a `multi_array`
-class that is intended to be the basic 3D array data structure. We'll expand
-this along the way.
