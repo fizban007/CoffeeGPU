@@ -33,7 +33,8 @@ class multi_array {
   /// Standard copy constructor.
   multi_array(const self_type& other);
 
-  /// Standard move constructor.
+  /// Standard move constructor. The object `other` will become empty after the
+  /// move.
   multi_array(self_type&& other);
 
   /// Destructor. Delete the member data array.
