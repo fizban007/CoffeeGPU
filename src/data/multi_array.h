@@ -1,9 +1,6 @@
 #ifndef _MULTI_ARRAY_H_
 #define _MULTI_ARRAY_H_
 
-#include <algorithm>
-#include <cassert>
-#include <type_traits>
 #include "data/vec3.h"
 
 namespace Coffee {
