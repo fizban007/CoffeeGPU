@@ -27,6 +27,7 @@ find_package(HDF5 REQUIRED COMPONENTS CXX)
 
 # set(FMT_INCLUDE_DIR deps/fmt)
 set(CATCH_INCLUDE_DIR deps/catch/single_include/catch2)
+set(CPPTOML_INCLUDE_DIR deps/cpptoml/include)
 
 include_directories(${MPI_INCLUDE_PATH} ${CPPTOML_INCLUDE_DIR} ${CATCH_INCLUDE_DIR}
   ${HIGHFIVE_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} src)
