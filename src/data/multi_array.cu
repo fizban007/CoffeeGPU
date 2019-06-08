@@ -62,4 +62,28 @@ multi_array<T>::free_mem() {
   }
 }
 
+template <typename T>
+const T& multi_array<T>::operator()(int x, int y, int z) const {
+  size_t idx = x + (y + z * m_extent.height()) * m_extent.width();
+  return m_data_h[idx];
+}
+
+template <typename T>
+T& multi_array<T>::operator()(int x, int y, int z) {
+  size_t idx = x + (y + z * m_extent.height()) * m_extent.width();
+  return m_data_h[idx];
+}
+
+template <typename T>
+const T& multi_array<T>::operator()(const Index& index) const {
+  size_t idx = index.linear_index(m_extent);
+  return m_data_h[idx];
+}
+
+template <typename T>
+T& multi_array<T>::operator()(const Index& index) {
+  size_t idx = index.linear_index(m_extent);
+  return m_data_h[idx];
+}
+
 }  // namespace Coffee

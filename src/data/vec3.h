@@ -217,8 +217,8 @@ struct Index : public Vec3<int> {
   HOST_DEVICE Index(int xi, int yi, int zi) : Vec3(xi, yi, zi) {}
   HOST_DEVICE Index(const Vec3<int>& vec) : Vec3(vec) {}
 
-  HD_INLINE int index(const Extent& ext) const {
-    return x + y * ext.width() + z * ext.width() * ext.height();
+  HD_INLINE int linear_index(const Extent& ext) const {
+    return x + (y + z * ext.height()) * ext.width();
   }
 };
 
