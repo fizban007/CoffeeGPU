@@ -1,0 +1,24 @@
+# Simulation timestep size in numerical units
+dt = 0.01
+
+# Total number of timesteps to run
+max_steps = 10000
+
+# How many steps between data outputs
+data_interval = 100
+
+# Whether to use periodic boundary condition in the three dimensions
+periodic_boundary = [ false, false, false ]
+
+## Grid parameters ##################
+# Number of cells in each direction (excluding guard cells)
+N = [ 256, 256, 256 ]
+
+# Number of guard cells in each direction (at each boundary)
+guard = [ 1, 1, 1 ]
+
+# Lower limits of the simulation box
+lower = [ 0.0, 0.0, 0.0 ]
+
+# Size of the box in numerical units in each dimension
+size = [ 1.0, 1.0, 1.0 ]
