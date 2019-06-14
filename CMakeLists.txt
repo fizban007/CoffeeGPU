@@ -68,4 +68,4 @@ if (build_tests)
 endif()
 
 # Add the original Fortran code as compile target too
-add_subdirectory(original)
+# add_subdirectory(original)

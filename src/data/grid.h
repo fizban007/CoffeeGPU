@@ -7,7 +7,7 @@
 
 namespace Coffee {
 
-struct grid {
+struct Grid {
   int dims[3];   //!< Dimensions of the grid of each direction
   int guard[3];  //!< Number of guard cells at either end of each
                  //!< direction
@@ -20,7 +20,7 @@ struct grid {
 
   int offset[3];  //!< Grid offset in the global domain
 
-  HOST_DEVICE grid() {  //!< Default constructor
+  HOST_DEVICE Grid() {  //!< Default constructor
 // Only define an empty constructor when compiling with Cuda enabled.
 // This allows declaring a grid in __constant__ memory.
 #ifndef __CUDACC__
@@ -34,12 +34,11 @@ struct grid {
       inv_delta[i] = 1.0;
       offset[i] = 0;
     }
-    dimension = 1;
 #endif  // __CUDACC__
   }
 
   ///  Constructor which only initialize dimensions.
-  HOST_DEVICE grid(int N1, int N2 = 1, int N3 = 1) {
+  HOST_DEVICE Grid(int N1, int N2 = 1, int N3 = 1) {
     dims[0] = (N1 > 1 ? N1 : 1);
     dims[1] = (N2 > 1 ? N2 : 1);
     dims[2] = (N3 > 1 ? N3 : 1);
@@ -53,11 +52,10 @@ struct grid {
       sizes[i] = delta[i] * dims[i];
       offset[i] = 0;
     }
-    dimension = dim();
   }
 
   ///  Assignment operator
-  HOST_DEVICE grid& operator=(const grid& m) {
+  HOST_DEVICE Grid& operator=(const Grid& m) {
     for (int i = 0; i < 3; i++) {
       dims[i] = m.dims[i];
       guard[i] = m.guard[i];
@@ -67,12 +65,11 @@ struct grid {
       sizes[i] = m.sizes[i];
       offset[i] = m.offset[i];
     }
-    dimension = m.dimension;
     return *this;
   }
 
   ///  Comparison operator
-  HOST_DEVICE bool operator==(const grid& m) const {
+  HOST_DEVICE bool operator==(const Grid& m) const {
     bool result = true;
     for (int i = 0; i < 3; i++) {
       result = result && (dims[i] == m.dims[i]);
@@ -81,7 +78,6 @@ struct grid {
       result = result && (lower[i] == m.lower[i]);
       result = result && (offset[i] == m.offset[i]);
     }
-    result = result && (dimension == m.dimension);
     return result;
   }
 
@@ -129,7 +125,7 @@ struct grid {
   ///  between guard cells and physical cells. The function is only
   ///  defined for i >= 0 and i < DIM.
   HD_INLINE Scalar pos(int i, int n, Scalar pos_in_cell) const {
-    if (i < dimension)
+    if (i < 3)
       return (lower[i] + delta[i] * (n - guard[i] + pos_in_cell));
     else
       // return 0.0;
@@ -152,7 +148,7 @@ struct grid {
   ///  Find the relative position and cell number in the dual grid
   template <typename T>
   HD_INLINE void pos_dual(Vec3<int>& c, Vec3<T>& pos) const {
-    for (int i = 0; i < dimension; i++) {
+    for (int i = 0; i < 3; i++) {
       if (pos[i] > 0.5) {
         pos[i] -= 0.5;
       } else {
@@ -174,7 +170,7 @@ struct grid {
 
   ///  Index increment in the particular direction
   HD_INLINE int idx_increment(int direction) const {
-    if (direction >= dimension) return 0;
+    if (direction >= 3) return 0;
     switch (direction) {
       case 0:
         return 1;
@@ -229,39 +225,6 @@ struct grid {
     int z2 = (c2 >= guard[1]) + (c2 >= (dims[1] - guard[1]));
     int z3 = (c3 >= guard[2]) + (c3 >= (dims[2] - guard[2]));
     return z1 + z2 * 3 + z3 * 9;
-  }
-
-  ///  Find the cell index from the global position, and get the
-  ///  relative position as well.
-  HD_INLINE int find_cell(const Vec3<Scalar>& pos,
-                          Vec3<Pos_t>& rel_pos) const {
-    int c1 = static_cast<int>(floor((pos.x - lower[0]) * inv_delta[0])) +
-             guard[0];
-    // if (c1 < 0 || c1 > dims[0]) {
-    //   std::cerr << "c1 out of range: " << c1 << std::endl;
-    //   c1 = 0;
-    // }
-    int c2 = static_cast<int>(floor((pos.y - lower[1]) * inv_delta[1])) +
-             guard[1];
-    if (dim() < 2) c2 = 0;
-    // else if (c2 < 0 || c2 > dims[1]) {
-    //   std::cerr << "c2 out of range: " << c2 << std::endl;
-    //   c2 = 0;
-    // }
-    int c3 = static_cast<int>(floor((pos.z - lower[2]) * inv_delta[2])) +
-             guard[2];
-    if (dim() < 3) c3 = 0;
-    // else if (c3 < 0 || c3 > dims[2]) {
-    //   std::cerr << "c3 out of range: " << c3 << std::endl;
-    //   c3 = 0;
-    // }
-    rel_pos.x =
-        (pos.x - (c1 - guard[0]) * delta[0] - lower[0]) * inv_delta[0];
-    rel_pos.y =
-        (pos.y - (c2 - guard[1]) * delta[1] - lower[1]) * inv_delta[1];
-    rel_pos.z =
-        (pos.z - (c3 - guard[2]) * delta[2] - lower[2]) * inv_delta[2];
-    return get_idx(c1, c2, c3);
   }
 
   ///  Get the extent of the grid. Used for interfacing with

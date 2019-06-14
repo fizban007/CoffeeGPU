@@ -1,5 +1,6 @@
 set(Coffee_src
   # "utils/logger.cpp"
+  "data/fields.cpp"
   "utils/timer.cpp"
   "sim_params.cpp"
   )
