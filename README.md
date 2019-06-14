@@ -1,4 +1,4 @@
-COFFEE
+COmputational Force-FreE Electrodynamics (COFFEE)
 ======
 
 # How to compile
@@ -31,5 +31,5 @@ directory. Every time you make, all the tests are compiled but not run. You'll
 need to manually run them using `make check`. The first unit test
 `test_stagger.cpp` should be a good indication of how to write unit tests. For
 further information please look at the official documentation at
-[[https://github.com/catchorg/Catch2/blob/master/docs/tutorial.md]].
+<https://github.com/catchorg/Catch2/blob/master/docs/tutorial.md>.
     
