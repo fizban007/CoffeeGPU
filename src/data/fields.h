@@ -14,6 +14,7 @@ class vector_field {
   typedef vector_field<T> self_type;
   typedef multi_array<T> array_type;
 
+  // Constructors
   vector_field();
   ~vector_field();
   vector_field(const Grid &grid);
