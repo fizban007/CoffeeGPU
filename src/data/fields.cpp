@@ -34,6 +34,28 @@ template <typename T>
 vector_field<T>::~vector_field() {}
 
 template <typename T>
+vector_field<T>&
+vector_field<T>::operator=(const self_type &field) {
+  m_grid = field.m_grid;
+  for (int i = 0; i < 3; i++) {
+    m_stagger[i] = field.m_stagger[i];
+    m_data[i] = field.m_data[i];
+  }
+  return *this;
+}
+
+template <typename T>
+vector_field<T>&
+vector_field<T>::operator=(self_type &&field) {
+  m_grid = field.m_grid;
+  for (int i = 0; i < 3; i++) {
+    m_stagger[i] = field.m_stagger[i];
+    m_data[i] = std::move(field.m_data[i]);
+  }
+  return *this;
+}
+
+template <typename T>
 void
 vector_field<T>::initialize() {
   assign(0.0);

@@ -56,6 +56,12 @@ class multi_array {
   /// write
   T& operator()(const Index& index);
 
+  /// Linear indexing operator using directly the array index, read only
+  const T& operator[](size_t n) const;
+
+  /// Linear indexing operator using directly the array index, read/write
+  T& operator[](size_t n);
+
   /// Copying the entire content from another vector
   void copy_from(const self_type& other);
 

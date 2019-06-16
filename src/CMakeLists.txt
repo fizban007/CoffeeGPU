@@ -17,3 +17,6 @@ set(Coffee_cuda_src
 
 add_cuda_target(Coffee_cuda ${Coffee_cuda_src})
 target_link_libraries(Coffee_cuda ${MPI_LIBRARIES} ${HDF5_LIBRARIES} Coffee)
+
+add_executable(coffee "main.cpp")
+target_link_libraries(coffee Coffee Coffee_cuda ${MPI_LIBRARIES} ${HDF5_LIBRARIES})

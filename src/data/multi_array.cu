@@ -122,6 +122,18 @@ multi_array<T>::operator()(const Index& index) {
 }
 
 template <typename T>
+const T&
+multi_array<T>::operator[](size_t n) const {
+  return m_data_h[n];
+}
+
+template <typename T>
+T&
+multi_array<T>::operator[](size_t n) {
+  return m_data_h[n];
+}
+
+template <typename T>
 void
 multi_array<T>::copy_from(const self_type& other) {
   if (m_size != other.m_size) {
