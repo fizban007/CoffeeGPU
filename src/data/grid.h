@@ -4,6 +4,7 @@
 #include "cuda/cuda_control.h"
 #include "data/vec3.h"
 #include "data/typedefs.h"
+#include "data/stagger.h"
 
 namespace Coffee {
 

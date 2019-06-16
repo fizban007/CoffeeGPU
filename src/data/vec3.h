@@ -37,11 +37,9 @@ struct Vec3 {
       return x;
     else if (idx == 1)
       return y;
-    else if (idx == 2)
-    // else
-      return z;
+    // else if (idx == 2)
     else
-      throw std::out_of_range("Index out of bound!");
+      return z;
   }
 
   HD_INLINE const T& operator[](int idx) const {
@@ -49,11 +47,9 @@ struct Vec3 {
       return x;
     else if (idx == 1)
       return y;
-    else if (idx == 2)
-    // else
-      return z;
+    // else if (idx == 2)
     else
-      throw std::out_of_range("Index out of bound!");
+      return z;
   }
 
   HD_INLINE self_type& operator=(const self_type& other) {
