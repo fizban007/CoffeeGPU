@@ -66,7 +66,14 @@ stagger structure, and has a pointer to the `Grid` object it lives on. Every
 component of the `vector_field` has a `stagger`. By default all fields are
 edge-centered, meaning that `E[i]` will be staggered in all directions except
 `i`. The default convention is that `E` field will be edge-centered and `B`
-field will be face-centered.
+field will be face-centered. A vector field can be initialized with a lambda
+function as follows:
+
+    vector_field<double> f(grid);
+    f.initialize(0, [](double x, double y, double z){
+        return x / sqrt(x * x + y * y + z * z);
+    });
+    // Now f[0] will be initialized to x/r over the entire domain
 
 The `sim_data` class is a bundle of all the `vector_field`s involved in the
 simulation. The data output routine should take the `sim_data` and serialize it
