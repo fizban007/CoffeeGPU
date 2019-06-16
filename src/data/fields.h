@@ -48,7 +48,7 @@ class vector_field {
   void assign(T value);
 
   /// Assign the value of another field to this one, multiplied by factor q
-  void assign(const self_type &field, const T &q);
+  // void assign(const self_type &field, const T &q);
 
   /// Copy from the other field
   void copy_from(const self_type &field);
@@ -58,20 +58,20 @@ class vector_field {
   void resize(const Grid &grid);
 
   /// Arithmetic operations
-  self_type &multiplyBy(T value);
-  self_type &addBy(T value, int n);
-  self_type &addBy(const self_type &field);
-  self_type &addBy(const self_type &field, T q);
-  self_type &subtractBy(T value, int n);
-  self_type &subtractBy(const self_type &field);
+  // self_type &multiplyBy(T value);
+  // self_type &addBy(T value, int n);
+  // self_type &addBy(const self_type &field);
+  // self_type &addBy(const self_type &field, T q);
+  // self_type &subtractBy(T value, int n);
+  // self_type &subtractBy(const self_type &field);
 
   // Interpolate the field to cell center and store the result to
   // @result
-  void interpolate_to_center(self_type &result);
+  // void interpolate_to_center(self_type &result);
 
   // Interpolate the field from cell center to the stagger position
   // according to m_stagger, and store the result to @result
-  void interpolate_from_center(self_type &result, Scalar q = 1.0);
+  // void interpolate_from_center(self_type &result, Scalar q = 1.0);
 
   /// Index using three integers, and a component
   T &operator()(int n, int i, int j = 0, int k = 0) {
@@ -93,17 +93,24 @@ class vector_field {
     return m_data[n](idx);
   }
 
+  // Synchronize between host and device
   void sync_to_host();
   void sync_to_host(int n);
   void sync_to_device();
   void sync_to_device(int n);
 
-  /// Accessor methods
+  // Accessor methods
   array_type &data(int n) { return m_data[n]; }
   const array_type &data(int n) const { return m_data[n]; }
   Stagger stagger(int n) const { return m_stagger[n]; }
   const Grid &grid() const { return *m_grid; }
   Extent extent() const { return m_grid->extent(); }
+
+  // Direct access to the underlying pointers
+  T* dev_ptr(int n) { return m_data[n].dev_ptr(); }
+  const T* dev_ptr(int n) const { return m_data[n].dev_ptr(); }
+  T* host_ptr(int n) { return m_data[n].host_ptr(); }
+  const T* host_ptr(int n) const { return m_data[n].host_ptr(); }
 
   void set_stagger(int n, Stagger stagger) { m_stagger[n] = stagger; }
   void set_stagger(Stagger stagger[]) {

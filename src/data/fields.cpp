@@ -56,12 +56,6 @@ vector_field<T>::assign(T value, int n) {
 
 template <typename T>
 void
-vector_field<T>::assign(const self_type &field, const T &q) {
-  // TODO: Finish this function!
-}
-
-template <typename T>
-void
 vector_field<T>::copy_from(const self_type &field) {
   for (int i = 0; i < 3; i++) {
     m_data[i].copy_from(field.m_data[i]);

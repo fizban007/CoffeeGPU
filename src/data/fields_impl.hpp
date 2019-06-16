@@ -1,7 +1,7 @@
 #ifndef _FIELDS_IMPL_H_
 #define _FIELDS_IMPL_H_
 
-#include "fields.h"
+// #include "fields.h"
 
 namespace Coffee {
 
