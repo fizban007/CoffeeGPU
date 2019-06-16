@@ -1,4 +1,5 @@
 #include "fields.h"
+#include <stdexcept>
 
 namespace Coffee {
 

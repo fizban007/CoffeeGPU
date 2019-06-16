@@ -23,5 +23,5 @@ set(ffree_src "${PREC_SRC_DIR}/ffree3D.F90"
   "${PREC_SRC_DIR}/user_init_uniform.f90"
 )
 
-add_executable(ffree ${ffree_src})
+add_executable(ffree EXCLUDE_FROM_ALL ${ffree_src})
 target_link_libraries(ffree ${MPI_Fortran_LIBRARIES} ${HDF5_LIBRARIES})
