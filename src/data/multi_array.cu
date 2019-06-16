@@ -1,8 +1,22 @@
 #include "cuda/cuda_utility.h"
 #include "multi_array.h"
+#include <algorithm>
 #include <stdexcept>
 
 namespace Coffee {
+
+namespace Kernels {
+
+template <typename T>
+__global__ void
+assign_single_value(T* data, size_t size, T value) {
+  for (size_t i = threadIdx.x + blockIdx.x * blockDim.x; i < size;
+       i += blockDim.x * gridDim.x) {
+    data[i] = value;
+  }
+}
+
+}  // namespace Kernels
 
 template <typename T>
 multi_array<T>::multi_array()
@@ -122,14 +136,12 @@ multi_array<T>::operator()(const Index& index) {
 }
 
 template <typename T>
-const T&
-multi_array<T>::operator[](size_t n) const {
+const T& multi_array<T>::operator[](size_t n) const {
   return m_data_h[n];
 }
 
 template <typename T>
-T&
-multi_array<T>::operator[](size_t n) {
+T& multi_array<T>::operator[](size_t n) {
   return m_data_h[n];
 }
 
@@ -148,7 +160,14 @@ multi_array<T>::copy_from(const self_type& other) {
 template <typename T>
 void
 multi_array<T>::assign(const T& value) {
-  // TODO: finish implementation of assign
+  std::fill_n(m_data_h, m_size, value);
+}
+
+template <typename T>
+void
+multi_array<T>::assign_dev(const T& value) {
+  Kernels::assign_single_value<<<256, 512>>>(m_data_d, m_size, value);
+  CudaCheckError();
 }
 
 template <typename T>

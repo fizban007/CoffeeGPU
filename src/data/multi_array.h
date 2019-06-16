@@ -65,8 +65,11 @@ class multi_array {
   /// Copying the entire content from another vector
   void copy_from(const self_type& other);
 
-  /// Set the whole array to a single initial value
+  /// Set the whole array to a single initial value on host
   void assign(const T& value);
+
+  /// Set the whole array to a single initial value on device
+  void assign_dev(const T& value);
 
   /// Resize the array.
   void resize(int width, int height = 1, int depth = 1);
