@@ -81,11 +81,11 @@ class multi_array {
   size_t size() const { return m_size; }
   const Extent& extent() const { return m_extent; }
 
-  // Direct access to the encapsulated pointer
-  void* host_ptr() { return m_data_h; }
-  const void* host_ptr() const { return m_data_h; }
-  void* dev_ptr() { return m_data_d; }
-  const void* dev_ptr() const { return m_data_d; }
+  // Direct access to the encapsulated pointers
+  T* host_ptr() { return m_data_h; }
+  const T* host_ptr() const { return m_data_h; }
+  T* dev_ptr() { return m_data_d; }
+  const T* dev_ptr() const { return m_data_d; }
 
  private:
   void alloc_mem(size_t size);
