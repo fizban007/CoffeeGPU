@@ -121,7 +121,8 @@ class vector_field {
   Stagger m_stagger[3];
 };
 
-
 }
+
+#include "fields_impl.hpp"
 
 #endif // _FIELDS_H_
