@@ -25,7 +25,9 @@ multi_array<T>::multi_array(const Extent& extent)
 
 template <typename T>
 multi_array<T>::multi_array(const self_type& other)
-    : multi_array(other.m_extent) {}
+    : multi_array(other.m_extent) {
+  copy_from(other);
+}
 
 template <typename T>
 multi_array<T>::multi_array(self_type&& other) {
@@ -127,6 +129,8 @@ multi_array<T>::copy_from(const self_type& other) {
         "Trying to copy from a multi_array of different size!");
   }
   memcpy(m_data_h, other.m_data_h, m_size * sizeof(T));
+  CudaSafeCall(cudaMemcpy(m_data_d, other.m_data_d, m_size * sizeof(T),
+                          cudaMemcpyDeviceToDevice));
 }
 
 template <typename T>

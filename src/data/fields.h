@@ -48,7 +48,7 @@ class vector_field {
   void assign(T value);
 
   /// Assign the value of another field to this one, multiplied by factor q
-  void assign(const vector_field<T> &field, const T &q);
+  void assign(const self_type &field, const T &q);
 
   /// Copy from the other field
   void copy_from(const self_type &field);
@@ -60,10 +60,10 @@ class vector_field {
   /// Arithmetic operations
   self_type &multiplyBy(T value);
   self_type &addBy(T value, int n);
-  self_type &addBy(const vector_field<T> &field);
-  self_type &addBy(const vector_field<T> &field, T q);
+  self_type &addBy(const self_type &field);
+  self_type &addBy(const self_type &field, T q);
   self_type &subtractBy(T value, int n);
-  self_type &subtractBy(const vector_field<T> &field);
+  self_type &subtractBy(const self_type &field);
 
   // Interpolate the field to cell center and store the result to
   // @result
@@ -93,12 +93,17 @@ class vector_field {
     return m_data[n](idx);
   }
 
+  void sync_to_host();
+  void sync_to_host(int n);
+  void sync_to_device();
+  void sync_to_device(int n);
+
   /// Accessor methods
   array_type &data(int n) { return m_data[n]; }
   const array_type &data(int n) const { return m_data[n]; }
   Stagger stagger(int n) const { return m_stagger[n]; }
   const Grid &grid() const { return *m_grid; }
-  const Extent& extent() const { return m_grid->extent(); }
+  Extent extent() const { return m_grid->extent(); }
 
   void set_stagger(int n, Stagger stagger) { m_stagger[n] = stagger; }
   void set_stagger(Stagger stagger[]) {
@@ -107,6 +112,9 @@ class vector_field {
   }
 
  private:
+  void set_default_stagger();
+  void check_component_range(int n) const;
+
   const Grid *m_grid;
 
   multi_array<T> m_data[3];
