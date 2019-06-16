@@ -6,10 +6,15 @@
 
 namespace Coffee {
 
+class sim_environment;
+
 class sim_data {
  public:
   vector_field<Scalar> E, B;
-  Grid grid;
+  const sim_environment& env;
+
+  sim_data(const sim_environment& env);
+  ~sim_data();
 };
 
 }  // namespace Coffee

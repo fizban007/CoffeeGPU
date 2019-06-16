@@ -1,8 +1,10 @@
 set(Coffee_src
   # "utils/logger.cpp"
-  "data/fields.cpp"
   "utils/timer.cpp"
+  "data/fields.cpp"
+  "data/sim_data.cpp"
   "sim_params.cpp"
+  "sim_env.cpp"
   )
 
 add_library(Coffee ${Coffee_src})
