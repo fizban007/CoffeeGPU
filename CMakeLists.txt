@@ -10,7 +10,10 @@ message ("CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 option(build_tests "Build the test suite." ON)
 option(use_cuda "Build the GPU part of the code" ON)
 
-cmake_policy(SET CMP0074 NEW)
+if (POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW) # CMake 3.12
+endif ()
+# cmake_policy(SET CMP0074 NEW)
 # set(CMAKE_CXX_STANDARD 11)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -O3 -g -DNDEBUG -xHost -no-prec-div ${CXX_EXTRA_FLAGS}")
