@@ -7,13 +7,26 @@ First clone the directory:
 
     git clone https://github.com/fizban007/CoffeeGPU
     
-Now to build this, you need to have `cmake`, `cuda`, and `hdf5` installed. To
-compile this on `tigergpu` or `tigressdata`, use the following module load:
+Now to build this, you need to have `cmake`, `cuda`, `mpi`, and `hdf5` installed. 
+
+## Compilation on tigressdata or tigergpu
+
+To compile this on `tigergpu` or `tigressdata`, use the following module load:
 
     module load rh/devtoolset
     module load cudatoolkit
     module load openmpi/gcc/1.10.2
     module load hdf5/gcc
+    
+Then go into the cloned repo and run this:
+
+    cd CoffeeGPU
+    mkdir build
+    cd build
+    cmake3 ..
+    make
+
+## Compilation on Ascent
     
 When on `Ascent`, use the following module load:
 
