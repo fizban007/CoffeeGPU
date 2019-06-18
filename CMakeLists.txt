@@ -19,7 +19,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -O3 -g -DNDEBUG -xHost -no-prec-div ${CXX_EXTRA_FLAGS}")
 else()
   # set(CXX_EXTRA_FLAGS "-Wno-misleading-indentation -Wno-unused-parameter")
-  set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -O3 -g -DNDEBUG -mcpu=native ${CXX_EXTRA_FLAGS}")
+  set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -O3 -g -DNDEBUG -mtune=native ${CXX_EXTRA_FLAGS}")
 endif()
 set(CMAKE_CXX_FLAGS_DEBUG "-std=c++11 -g3 -O0 ${CXX_EXTRA_FLAGS}")
 
