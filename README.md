@@ -82,11 +82,14 @@ edge-centered, meaning that `E[i]` will be staggered in all directions except
 field will be face-centered. A vector field can be initialized with a lambda
 function as follows:
 
-    vector_field<double> f(grid);
-    f.initialize(0, [](double x, double y, double z){
-        return x / sqrt(x * x + y * y + z * z);
-    });
-    // Now f[0] will be initialized to x/r over the entire domain
+``` cuda
+vector_field<double> f(grid);
+f.initialize(0, [](double x, double y, double z){
+    return x / sqrt(x * x + y * y + z * z);
+});
+// Now f[0] will be initialized to x/r over the entire domain
+```
+
 
 The `sim_data` class is a bundle of all the `vector_field`s involved in the
 simulation. The data output routine should take the `sim_data` and serialize it
@@ -98,6 +101,62 @@ should be initialized using only `sim_environment` only, as it contains all
 contextual information of any core algorithms.
 
 The modules to be worked on will be the core field update module, the MPI
-communication module, and the HDF5 output module. The `main.cpp` file will
+communication module, and the HDF5 output module. The `main.cpp** file will
 initialize these modules sequentially, while including appropriate user files
 that define initial and boundary conditions.
+
+In order to have the ability to switch between using `float` and `double`, a
+cmake flag is introduced. The code defines an alias `Scalar` which by default is
+equivalent to `float`. If one adds `-Duse_double=1` when running `cmake`, then
+`Scalar` will be mapped to `double` instead. Remember to rerun `make` after
+changing the configuration like this.
+
+# Examples for how to write kernels
+
+Here is a simple example for how to write CUDA kernels. A CUDA kernel is a C
+function which has a decorator `__global__`, and has to return `void`. Lets say
+we defined two vector fields, and want to add them together, here is an example
+of how to do that:
+
+``` cuda
+__global__ void
+add_fields(const Scalar* a, const Scalar* b, Scalar* c) {
+  for (int k = threadIdx.z + blockIdx.z * blockDim.z;
+       k < dev_mesh.dims[2];
+       k += blockDim.z * gridDim.z) {
+    for (int j = threadIdx.y + blockIdx.y * blockDim.y;
+        j < dev_mesh.dims[1];
+        j += blockDim.y * gridDim.y) {
+      for (int i = threadIdx.x + blockIdx.x * blockDim.x;
+          i < dev_mesh.dims[0];
+          i += blockDim.x * gridDim.x) {
+        size_t idx = i + j * dev_mesh.dims[0]
+                     + k * dev_mesh.dims[0] * dev_mesh.dims[1];
+        c[idx] = a[idx] + b[idx];
+      }
+    }
+  }
+}
+```
+
+Of course, if you simply want to iterate over the whole array then triple loop
+is overkill, but in the field solver where indices count, then this is how to do
+it. We used "grid-stride loops", so that the grid sizes do not need to be exact
+multiple of the block dimensions that we use to launch the kernel. `dev_mesh`
+lives in constant memory and holds the grid dimensions and deltas that we
+specify. In the kernel parameters, notice we use `const` to specify input arrays
+and no `const` for output arrays.
+
+To invoke the kernel, you should use:
+``` cuda
+vector_field<Scalar> a(grid), b(grid), c(grid);
+a.assign(1.0);
+b.assign(2.0);
+
+dim3 gridSize(16, 16, 16);
+dim3 blockSize(8, 8, 8);
+add_fields<<<gridSize, blockSize>>>(a.dev_ptr(0), b.dev_ptr(0), c.dev_ptr(0));
+add_fields<<<gridSize, blockSize>>>(a.dev_ptr(1), b.dev_ptr(1), c.dev_ptr(1));
+add_fields<<<gridSize, blockSize>>>(a.dev_ptr(2), b.dev_ptr(2), c.dev_ptr(2));
+// Now all components of c will be equal to 3
+```
