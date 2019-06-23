@@ -119,19 +119,21 @@ we defined two vector fields, and want to add them together, here is an example
 of how to do that:
 
 ``` cuda
+#include "cuda/constant_mem.h"
+
 __global__ void
 add_fields(const Scalar* a, const Scalar* b, Scalar* c) {
   for (int k = threadIdx.z + blockIdx.z * blockDim.z;
-       k < dev_mesh.dims[2];
+       k < dev_grid.dims[2];
        k += blockDim.z * gridDim.z) {
     for (int j = threadIdx.y + blockIdx.y * blockDim.y;
-        j < dev_mesh.dims[1];
+        j < dev_grid.dims[1];
         j += blockDim.y * gridDim.y) {
       for (int i = threadIdx.x + blockIdx.x * blockDim.x;
-          i < dev_mesh.dims[0];
+          i < dev_grid.dims[0];
           i += blockDim.x * gridDim.x) {
-        size_t idx = i + j * dev_mesh.dims[0]
-                     + k * dev_mesh.dims[0] * dev_mesh.dims[1];
+        size_t idx = i + j * dev_grid.dims[0]
+                     + k * dev_grid.dims[0] * dev_grid.dims[1];
         c[idx] = a[idx] + b[idx];
       }
     }
@@ -142,7 +144,7 @@ add_fields(const Scalar* a, const Scalar* b, Scalar* c) {
 Of course, if you simply want to iterate over the whole array then triple loop
 is overkill, but in the field solver where indices count, then this is how to do
 it. We used "grid-stride loops", so that the grid sizes do not need to be exact
-multiple of the block dimensions that we use to launch the kernel. `dev_mesh`
+multiple of the block dimensions that we use to launch the kernel. `dev_grid`
 lives in constant memory and holds the grid dimensions and deltas that we
 specify. In the kernel parameters, notice we use `const` to specify input arrays
 and no `const` for output arrays.
