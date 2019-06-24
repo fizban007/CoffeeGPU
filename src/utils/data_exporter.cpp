@@ -58,6 +58,8 @@ data_exporter::data_exporter(sim_environment& env, uint32_t& timestep)
   auto d = m_env.params().downsample;
   tmp_grid_data.resize(ext.width() / d, ext.height() / d,
                        ext.depth() / d);
+
+  outputDirectory = "./Data/";
 }
 
 data_exporter::~data_exporter() {}
@@ -70,8 +72,16 @@ data_exporter::write_output(sim_data& data, uint32_t timestep,
   data.sync_to_host();
 
   // Launch a new thread to handle the field output
-  m_thread.reset(new std::thread(&data_exporter::write_field_output,
-                                 this, std::ref(data), timestep, time));
+  // m_thread.reset(new std::thread(&data_exporter::write_field_output,
+  //                                this, std::ref(data), timestep,
+  //                                time));
+  write_field_output(data, timestep, time);
+  std::cout << "Output written!" << std::endl;
+}
+
+void
+data_exporter::sync() {
+  if (m_thread && m_thread->joinable()) m_thread->join();
 }
 
 void
@@ -81,7 +91,12 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
       outputDirectory + std::string("fld") +
           std::to_string(timestep / m_env.params().data_interval) +
           std::string(".h5"),
-      H5F_ACC_RDWR | H5F_ACC_TRUNC);
+      H5F_ACC_TRUNC);
+  std::cout << outputDirectory + std::string("fld") +
+                   std::to_string(timestep /
+                                  m_env.params().data_interval) +
+                   std::string(".h5")
+            << std::endl;
   // add_grid_output(
   //     data, "E1",
   //     [](sim_data& data, multi_array<Scalar>& p, Index idx,

@@ -28,6 +28,8 @@ class data_exporter {
   void write_field_output(sim_data& data, uint32_t timestep,
                           double time);
 
+  void sync();
+
  protected:
   template <typename Func>
   void add_grid_output(sim_data& data, const std::string& name, Func f,
@@ -37,8 +39,6 @@ class data_exporter {
   sim_environment& m_env;
   std::string
       outputDirectory;  //!< Sets the directory of all the data files
-  std::string subDirectory;  //!< Sets the directory of current rank
-  std::string subName;
   // std::string filePrefix;  //!< Sets the common prefix of the data files
 
   std::ofstream xmf;  //!< This is the accompanying xmf file describing
