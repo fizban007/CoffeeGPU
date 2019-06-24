@@ -31,6 +31,7 @@ sim_environment::sim_environment(int* argc, char*** argv) {
     std::cerr << "No usable Cuda device found!!" << std::endl;
     exit(1);
   }
+  // TODO: This way of finding device id may not be reliable
   m_dev_id = m_rank % n_devices;
   cudaSetDevice(m_dev_id);
 
