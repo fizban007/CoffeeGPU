@@ -17,6 +17,8 @@ struct sim_params {
   uint64_t max_steps = 10000; ///< Total number of timesteps
   int data_interval = 100; ///< How many steps between data outputs
   bool periodic_boundary[3] = {false}; ///< Periodic boundary condition
+  int downsample = 1; ///< How much to downsample from simulation grid to data
+                      ///output grid
 
   // Grid parameters
   int N[3] = {1};  ///< Number of cells in each direction (excluding guard cells)
