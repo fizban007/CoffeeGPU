@@ -5,6 +5,7 @@
 #include "data/multi_array.h"
 #include "sim_params.h"
 #include <vector>
+#include <mpi.h>
 
 namespace Coffee {
 
@@ -20,6 +21,9 @@ class sim_environment {
   const Grid& grid() const { return m_grid; }
   const sim_params& params() const { return m_params; }
 
+  bool is_boundary(int n) const { return m_is_boundary[n]; }
+  bool is_periodic(int n) const { return m_is_periodic[n]; }
+
  private:
   void initialize();
   void setup_domain();
@@ -27,13 +31,16 @@ class sim_environment {
   sim_params m_params;
   Grid m_grid;
 
-  int m_dim = 1;
-  int m_rank = 0;
-  int m_mpi_dims[3] = {1};
-  int m_mpi_coord[3] = {0};
-  bool m_is_boundary = {false};
-  bool m_is_periodic = {false};
+  int m_size = 1; ///< Size of MPI_COMM_WORLD
+  int m_rank = 0; ///< Rank of current process
+  int m_mpi_dims[3] = {1}; ///< Size of the domain decomposition in 3 directions
+  int m_mpi_coord[3] = {0}; ///< The 3D MPI coordinate of this rank
+  bool m_is_boundary[6] = {false}; ///< Is this rank at boundary in each direction
+  int m_is_periodic[3] = {0}; ///< Whether to use periodic boundary conditions in each direction
   multi_array<int> m_domain_map;
+
+  MPI_Comm m_world;
+  MPI_Comm m_cart;
 };  // ----- end of class sim_environment
 
 }  // namespace Coffee

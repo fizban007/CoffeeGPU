@@ -3,6 +3,7 @@ add_custom_target(check)
 add_executable(tests "test.cpp"
   "test_stagger.cpp"
   "test_multi_array.cpp"
+  "test_interp.cpp"
   )
 target_link_libraries(tests
   Coffee Coffee_cuda)
