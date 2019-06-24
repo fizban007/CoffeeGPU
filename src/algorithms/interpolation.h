@@ -3,7 +3,7 @@
 
 namespace Coffee {
 
-HD_INLINE Scalar interpolate(Scalar* f, size_t idx_lin, Stagger in, Stagger out,
+HOST_DEVICE Scalar interpolate(Scalar* f, size_t idx_lin, Stagger in, Stagger out,
                              uint32_t dim0, uint32_t dim1) {
   int di_m = (in[0] == out[0] ? 0 : - out[0]);
   int di_p = (in[0] == out[0] ? 0 : 1 - out[0]);
@@ -25,9 +25,9 @@ HD_INLINE Scalar interpolate(Scalar* f, size_t idx_lin, Stagger in, Stagger out,
   return 0.5 * (f1 + f0);
 }
 
-HD_INLINE Scalar interpolate(Scalar* f, Index idx, Stagger in, Stagger out,
-                             uint32_t dim0, uint32_t dim1) {
-  int idx_lin = idx.x + idx.y * dim0 + idx.z * dim0 * dim1;
+HOST_DEVICE Scalar interpolate(Scalar* f, Index idx, Stagger in, Stagger out,
+                               uint32_t dim0, uint32_t dim1) {
+  size_t idx_lin = idx.x + idx.y * dim0 + idx.z * dim0 * dim1;
   return interpolate(f, idx_lin, in, out, dim0, dim1);
 }
 
