@@ -18,4 +18,10 @@ sim_data::sim_data(const sim_environment& e) : env(e) {
 
 sim_data::~sim_data() {}
 
+void
+sim_data::sync_to_host() {
+  E.sync_to_host();
+  B.sync_to_host();
+}
+
 }  // namespace Coffee
