@@ -15,6 +15,8 @@ class sim_data {
 
   sim_data(const sim_environment& env);
   ~sim_data();
+
+  void sync_to_host();
 };
 
 }  // namespace Coffee

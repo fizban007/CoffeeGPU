@@ -11,6 +11,9 @@ vector_field<T>::vector_field() : m_grid(nullptr) {
 template <typename T>
 vector_field<T>::vector_field(const Grid& grid) : m_grid(&grid) {
   set_default_stagger();
+  for (int i = 0; i < 3; i++) {
+    m_data[i] = multi_array<T>(grid.extent());
+  }
 }
 
 template <typename T>

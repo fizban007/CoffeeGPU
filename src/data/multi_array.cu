@@ -124,15 +124,13 @@ multi_array<T>::operator()(int x, int y, int z) {
 template <typename T>
 const T&
 multi_array<T>::operator()(const Index& index) const {
-  size_t idx = index.linear_index(m_extent);
-  return m_data_h[idx];
+  return operator()(index.x, index.y, index.z);
 }
 
 template <typename T>
 T&
 multi_array<T>::operator()(const Index& index) {
-  size_t idx = index.linear_index(m_extent);
-  return m_data_h[idx];
+  return operator()(index.x, index.y, index.z);
 }
 
 template <typename T>
