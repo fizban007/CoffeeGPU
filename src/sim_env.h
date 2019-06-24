@@ -30,6 +30,7 @@ class sim_environment {
 
   sim_params m_params;
   Grid m_grid;
+  int m_dev_id;
 
   int m_size = 1; ///< Size of MPI_COMM_WORLD
   int m_rank = 0; ///< Rank of current process

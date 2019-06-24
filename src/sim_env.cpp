@@ -2,6 +2,7 @@
 #include "cuda/constant_mem_func.h"
 #include <mpi.h>
 #include "data/vec3.h"
+#include <cuda_runtime.h>
 
 namespace Coffee {
 
@@ -22,6 +23,16 @@ sim_environment::sim_environment(int* argc, char*** argv) {
   m_world = MPI_COMM_WORLD;
   MPI_Comm_rank(m_world, &m_rank);
   MPI_Comm_size(m_world, &m_size);
+
+  // Poll the system to detect how many GPUs are on the node
+  int n_devices;
+  cudaGetDeviceCount(&n_devices);
+  if (n_devices <= 0) {
+    std::cerr << "No usable Cuda device found!!" << std::endl;
+    exit(1);
+  }
+  m_dev_id = m_rank % n_devices;
+  cudaSetDevice(m_dev_id);
 
   // Hard coded to read the file config.toml in the current directory.
   // May want to make this more flexible
