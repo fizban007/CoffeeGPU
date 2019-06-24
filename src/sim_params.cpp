@@ -12,7 +12,9 @@ parse_config(const std::string& filename) {
   result.max_steps = config->get_as<uint64_t>("max_steps")
                          .value_or(defaults.max_steps);
   result.data_interval = config->get_as<int>("data_interval")
-                             .value_or(defaults.data_interval);
+      .value_or(defaults.data_interval);
+  result.downsample = config->get_as<int>("downsample")
+      .value_or(defaults.downsample);
 
   auto periodic_boundary =
       config->get_array_of<bool>("periodic_boundary");
