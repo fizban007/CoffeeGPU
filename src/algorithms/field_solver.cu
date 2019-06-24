@@ -10,9 +10,9 @@ kernel_rk_push(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                const Scalar *b0x, const Scalar *b0y, const Scalar *b0z,
                Scalar *dex, Scalar *dey, Scalar *dez,
                Scalar *dbx, Scalar *dby, Scalar *dbz) {
-  Scalar CCx = dev_params.dt * dev_grid.dims[0];
-  Scalar CCy = dev_params.dt * dev_grid.dims[1];
-  Scalar CCz = dev_params.dt * dev_grid.dims[2];
+  Scalar CCx = dev_params.dt * dev_grid.inv_delta[0];
+  Scalar CCy = dev_params.dt * dev_grid.inv_delta[1];
+  Scalar CCz = dev_params.dt * dev_grid.inv_delta[2];
   for (int k = threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2];
        k < dev_grid.dims[2] - dev_grid.guard[2];
        k += blockDim.z * gridDim.z) {
