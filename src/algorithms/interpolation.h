@@ -1,10 +1,13 @@
 #include "data/typedefs.h"
+#include "data/stagger.h"
+#include "data/vec3.h"
 #include "cuda/cuda_control.h"
+#include <cstdint>
 
 namespace Coffee {
 
-HOST_DEVICE Scalar interpolate(Scalar* f, size_t idx_lin, Stagger in, Stagger out,
-                             uint32_t dim0, uint32_t dim1) {
+HOST_DEVICE Scalar interpolate(Scalar* f, std::size_t idx_lin, Stagger in, Stagger out,
+                               int dim0, int dim1) {
   int di_m = (in[0] == out[0] ? 0 : - out[0]);
   int di_p = (in[0] == out[0] ? 0 : 1 - out[0]);
   int dj_m = (in[1] == out[1] ? 0 : - out[1]);
@@ -26,8 +29,8 @@ HOST_DEVICE Scalar interpolate(Scalar* f, size_t idx_lin, Stagger in, Stagger ou
 }
 
 HOST_DEVICE Scalar interpolate(Scalar* f, Index idx, Stagger in, Stagger out,
-                               uint32_t dim0, uint32_t dim1) {
-  size_t idx_lin = idx.x + idx.y * dim0 + idx.z * dim0 * dim1;
+                               int dim0, int dim1) {
+  std::size_t idx_lin = idx.x + idx.y * dim0 + idx.z * dim0 * dim1;
   return interpolate(f, idx_lin, in, out, dim0, dim1);
 }
 
