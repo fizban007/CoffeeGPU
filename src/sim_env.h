@@ -18,8 +18,17 @@ class sim_environment {
   sim_environment(sim_environment const&) = delete;
   sim_environment& operator=(sim_environment const&) = delete;
 
+  void send_guard_cells();
+
+  void send_guard_cell_x(int dir);
+  void send_guard_cell_y(int dir);
+  void send_guard_cell_z(int dir);
+
   const Grid& grid() const { return m_grid; }
   const sim_params& params() const { return m_params; }
+
+  int size() const { return m_size; }
+  int rank() const { return m_rank; }
 
   bool is_boundary(int n) const { return m_is_boundary[n]; }
   bool is_periodic(int n) const { return m_is_periodic[n]; }
