@@ -19,8 +19,11 @@ TEST_CASE("Trying out simple interpolation", "[interp]") {
                     Stagger(0b111), 10, 10) == Approx(5.0 * 5.0 * 5.5));
 
   CHECK(interpolate(f.host_ptr(), Index(2, 3, 4), Stagger(0b011),
-                    Stagger(0b100), 10, 10) == Approx(2.0 * 2.5 * 4.0));
+                    Stagger(0b100), 10, 10) == Approx(2.5 * 3.5 * 3.5));
 
   CHECK(interpolate(f.host_ptr(), Index(4, 2, 6), Stagger(0b010),
                     Stagger(0b101), 10, 10) == Approx(3.5 * 2.5 * 5.5));
+
+  CHECK(interpolate(f.host_ptr(), Index(7, 5, 3), Stagger(0b010),
+                    Stagger(0b011), 10, 10) == Approx(6.5 * 5.0 * 3.0));
 }
