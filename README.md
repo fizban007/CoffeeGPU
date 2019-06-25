@@ -55,6 +55,26 @@ need to manually run them using `make check`. The first unit test
 `test_stagger.cpp` should be a good indication of how to write unit tests. For
 further information please look at the official documentation at
 <https://github.com/catchorg/Catch2/blob/master/docs/tutorial.md>.
+
+## Run on Ascent
+Note that in order to write data we need to use the scratch (GPFS) directories, e.g.,
+
+    /gpfs/wolf/gen127/scratch/userid
+
+For interactive job submission, first run
+
+    bsub -P PROJID -nnodes 1 -W 60 -alloc_flags gpumps -Is $SHELL
+
+`PROJID` should be GEN127 here, and the number of nodes can be varied (there are 6 GPUs per node).
+This opens up a new shell.
+Use `export OMP_NUM_THREADS=1` to set OpenMP thread.
+To run the code, in the folder `bin`, use the following commands:
+
+    mkdir Data
+    jsrun -n4 -a1 -c1 -g1 ./coffee
+    
+Here `-n` gives the number of resource sets; each resource set includes `-a` number of MPI tasks, 
+`-c` number of CPU cores and `-g` number of GPUs. 
    
 # How the code is structured
 
