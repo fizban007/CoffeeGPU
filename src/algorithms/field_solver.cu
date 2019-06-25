@@ -1,12 +1,13 @@
 #include "cuda/constant_mem.h"
 #include "cuda/constant_mem_func.h"
 #include "cuda/cuda_utility.h"
+#include "interpolation.h"
 #include "field_solver.h"
 
 namespace Coffee {
 
-static dim3 gridSize(16, 16, 16);
-static dim3 blockSize(8, 8, 8);
+static dim3 gridSize(8, 16, 16);
+static dim3 blockSize(32, 4, 4);
 
 __global__ void
 kernel_compute_rho(const Scalar *ex, const Scalar *ey, const Scalar *ez,
@@ -125,8 +126,8 @@ kernel_rk_update(Scalar *ex, Scalar *ey, Scalar *ez, Scalar *bx,
                  Scalar *by, Scalar *bz, const Scalar *enx,
                  const Scalar *eny, const Scalar *enz,
                  const Scalar *bnx, const Scalar *bny,
-                 const Scalar *bnz, const Scalar *dex,
-                 const Scalar *dey, const Scalar *dez,
+                 const Scalar *bnz, Scalar *dex,
+                 Scalar *dey, Scalar *dez,
                  const Scalar *dbx, const Scalar *dby,
                  const Scalar *dbz, Scalar rk_c1, Scalar rk_c2,
                  Scalar rk_c3) {
@@ -216,7 +217,7 @@ kernel_clean_epar(const Scalar *ex, const Scalar *ey, const Scalar *ez,
 }
 
 __global__ void
-kernel_check_eGTb(const Scalar *dex, const Scalar *dey, const Scalar *dez
+kernel_check_eGTb(const Scalar *dex, const Scalar *dey, const Scalar *dez,
                   Scalar *ex, Scalar *ey, Scalar *ez,
                   const Scalar *bx, const Scalar *by, const Scalar *bz) {
   Scalar intex, intey, intez, intbx, intby, intbz, emag, bmag, temp;
@@ -249,7 +250,7 @@ kernel_check_eGTb(const Scalar *dex, const Scalar *dey, const Scalar *dez
         } else {
           temp = 1.0;
         }
-        ex[ijk] = temp * dex[ijk]
+        ex[ijk] = temp * dex[ijk];
 
         // y:
         intex = interpolate(ex, ijk, Stagger(0b011), Stagger(0b101), dev_grid.dims[0], dev_grid.dims[1]);
@@ -265,7 +266,7 @@ kernel_check_eGTb(const Scalar *dex, const Scalar *dey, const Scalar *dez
         } else {
           temp = 1.0;
         }
-        ey[ijk] = temp * dey[ijk]
+        ey[ijk] = temp * dey[ijk];
 
         // z:
         intex = interpolate(ex, ijk, Stagger(0b011), Stagger(0b110), dev_grid.dims[0], dev_grid.dims[1]);
@@ -281,7 +282,7 @@ kernel_check_eGTb(const Scalar *dex, const Scalar *dey, const Scalar *dez
         } else {
           temp = 1.0;
         }
-        ez[ijk] = temp * dez[ijk]
+        ez[ijk] = temp * dez[ijk];
       }
     }
   }
@@ -297,6 +298,8 @@ field_solver::field_solver(sim_data &mydata) : m_data(mydata) {
   dB = vector_field<Scalar>(m_data.env.grid());
   Bn.copy_stagger(m_data.B);
   dB.copy_stagger(m_data.B);
+
+  rho = multi_array<Scalar>(m_data.env.grid().extent());
 }
 
 field_solver::~field_solver() {}
@@ -337,7 +340,7 @@ field_solver::rk_push() {
   // `rho = div E`
   kernel_compute_rho<<<gridSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-      rho.dev_ptr);
+      rho.dev_ptr());
   // `dE = curl B - curl B0 - j, dB = -curl E`
   kernel_rk_push<<<gridSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),

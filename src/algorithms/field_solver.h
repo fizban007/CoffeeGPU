@@ -17,6 +17,7 @@ class field_solver {
 
  private:
   void copy_fields();
+  void check_eGTb();
 
   void rk_push();
   void rk_update(Scalar rk_c1, Scalar rk_c2, Scalar rk_c3);
