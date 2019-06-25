@@ -151,25 +151,38 @@ template <typename Func>
 void
 data_exporter::add_grid_output(sim_data& data, const std::string& name,
                                Func f, File& file) {
-  if (data.env.grid().dim() == 3) {
-    sample_grid_quantity3d(data, m_env.grid(),
-                           m_env.params().downsample, tmp_grid_data,
-                           m_output, f);
+  // if (data.env.grid().dim() == 3) {
+  int downsample = m_env.params().downsample;
+  sample_grid_quantity3d(data, m_env.grid(), downsample,
+                         tmp_grid_data, m_output, f);
 
-    // Actually write the temp array to hdf
-    DataSet dataset =
-        file.createDataSet<float>(name, DataSpace::From(m_output));
-    dataset.write(m_output);
-  } else if (data.env.grid().dim() == 2) {
-    sample_grid_quantity2d(data, m_env.grid(),
-                           m_env.params().downsample, tmp_grid_data,
-                           m_output, f);
 
-    // Actually write the temp array to hdf
-    DataSet dataset =
-        file.createDataSet<float>(name, DataSpace::From(m_output));
-    dataset.write(m_output);
+  std::vector<size_t> dims(3);
+  for (int i = 0; i < 3; i++) {
+    dims[i] = m_env.params().N[2 - i];
+    if (dims[i] > downsample)
+      dims[i] /= downsample;
   }
+  // Actually write the temp array to hdf
+  DataSet dataset = file.createDataSet<float>(name, DataSpace(dims));
+
+  std::vector<size_t> out_dim(3);
+  std::vector<size_t> offsets(3);
+  for (int i = 0; i < 3; i++) {
+    offsets[i] = m_env.grid().offset[2 - i] / downsample;
+    out_dim[i] = tmp_grid_data.extent()[2 - i];
+  }
+  dataset.select(offsets, out_dim).write(m_output);
+  // } else if (data.env.grid().dim() == 2) {
+  //   sample_grid_quantity2d(data, m_env.grid(),
+  //                          m_env.params().downsample, tmp_grid_data,
+  //                          m_output, f);
+
+  //   // Actually write the temp array to hdf
+  //   DataSet dataset =
+  //       file.createDataSet<float>(name, DataSpace::From(m_output));
+  //   dataset.write(m_output);
+  // }
 }
 
 }  // namespace Coffee
