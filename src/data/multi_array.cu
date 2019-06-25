@@ -41,6 +41,7 @@ template <typename T>
 multi_array<T>::multi_array(const self_type& other)
     : multi_array(other.m_extent) {
   copy_from(other);
+  sync_to_host();
 }
 
 template <typename T>
@@ -68,6 +69,7 @@ multi_array<T>::operator=(const self_type& other) {
 
   alloc_mem(other.m_size);
   copy_from(other);
+  sync_to_host();
   return *this;
 }
 
@@ -150,7 +152,7 @@ multi_array<T>::copy_from(const self_type& other) {
     throw std::range_error(
         "Trying to copy from a multi_array of different size!");
   }
-  memcpy(m_data_h, other.m_data_h, m_size * sizeof(T));
+  // memcpy(m_data_h, other.m_data_h, m_size * sizeof(T));
   CudaSafeCall(cudaMemcpy(m_data_d, other.m_data_d, m_size * sizeof(T),
                           cudaMemcpyDeviceToDevice));
 }
