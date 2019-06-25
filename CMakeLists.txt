@@ -41,18 +41,45 @@ include_directories(${MPI_INCLUDE_PATH} ${CPPTOML_INCLUDE_DIR} ${CATCH_INCLUDE_D
   ${Boost_INCLUDE_DIRS} src)
 
 ######### Check for cuda support
+# if (use_cuda)
+#   find_package(CUDA REQUIRED)
+#   if (CUDA_FOUND)
+#     message("Enabling Cuda")
+#     set(CUDA_NVCC_FLAGS --expt-extended-lambda;-lcublas;-lcurand;-Xcompiler -fPIC;-Xcudafe --diag_suppress=esa_on_defaulted_function_ignored;-Xcudafe --diag_suppress=code_is_unreachable)
+#     set(CUDA_SEPARABLE_COMPILATION ON)
+#     include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${CUDA_INCLUDE_DIRS})
+#     macro(add_cuda_target cuda_target)
+#       cuda_add_library(${cuda_target} ${${cuda_target}_src}
+#         OPTIONS --compiler-options '-fPIC'
+#         RELEASE -DNDEBUG -O3 -lineinfo
+#         DEBUG -g -G -Xcompiler -rdynamic)
+#       # target_compile_options(${cuda_target} PRIVATE "-arch=compute_61;-code=sm_61;-lineinfo")
+#     endmacro()
+#   endif()
+# endif()
 if (use_cuda)
-  find_package(CUDA REQUIRED)
-  if (CUDA_FOUND)
-    message("Enabling Cuda")
-    set(CUDA_NVCC_FLAGS --expt-extended-lambda;-lcublas;-lcurand;-Xcompiler -fPIC;-Xcudafe --diag_suppress=esa_on_defaulted_function_ignored;-Xcudafe --diag_suppress=code_is_unreachable)
-    set(CUDA_SEPARABLE_COMPILATION ON)
+  include(CheckLanguage)
+  check_language(CUDA)
+  if (CMAKE_CUDA_COMPILER)
+    enable_language(CUDA)
+    message("Enabling Cuda, ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${CUDA_INCLUDE_DIRS}")
     include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${CUDA_INCLUDE_DIRS})
+    set(CMAKE_CUDA_FLAGS "--expt-extended-lambda --expt-relaxed-constexpr \
+      -lcublas -lcurand -Xcompiler -fPIC -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored \
+      -Xcudafe --diag_suppress=code_is_unreachable -ccbin=${CMAKE_CXX_COMPILER}")
+    set(CMAKE_CUDA_FLAGS_DEBUG "-g -G")
+    set(CMAKE_CUDA_FLAGS_RELEASE "-lineinfo -O3 -DNDEBUG")
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    set(CMAKE_CUDA_STANDARD 14)
+    set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+    # set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
+    message(${CMAKE_CXX_COMPILER})
     macro(add_cuda_target cuda_target)
-      cuda_add_library(${cuda_target} ${${cuda_target}_src}
-        OPTIONS --compiler-options '-fPIC'
-        RELEASE -DNDEBUG -O3 -lineinfo
-        DEBUG -g -G -Xcompiler -rdynamic)
+      add_library(${cuda_target} ${${cuda_target}_src})
+      # target_compile_options(${cuda_target} PRIVATE "-arch=compute_61;-code=sm_61;-lineinfo")
+    endmacro()
+    macro(add_cuda_executable cuda_target)
+      add_executable(${cuda_target} ${${cuda_target}_src})
       # target_compile_options(${cuda_target} PRIVATE "-arch=compute_61;-code=sm_61;-lineinfo")
     endmacro()
   endif()
