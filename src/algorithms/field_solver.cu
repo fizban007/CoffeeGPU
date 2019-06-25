@@ -96,21 +96,13 @@ kernel_clean_epar() {
 field_solver::field_solver(sim_data& mydata) : m_data(mydata) {
   En = vector_field<Scalar>(m_data.env.grid());
   dE = vector_field<Scalar>(m_data.env.grid());
-  En.set_stagger(0, m_data.E.stagger(0));
-  En.set_stagger(1, m_data.E.stagger(1));
-  En.set_stagger(2, m_data.E.stagger(2));
-  dE.set_stagger(0, m_data.E.stagger(0));
-  dE.set_stagger(1, m_data.E.stagger(1));
-  dE.set_stagger(2, m_data.E.stagger(2));
+  En.copy_stagger(m_data.E);
+  dE.copy_stagger(m_data.E);
 
   Bn = vector_field<Scalar>(m_data.env.grid());
   dB = vector_field<Scalar>(m_data.env.grid());
-  Bn.set_stagger(0, m_data.B.stagger(0));
-  Bn.set_stagger(1, m_data.B.stagger(1));
-  Bn.set_stagger(2, m_data.B.stagger(2));
-  dB.set_stagger(0, m_data.B.stagger(0));
-  dB.set_stagger(1, m_data.B.stagger(1));
-  dB.set_stagger(2, m_data.B.stagger(2));
+  Bn.copy_stagger(m_data.B);
+  dB.copy_stagger(m_data.B);
 }
 
 void field_solver::evolve_fields() {

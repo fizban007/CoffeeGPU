@@ -147,6 +147,13 @@ vector_field<T>::check_component_range(int n) const {
   }
 }
 
+template <typename T>
+void
+vector_field<T>::copy_stagger(const self_type &field) {
+  for (int i = 0; i < 3; i++)
+    m_stagger[i] = field.m_stagger[i];
+}
+
 /////////////////////////////////////////////////////////////////
 // Explicitly instantiate the classes we will use
 /////////////////////////////////////////////////////////////////

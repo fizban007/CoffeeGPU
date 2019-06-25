@@ -53,6 +53,9 @@ class vector_field {
   /// Copy from the other field
   void copy_from(const self_type &field);
 
+  /// Copy the stagger configuration from the other field
+  void copy_stagger(const self_type& field);
+
   /// Resize this field according to the given grid (and point the grid pointer
   /// to this new grid)
   void resize(const Grid &grid);
