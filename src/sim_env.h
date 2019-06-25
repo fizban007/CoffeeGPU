@@ -41,6 +41,7 @@ class sim_environment {
  private:
   void initialize();
   void setup_domain();
+  void exchange_type(MPI_Datatype *y_type, MPI_Datatype *x_type);
 
   sim_params m_params;
   Grid m_grid;
