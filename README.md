@@ -17,6 +17,7 @@ To compile this on `tigergpu` or `tigressdata`, use the following module load:
     module load cudatoolkit
     module load openmpi/gcc/1.10.2
     module load hdf5/gcc
+    module load boost
     
 Then go into the cloned repo and run this:
 
@@ -35,6 +36,7 @@ When on `Ascent`, use the following module load:
     module load cuda/10.1.105
     module load spectrum-mpi/10.3.0.0-20190419
     module load hdf5/1.10.3
+    module load  boost/1.66.0
     
 Now go into the cloned repo:
 

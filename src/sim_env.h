@@ -7,7 +7,11 @@
 #include <vector>
 #include <mpi.h>
 
+#define NEIGHBOR_NULL -2
+
 namespace Coffee {
+
+struct sim_data;
 
 class sim_environment {
  public:
@@ -18,17 +22,18 @@ class sim_environment {
   sim_environment(sim_environment const&) = delete;
   sim_environment& operator=(sim_environment const&) = delete;
 
-  void send_guard_cells();
+  void send_guard_cells(sim_data& data);
 
-  void send_guard_cell_x(int dir);
-  void send_guard_cell_y(int dir);
-  void send_guard_cell_z(int dir);
+  void send_guard_cell_x(sim_data& data, int dir);
+  void send_guard_cell_y(sim_data& data, int dir);
+  void send_guard_cell_z(sim_data& data, int dir);
 
   const Grid& grid() const { return m_grid; }
   const sim_params& params() const { return m_params; }
 
   int size() const { return m_size; }
   int rank() const { return m_rank; }
+  MPI_Comm world() const { return m_world; }
 
   bool is_boundary(int n) const { return m_is_boundary[n]; }
   bool is_periodic(int n) const { return m_is_periodic[n]; }
@@ -36,6 +41,7 @@ class sim_environment {
  private:
   void initialize();
   void setup_domain();
+  void exchange_type(MPI_Datatype *y_type, MPI_Datatype *x_type);
 
   sim_params m_params;
   Grid m_grid;
@@ -47,6 +53,8 @@ class sim_environment {
   int m_mpi_coord[3] = {0}; ///< The 3D MPI coordinate of this rank
   bool m_is_boundary[6] = {false}; ///< Is this rank at boundary in each direction
   int m_is_periodic[3] = {0}; ///< Whether to use periodic boundary conditions in each direction
+  int m_neighbor_left[3] = {NEIGHBOR_NULL};
+  int m_neighbor_right[3] = {NEIGHBOR_NULL};
   multi_array<int> m_domain_map;
 
   MPI_Comm m_world;

@@ -5,6 +5,8 @@
 *.el
 *.out
 *.un~
+*~
+\#*
 build
 bin
 ninja
