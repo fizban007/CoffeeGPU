@@ -63,6 +63,9 @@ Note that in order to write data we need to use the scratch (GPFS) directories, 
 
     /gpfs/wolf/gen127/scratch/userid
 
+After making the executable, go to the `bin` directory and create the configuration file `config.toml` 
+(see `CoffeeGPU/config.toml.example` as an example).
+
 For interactive job submission, first run
 
     bsub -P PROJID -nnodes 1 -W 60 -alloc_flags gpumps -Is $SHELL
