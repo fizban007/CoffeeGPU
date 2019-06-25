@@ -9,6 +9,8 @@
 
 namespace Coffee {
 
+struct sim_data;
+
 class sim_environment {
  public:
   sim_environment(int* argc, char*** argv);
@@ -18,11 +20,11 @@ class sim_environment {
   sim_environment(sim_environment const&) = delete;
   sim_environment& operator=(sim_environment const&) = delete;
 
-  void send_guard_cells();
+  void send_guard_cells(sim_data& data);
 
-  void send_guard_cell_x(int dir);
-  void send_guard_cell_y(int dir);
-  void send_guard_cell_z(int dir);
+  void send_guard_cell_x(sim_data& data, int dir);
+  void send_guard_cell_y(sim_data& data, int dir);
+  void send_guard_cell_z(sim_data& data, int dir);
 
   const Grid& grid() const { return m_grid; }
   const sim_params& params() const { return m_params; }
