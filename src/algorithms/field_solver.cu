@@ -9,14 +9,44 @@ static dim3 gridSize(16, 16, 16);
 static dim3 blockSize(8, 8, 8);
 
 __global__ void
+kernel_compute_rho(const Scalar *ex, const Scalar *ey, const Scalar *ez,
+                   Scalar *rho) {
+  size_t ijk, iM1jk, ijM1k, ijkM1;
+  for (int k =
+           threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - 1;
+       k < dev_grid.dims[2] - dev_grid.guard[2] + 1;
+       k += blockDim.z * gridDim.z) {
+    for (int j =
+             threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - 1;
+         j < dev_grid.dims[1] - dev_grid.guard[1] + 1;
+         j += blockDim.y * gridDim.y) {
+      for (int i = threadIdx.x + blockIdx.x * blockDim.x +
+                   dev_grid.guard[0] - 1;
+           i < dev_grid.dims[0] - dev_grid.guard[0] + 1;
+           i += blockDim.x * gridDim.x) {
+        ijk = i + j * dev_grid.dims[0] +
+              k * dev_grid.dims[0] * dev_grid.dims[1];
+        iM1jk = ijk - 1;
+        ijM1k = ijk - dev_grid.dims[0];
+        ijkM1 = ijk - dev_grid.dims[0] * dev_grid.dims[1];
+        rho[ijk] = dev_grid.inv_delta[0] * (ex[ijk] - ex[iM1jk]) +
+                   dev_grid.inv_delta[1] * (ey[ijk] - ey[ijM1k]) +
+                   dev_grid.inv_delta[2] * (ez[ijk] - ez[ijkM1]);
+      }
+    }
+  }
+}
+
+__global__ void
 kernel_rk_push(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                const Scalar *bx, const Scalar *by, const Scalar *bz,
                const Scalar *bx0, const Scalar *by0, const Scalar *bz0,
                Scalar *dex, Scalar *dey, Scalar *dez, Scalar *dbx,
-               Scalar *dby, Scalar *dbz) {
+               Scalar *dby, Scalar *dbz, Scalar *rho) {
   Scalar CCx = dev_params.dt * dev_grid.inv_delta[0];
   Scalar CCy = dev_params.dt * dev_grid.inv_delta[1];
   Scalar CCz = dev_params.dt * dev_grid.inv_delta[2];
+  size_t ijk, iP1jk, iM1jk, ijP1k, ijM1k, ijkP1, ijkM1;
   for (int k =
            threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2];
        k < dev_grid.dims[2] - dev_grid.guard[2];
@@ -29,20 +59,14 @@ kernel_rk_push(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                    dev_grid.guard[0];
            i < dev_grid.dims[0] - dev_grid.guard[0];
            i += blockDim.x * gridDim.x) {
-        size_t ijk = i + j * dev_grid.dims[0] +
-                     k * dev_grid.dims[0] * dev_grid.dims[1];
-        size_t iP1jk = (i + 1) + j * dev_grid.dims[0] +
-                       k * dev_grid.dims[0] * dev_grid.dims[1];
-        size_t iM1jk = (i - 1) + j * dev_grid.dims[0] +
-                       k * dev_grid.dims[0] * dev_grid.dims[1];
-        size_t ijP1k = i + (j + 1) * dev_grid.dims[0] +
-                       k * dev_grid.dims[0] * dev_grid.dims[1];
-        size_t ijM1k = i + (j - 1) * dev_grid.dims[0] +
-                       k * dev_grid.dims[0] * dev_grid.dims[1];
-        size_t ijkP1 = i + j * dev_grid.dims[0] +
-                       (k + 1) * dev_grid.dims[0] * dev_grid.dims[1];
-        size_t ijkM1 = i + j * dev_grid.dims[0] +
-                       (k - 1) * dev_grid.dims[0] * dev_grid.dims[1];
+        ijk = i + j * dev_grid.dims[0] +
+              k * dev_grid.dims[0] * dev_grid.dims[1];
+        iP1jk = ijk + 1;
+        iM1jk = ijk - 1;
+        ijP1k = ijk + dev_grid.dims[0];
+        ijM1k = ijk - dev_grid.dims[0];
+        ijkP1 = ijk + dev_grid.dims[0] * dev_grid.dims[1];
+        ijkM1 = ijk - dev_grid.dims[0] * dev_grid.dims[1];
         // push B-field
         dbx[ijk] = CCx * (ey[ijkP1] - ey[ijk] - ez[ijP1k] + ez[ijk]);
         dby[ijk] = CCy * (ez[iP1jk] - ez[ijk] - ez[ijkP1] + ex[ijk]);
@@ -76,6 +100,7 @@ kernel_rk_update(Scalar *ex, Scalar *ey, Scalar *ez, Scalar *bx,
                  const Scalar *dbx, const Scalar *dby,
                  const Scalar *dbz, Scalar rk_c1, Scalar rk_c2,
                  Scalar rk_c3) {
+  size_t ijk;
   for (int k =
            threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2];
        k < dev_grid.dims[2] - dev_grid.guard[2];
@@ -88,8 +113,8 @@ kernel_rk_update(Scalar *ex, Scalar *ey, Scalar *ez, Scalar *bx,
                    dev_grid.guard[0];
            i < dev_grid.dims[0] - dev_grid.guard[0];
            i += blockDim.x * gridDim.x) {
-        size_t ijk = i + j * dev_grid.dims[0] +
-                     k * dev_grid.dims[0] * dev_grid.dims[1];
+        ijk = i + j * dev_grid.dims[0] +
+              k * dev_grid.dims[0] * dev_grid.dims[1];
         // update E-field
         ex[ijk] = rk_c1 * enx[ijk] + rk_c2 * ex[ijk] + rk_c3 * dex[ijk];
         ey[ijk] = rk_c1 * eny[ijk] + rk_c2 * ey[ijk] + rk_c3 * dey[ijk];
@@ -123,6 +148,7 @@ field_solver::evolve_fields() {
   // `En = E`, `Bn = B`:
   copy_fields();
 
+  // `rho = div E`
   // `dB = -curl E`
   // `dE = curl B - curl B0 - j`
   // `E = c1 En + c2 E + c3 dE`
@@ -147,12 +173,15 @@ field_solver::copy_fields() {
 
 void
 field_solver::rk_push() {
+  kernel_compute_rho<<<gridSize, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      rho.dev_ptr);
   kernel_rk_push<<<gridSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       m_data.B0.dev_ptr(0), m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
-      dB.dev_ptr(1), dB.dev_ptr(2));
+      dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr);
 }
 
 void

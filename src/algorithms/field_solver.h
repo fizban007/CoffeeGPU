@@ -8,6 +8,7 @@ class field_solver {
   sim_data& m_data;
 
   vector_field<Scalar> En, Bn, dE, dB;
+  multi_array<Scalar> rho;
 
   field_solver(sim_data& mydata);
   ~field_solver();
