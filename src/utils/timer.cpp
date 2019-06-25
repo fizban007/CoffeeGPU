@@ -1,6 +1,6 @@
 #include "utils/timer.h"
 
-using namespace Aperture;
+using namespace Coffee;
 using namespace std::chrono;
 
 std::unordered_map<std::string, high_resolution_clock::time_point>
