@@ -3,11 +3,22 @@
 #include "cuda/cuda_utility.h"
 #include "field_solver.h"
 #include "interpolation.h"
+#include "utils/timer.h"
+
+#define BLOCK_SIZE_X 32
+#define BLOCK_SIZE_Y 2
+#define BLOCK_SIZE_Z 2
+
+#define nghost 1
+
+#define full_SIZE_X (BLOCK_SIZE_X + 2 * nghost)
+#define full_SIZE_Y (BLOCK_SIZE_Y + 2 * nghost)
+#define full_SIZE_Z (BLOCK_SIZE_Z + 2 * nghost)
 
 namespace Coffee {
 
 static dim3 gridSize(8, 16, 16);
-static dim3 blockSize(32, 4, 4);
+static dim3 blockSize(BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z);
 
 __global__ void
 kernel_compute_rho(const Scalar *ex, const Scalar *ey, const Scalar *ez,
@@ -39,30 +50,19 @@ kernel_compute_rho(const Scalar *ex, const Scalar *ey, const Scalar *ez,
 }
 
 __global__ void
-kernel_rk_push(const Scalar *ex, const Scalar *ey, const Scalar *ez,
-               const Scalar *bx, const Scalar *by, const Scalar *bz,
-               const Scalar *bx0, const Scalar *by0, const Scalar *bz0,
-               Scalar *dex, Scalar *dey, Scalar *dez, Scalar *dbx,
-               Scalar *dby, Scalar *dbz, Scalar *rho) {
+kernel_rk_push_old(const Scalar *ex, const Scalar *ey, const Scalar *ez,
+                   const Scalar *bx, const Scalar *by, const Scalar *bz,
+                   const Scalar *bx0, const Scalar *by0,
+                   const Scalar *bz0, Scalar *dex, Scalar *dey,
+                   Scalar *dez, Scalar *dbx, Scalar *dby, Scalar *dbz,
+                   Scalar *rho) {
   Scalar CCx = dev_params.dt * dev_grid.inv_delta[0];
   Scalar CCy = dev_params.dt * dev_grid.inv_delta[1];
   Scalar CCz = dev_params.dt * dev_grid.inv_delta[2];
   Scalar intex, intey, intez, intbx, intby, intbz, intrho;
   Scalar jx, jy, jz;
   size_t ijk, iP1jk, iM1jk, ijP1k, ijM1k, ijkP1, ijkM1;
-  // for (int k =
-  //          threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2];
-  //      k < dev_grid.dims[2] - dev_grid.guard[2];
-  //      k += blockDim.z * gridDim.z) {
-  //   for (int j =
-  //            threadIdx.y + blockIdx.y * blockDim.y +
-  //            dev_grid.guard[1];
-  //        j < dev_grid.dims[1] - dev_grid.guard[1];
-  //        j += blockDim.y * gridDim.y) {
-  //     for (int i = threadIdx.x + blockIdx.x * blockDim.x +
-  //                  dev_grid.guard[0];
-  //          i < dev_grid.dims[0] - dev_grid.guard[0];
-  //          i += blockDim.x * gridDim.x) {
+
   int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0];
   int j = threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1];
   int k = threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2];
@@ -79,8 +79,8 @@ kernel_rk_push(const Scalar *ex, const Scalar *ey, const Scalar *ez,
     ijkM1 = ijk - dev_grid.dims[0] * dev_grid.dims[1];
     // push B-field
     dbx[ijk] = CCx * (ey[ijkP1] - ey[ijk] - ez[ijP1k] + ez[ijk]);
-    dby[ijk] = CCy * (ez[iP1jk] - ez[ijk] - ez[ijkP1] + ex[ijk]);
-    dbz[ijk] = CCz * (ex[ijP1k] - ex[ijk] - ez[iP1jk] + ey[ijk]);
+    dby[ijk] = CCy * (ez[iP1jk] - ez[ijk] - ex[ijkP1] + ex[ijk]);
+    dbz[ijk] = CCz * (ex[ijP1k] - ex[ijk] - ey[iP1jk] + ey[ijk]);
     // push E-field
     dex[ijk] = CCx * ((by[ijkM1] - by[ijk] - bz[ijM1k] + bz[ijk]) -
                       (by0[ijkM1] - bz0[ijk] - bz0[ijM1k] + bz0[ijk]));
@@ -145,9 +145,159 @@ kernel_rk_push(const Scalar *ex, const Scalar *ey, const Scalar *ez,
     dey[ijk] -= jy;
     dez[ijk] -= jz;
   }
-  // }
-  // }
-  // }
+}
+
+__global__ void
+kernel_rk_push(const Scalar *ex, const Scalar *ey, const Scalar *ez,
+               const Scalar *bx, const Scalar *by, const Scalar *bz,
+               const Scalar *bx0, const Scalar *by0, const Scalar *bz0,
+               Scalar *dex, Scalar *dey, Scalar *dez, Scalar *dbx,
+               Scalar *dby, Scalar *dbz, Scalar *rho) {
+  Scalar CCx = dev_params.dt * dev_grid.inv_delta[0];
+  Scalar CCy = dev_params.dt * dev_grid.inv_delta[1];
+  Scalar CCz = dev_params.dt * dev_grid.inv_delta[2];
+  Scalar intex, intey, intez, intbx, intby, intbz, intrho;
+  Scalar jx, jy, jz;
+
+  __shared__ Scalar
+      // sh_ex[(full_SIZE_Z) * (full_SIZE_Y) * (full_SIZE_X)];
+  sh_ex[full_SIZE_Z][full_SIZE_Y][full_SIZE_X];
+  __shared__ Scalar
+      // sh_ey[(full_SIZE_Z) * (full_SIZE_Y) * (full_SIZE_X)];
+  sh_ey[full_SIZE_Z][full_SIZE_Y][full_SIZE_X];
+  __shared__ Scalar
+      // sh_ez[(full_SIZE_Z) * (full_SIZE_Y) * (full_SIZE_X)];
+  sh_ez[full_SIZE_Z][full_SIZE_Y][full_SIZE_X];
+  __shared__ Scalar
+      // sh_bx[(full_SIZE_Z) * (full_SIZE_Y) * (full_SIZE_X)];
+  sh_bx[full_SIZE_Z][full_SIZE_Y][full_SIZE_X];
+  __shared__ Scalar
+      // sh_by[(full_SIZE_Z) * (full_SIZE_Y) * (full_SIZE_X)];
+  sh_by[full_SIZE_Z][full_SIZE_Y][full_SIZE_X];
+  __shared__ Scalar
+      // sh_bz[(full_SIZE_Z) * (full_SIZE_Y) * (full_SIZE_X)];
+  sh_bz[full_SIZE_Z][full_SIZE_Y][full_SIZE_X];
+  __shared__ Scalar
+      // sh_bx0[(full_SIZE_Z) * (full_SIZE_Y) * (full_SIZE_X)];
+  sh_bx0[full_SIZE_Z][full_SIZE_Y][full_SIZE_X];
+  __shared__ Scalar
+      // sh_by0[(full_SIZE_Z) * (full_SIZE_Y) * (full_SIZE_X)];
+  sh_by0[full_SIZE_Z][full_SIZE_Y][full_SIZE_X];
+  __shared__ Scalar
+      // sh_bz0[(full_SIZE_Z) * (full_SIZE_Y) * (full_SIZE_X)];
+  sh_bz0[full_SIZE_Z][full_SIZE_Y][full_SIZE_X];
+  __shared__ Scalar
+      // sh_rho[(full_SIZE_Z) * (full_SIZE_Y) * (full_SIZE_X)];
+  sh_rho[full_SIZE_Z][full_SIZE_Y][full_SIZE_X];
+
+  // populating __shared__ memory
+  size_t ijk, ijk_thr, iglob, jglob, kglob, i, j, k;
+  // size_t iP1jk_thr, iM1jk_thr, ijP1k_thr, ijM1k_thr, ijkP1_thr,
+  //     ijkM1_thr;
+  for (k = threadIdx.z; k < (full_SIZE_Z); k += blockDim.z) {
+    kglob = k + blockIdx.z * blockDim.z;
+    for (j = threadIdx.y; j < (full_SIZE_Y); j += blockDim.y) {
+      jglob = j + blockIdx.y * blockDim.y;
+      for (i = threadIdx.x; i < (full_SIZE_X); i += blockDim.x) {
+        iglob = i + blockIdx.x * blockDim.x;
+        if ((iglob < dev_grid.dims[0]) && (jglob < dev_grid.dims[1]) &&
+            (kglob < dev_grid.dims[2])) {
+          ijk = iglob + jglob * dev_grid.dims[0] +
+                kglob * dev_grid.dims[0] * dev_grid.dims[1];
+          // ijk_thr =
+          //     i + j * (full_SIZE_X) + k * (full_SIZE_X) * (full_SIZE_Y);
+          // sh_ex[ijk_thr] = ex[ijk];
+          // sh_ey[ijk_thr] = ey[ijk];
+          // sh_ez[ijk_thr] = ez[ijk];
+          // sh_bx[ijk_thr] = bx[ijk];
+          // sh_by[ijk_thr] = by[ijk];
+          // sh_bz[ijk_thr] = bz[ijk];
+          // sh_bx0[ijk_thr] = bx0[ijk];
+          // sh_by0[ijk_thr] = by0[ijk];
+          // sh_bz0[ijk_thr] = bz0[ijk];
+          // sh_rho[ijk_thr] = rho[ijk];
+          sh_ex[k][j][i] = ex[ijk];
+          sh_ey[k][j][i] = ey[ijk];
+          sh_ez[k][j][i] = ez[ijk];
+          sh_bx[k][j][i] = bx[ijk];
+          sh_by[k][j][i] = by[ijk];
+          sh_bz[k][j][i] = bz[ijk];
+          sh_bx0[k][j][i] = bx0[ijk];
+          sh_by0[k][j][i] = by0[ijk];
+          sh_bz0[k][j][i] = bz0[ijk];
+          sh_rho[k][j][i] = rho[ijk];
+        }
+      }
+    }
+  }
+
+  // sync between threads
+  __syncthreads();
+  //
+
+  i = threadIdx.x + nghost;
+  j = threadIdx.y + nghost;
+  k = threadIdx.z + nghost;
+  iglob = i + blockIdx.x * blockDim.x;
+  jglob = j + blockIdx.y * blockDim.y;
+  kglob = k + blockIdx.z * blockDim.z;
+  if (((iglob < dev_grid.dims[0] - nghost) &&
+       (jglob < dev_grid.dims[1] - nghost) &&
+       (kglob < dev_grid.dims[2] - nghost))) {
+    // error
+    // asm("trap;");
+    ijk = iglob + jglob * dev_grid.dims[0] +
+          kglob * dev_grid.dims[0] * dev_grid.dims[1];
+    // ijk_thr = i + j * (full_SIZE_X) + k * (full_SIZE_X) * (full_SIZE_Y);
+
+    // iP1jk_thr = ijk_thr + 1;
+    // iM1jk_thr = ijk_thr - 1;
+    // ijP1k_thr = ijk_thr + (full_SIZE_X);
+    // ijM1k_thr = ijk_thr - (full_SIZE_X);
+    // ijkP1_thr = ijk_thr + (full_SIZE_X) * (full_SIZE_Y);
+    // ijkM1_thr = ijk_thr - (full_SIZE_X) * (full_SIZE_Y);
+
+    // // push B-field
+    // dbx[ijk] = CCx * (sh_ey[ijkP1_thr] - sh_ey[ijk_thr] -
+    //                   sh_ez[ijP1k_thr] + sh_ez[ijk_thr]);
+    // dby[ijk] = CCy * (sh_ez[iP1jk_thr] - sh_ez[ijk_thr] -
+    //                   sh_ez[ijkP1_thr] + sh_ex[ijk_thr]);
+    // dbz[ijk] = CCz * (sh_ex[ijP1k_thr] - sh_ex[ijk_thr] -
+    //                   sh_ez[iP1jk_thr] + sh_ey[ijk_thr]);
+    // // push E-field
+    // dex[ijk] = CCx * ((sh_by[ijkM1_thr] - sh_by[ijk_thr] -
+    //                    sh_bz[ijM1k_thr] + sh_bz[ijk_thr]) -
+    //                   (sh_by0[ijkM1_thr] - sh_bz0[ijk_thr] -
+    //                    sh_bz0[ijM1k_thr] + sh_bz0[ijk_thr]));
+    // dey[ijk] = CCy * ((sh_bz[iM1jk_thr] - sh_bz[ijk_thr] -
+    //                    sh_bx[ijkM1_thr] + sh_bx[ijk_thr]) -
+    //                   (sh_bz0[iM1jk_thr] - sh_bz0[ijk_thr] -
+    //                    sh_bx0[ijkM1_thr] + sh_bx0[ijk_thr]));
+    // dez[ijk] = CCz * ((sh_bx[ijM1k_thr] - sh_bx[ijk_thr] -
+    //                    sh_by[iM1jk_thr] + sh_by[ijk_thr]) -
+    //                   (sh_bx0[ijM1k_thr] - sh_bx0[ijk_thr] -
+    //                    sh_by0[iM1jk_thr] + sh_by0[ijk_thr]));
+    // push B-field
+    dbx[ijk] = CCx * (sh_ey[k + 1][j][i] - sh_ey[k][j][i] -
+                      sh_ez[k][j + 1][i] + sh_ez[k][j][i]);
+    dby[ijk] = CCy * (sh_ez[k][j][i + 1] - sh_ez[k][j][i] -
+                      sh_ex[k + 1][j][i] + sh_ex[k][j][i]);
+    dbz[ijk] = CCz * (sh_ex[k][j + 1][i] - sh_ex[k][j][i] -
+                      sh_ey[k][j][i + 1] + sh_ey[k][j][i]);
+    // push E-field
+    dex[ijk] = CCx * ((sh_by[k - 1][j][i] - sh_by[k][j][i] -
+                       sh_bz[k][j - 1][i] + sh_bz[k][j][i]) -
+                      (sh_by0[k - 1][j][i] - sh_by0[k][j][i] -
+                       sh_bz0[k][j - 1][i] + sh_bz0[k][j][i]));
+    dey[ijk] = CCy * ((sh_bz[k][j][i - 1] - sh_bz[k][j][i] -
+                       sh_bx[k - 1][j][i] + sh_bx[k][j][i]) -
+                      (sh_bz0[k][j][i - 1] - sh_bz0[k][j][i] -
+                       sh_bx0[k - 1][j][i] + sh_bx0[k][j][i]));
+    dez[ijk] = CCz * ((sh_bx[k][j - 1][i] - sh_bx[k][j][i] -
+                       sh_by[k][j][i - 1] + sh_by[k][j][i]) -
+                      (sh_bx0[k][j - 1][i] - sh_bx0[k][j][i] -
+                       sh_by0[k][j][i - 1] + sh_by0[k][j][i]));
+  }
 }
 
 __global__ void
@@ -371,6 +521,7 @@ field_solver::field_solver(sim_data &mydata) : m_data(mydata) {
   dB.copy_stagger(m_data.B);
 
   rho = multi_array<Scalar>(m_data.env.grid().extent());
+  rho.assign_dev(0.0);
 }
 
 field_solver::~field_solver() {}
@@ -381,19 +532,19 @@ field_solver::evolve_fields() {
 
   // substep #1:
   rk_push();
-  rk_update(1.0, 0.0, 1.0);
-  check_eGTb();
+  // rk_update(1.0, 0.0, 1.0);
+  // check_eGTb();
 
-  // substep #2:
-  rk_push();
-  rk_update(0.75, 0.25, 0.25);
-  check_eGTb();
+  // // substep #2:
+  // rk_push();
+  // rk_update(0.75, 0.25, 0.25);
+  // check_eGTb();
 
-  // substep #3:
-  rk_push();
-  rk_update(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
-  clean_epar();
-  check_eGTb();
+  // // substep #3:
+  // rk_push();
+  // rk_update(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
+  // clean_epar();
+  // check_eGTb();
 
   // boundary call
   CudaSafeCall(cudaDeviceSynchronize());
@@ -409,15 +560,15 @@ field_solver::copy_fields() {
 void
 field_solver::rk_push() {
   // `rho = div E`
-  kernel_compute_rho<<<gridSize, blockSize>>>(
-      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-      rho.dev_ptr());
+  // kernel_compute_rho<<<gridSize, blockSize>>>(
+  //     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+  //     rho.dev_ptr());
   // `dE = curl B - curl B0 - j, dB = -curl E`
-  // kernel_rk_push<<<gridSize, blockSize>>>(
-  dim3 g((m_data.env.grid().dims[0] + blockSize.x - 1) / blockSize.x,
-         (m_data.env.grid().dims[1] + blockSize.y - 1) / blockSize.y,
-         (m_data.env.grid().dims[2] + blockSize.z - 1) / blockSize.z);
+  dim3 g((m_data.env.grid().reduced_dim(0) + blockSize.x - 1) / blockSize.x,
+         (m_data.env.grid().reduced_dim(1) + blockSize.y - 1) / blockSize.y,
+         (m_data.env.grid().reduced_dim(2) + blockSize.z - 1) / blockSize.z);
   kernel_rk_push<<<g, blockSize>>>(
+  // kernel_rk_push_old<<<g, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       m_data.B0.dev_ptr(0), m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2),
