@@ -5,6 +5,9 @@
 
 namespace Coffee {
 
+static dim3 gridSize(16, 16, 16);
+static dim3 blockSize(8, 8, 8);
+
 __global__ void
 kernel_rk_push(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                const Scalar *bx, const Scalar *by, const Scalar *bz,
@@ -144,8 +147,6 @@ field_solver::copy_fields() {
 
 void
 field_solver::rk_push() {
-  dim3 gridSize(16, 16, 16);
-  dim3 blockSize(8, 8, 8);
   kernel_rk_push<<<gridSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
@@ -156,8 +157,6 @@ field_solver::rk_push() {
 
 void
 field_solver::rk_update(Scalar rk_c1, Scalar rk_c2, Scalar rk_c3) {
-  dim3 gridSize(16, 16, 16);
-  dim3 blockSize(8, 8, 8);
   kernel_rk_update<<<gridSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
@@ -169,8 +168,6 @@ field_solver::rk_update(Scalar rk_c1, Scalar rk_c2, Scalar rk_c3) {
 
 void
 field_solver::clean_epar() {
-  dim3 gridSize(16, 16, 16);
-  dim3 blockSize(8, 8, 8);
   kernel_clean_epar<<<gridSize, blockSize>>>();
 }
 
