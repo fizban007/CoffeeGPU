@@ -29,13 +29,16 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 find_package(MPI REQUIRED)
 find_package(HDF5 REQUIRED COMPONENTS CXX)
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 # set(FMT_INCLUDE_DIR deps/fmt)
 set(CATCH_INCLUDE_DIR deps/catch/single_include/catch2)
 set(CPPTOML_INCLUDE_DIR deps/cpptoml/include)
+set(HIGHFIVE_INCLUDE_DIR deps/highfive/include)
 
 include_directories(${MPI_INCLUDE_PATH} ${CPPTOML_INCLUDE_DIR} ${CATCH_INCLUDE_DIR}
-  ${HIGHFIVE_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} src)
+  ${HIGHFIVE_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+  ${Boost_INCLUDE_DIRS} src)
 
 ######### Check for cuda support
 if (use_cuda)

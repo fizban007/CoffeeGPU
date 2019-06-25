@@ -20,8 +20,8 @@ int main(int argc, char *argv[]) {
   data_exporter exporter(env, step);
 
   // std::cout << "Attempting to write output" << std::endl;
-  // exporter.write_output(data, step, 0.0);
-  // exporter.sync();
+  exporter.write_output(data, step, 0.0);
+  exporter.sync();
 
   // Main simulation loop
   for (step = 0; step <= env.params().max_steps; step++) {
