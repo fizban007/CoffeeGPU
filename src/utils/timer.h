@@ -6,7 +6,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace Aperture {
+namespace Coffee {
 
 class timer {
  public:

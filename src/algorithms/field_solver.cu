@@ -118,6 +118,8 @@ field_solver::field_solver(sim_data &mydata) : m_data(mydata) {
   dB.copy_stagger(m_data.B);
 }
 
+field_solver::~field_solver() {}
+
 void
 field_solver::evolve_fields() {
   // `En = E`, `Bn = B`:
@@ -137,6 +139,7 @@ field_solver::evolve_fields() {
   // clean `E || B`
   clean_epar();
   // boundary call
+  CudaSafeCall(cudaDeviceSynchronize());
 }
 
 void
