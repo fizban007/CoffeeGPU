@@ -7,6 +7,8 @@
 #include <vector>
 #include <mpi.h>
 
+#define NEIGHBOR_NULL -2
+
 namespace Coffee {
 
 struct sim_data;
@@ -50,6 +52,8 @@ class sim_environment {
   int m_mpi_coord[3] = {0}; ///< The 3D MPI coordinate of this rank
   bool m_is_boundary[6] = {false}; ///< Is this rank at boundary in each direction
   int m_is_periodic[3] = {0}; ///< Whether to use periodic boundary conditions in each direction
+  int m_neighbor_left[3] = {NEIGHBOR_NULL};
+  int m_neighbor_right[3] = {NEIGHBOR_NULL};
   multi_array<int> m_domain_map;
 
   MPI_Comm m_world;

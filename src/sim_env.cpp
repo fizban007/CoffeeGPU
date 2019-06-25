@@ -88,26 +88,25 @@ sim_environment::setup_domain() {
   int xleft, xright, yleft, yright, zleft, zright;
   int rank;
   MPI_Cart_shift(m_cart, 0, -1, &rank, &xleft);
-  // std::cout << "xleft of " << m_rank << " is " << xleft << std::endl;
   MPI_Cart_shift(m_cart, 0, 1, &rank, &xright);
-  // std::cout << "xright of " << m_rank << " is " << xright <<
-  // std::endl;
   if (xleft < 0) m_is_boundary[0] = true;
+  else m_neighbor_left[0] = xleft;
   if (xright < 0) m_is_boundary[1] = true;
+  else m_neighbor_right[0] = xright;
+
   MPI_Cart_shift(m_cart, 1, -1, &rank, &yleft);
-  // std::cout << "yleft of " << m_rank << " is " << yleft << std::endl;
   MPI_Cart_shift(m_cart, 1, 1, &rank, &yright);
-  // std::cout << "yright of " << m_rank << " is " << yright <<
-  // std::endl;
   if (yleft < 0) m_is_boundary[2] = true;
+  else m_neighbor_left[1] = yleft;
   if (yright < 0) m_is_boundary[3] = true;
+  else m_neighbor_right[1] = yright;
+
   MPI_Cart_shift(m_cart, 2, -1, &rank, &zleft);
-  // std::cout << "zleft of " << m_rank << " is " << zleft << std::endl;
   MPI_Cart_shift(m_cart, 2, 1, &rank, &zright);
-  // std::cout << "zright of " << m_rank << " is " << zright <<
-  // std::endl;
   if (zleft < 0) m_is_boundary[4] = true;
+  else m_neighbor_left[2] = zleft;
   if (zright < 0) m_is_boundary[5] = true;
+  else m_neighbor_right[2] = zright;
 
   // Adjust the grid so that it matches the local domain
   for (int i = 0; i < m_grid.dim(); i++) {
