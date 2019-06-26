@@ -9,6 +9,8 @@ typedef float Scalar;
 typedef double Scalar;
 #endif
 
+#define M_PI (3.141592653589793)
+
 }
 
 #endif  // _TYPEDEFS_H_

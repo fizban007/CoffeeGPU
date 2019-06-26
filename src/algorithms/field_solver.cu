@@ -599,9 +599,9 @@ field_solver::copy_fields() {
 void
 field_solver::rk_push() {
   // `rho = div E`
-  // kernel_compute_rho<<<gridSize, blockSize>>>(
-  //     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-  //     rho.dev_ptr());
+  kernel_compute_rho<<<gridSize, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      rho.dev_ptr());
   // `dE = curl B - curl B0 - j, dB = -curl E`
   dim3 g((m_data.env.grid().reduced_dim(0) + blockSize.x - 1) / blockSize.x,
          (m_data.env.grid().reduced_dim(1) + blockSize.y - 1) / blockSize.y,
