@@ -39,6 +39,7 @@ sim_environment::send_guard_cell_x(sim_data& data, int dir) {
   MPI_Request requests[2];
   int send_offset, receive_offset;
 
+  std::cout << "Sending guard cell x in dir " << dir << std::endl;
   dest = (dir == -1 ? m_neighbor_left[0] : m_neighbor_right[0]);
   origin = (dir == -1 ? m_neighbor_right[0] : m_neighbor_left[0]);
 
@@ -49,11 +50,15 @@ sim_environment::send_guard_cell_x(sim_data& data, int dir) {
                            : m_grid.dims[0] - 2 * m_grid.guard[0]);
   receive_offset = (dir == -1 ? m_grid.dims[0] - m_grid.guard[0] : 0);
 
-  MPI_Isend(data.E.dev_ptr(0) + send_offset, m_grid.guard[0], x_type,
-           dest, 0, m_cart, &requests[0]);
-  MPI_Irecv(data.E.dev_ptr(0) + receive_offset, m_grid.guard[0], x_type,
-            origin, 0, m_cart, &requests[1]);
-  MPI_Waitall(2, requests, NULL);
+  // MPI_Isend(data.E.dev_ptr(0) + send_offset, m_grid.guard[0], x_type,
+  //          dest, 0, m_cart, &requests[0]);
+  // MPI_Irecv(data.E.dev_ptr(0) + receive_offset, m_grid.guard[0], x_type,
+  //           origin, 0, m_cart, &requests[1]);
+  // MPI_Waitall(2, requests, NULL);
+  MPI_Send(data.E.dev_ptr(0) + send_offset, m_grid.guard[0], x_type,
+           dest, 1, m_cart);
+  MPI_Recv(data.E.dev_ptr(0) + receive_offset, m_grid.guard[0], x_type,
+           origin, 1, m_cart, &status);
   // MPI_Send(data.E.dev_ptr(1) + send_offset, m_grid.guard[0], x_type,
   //          dest, 1, m_cart);
   // MPI_Recv(data.E.dev_ptr(1) + receive_offset, m_grid.guard[0], x_type,
@@ -83,6 +88,7 @@ sim_environment::send_guard_cell_y(sim_data& data, int dir) {
   MPI_Status status;
   int send_offset, receive_offset;
 
+  std::cout << "Sending guard cell y in dir " << dir << std::endl;
   dest = (dir == -1 ? m_neighbor_left[1] : m_neighbor_right[1]);
   origin = (dir == -1 ? m_neighbor_right[1] : m_neighbor_left[1]);
 
@@ -95,31 +101,34 @@ sim_environment::send_guard_cell_y(sim_data& data, int dir) {
   receive_offset = (dir == -1 ? m_grid.dims[1] - m_grid.guard[1] : 0) *
                    m_grid.dims[0];
 
-  MPI_Send(data.E.dev_ptr(0) + send_offset, m_grid.guard[1], y_type,
-           dest, 0, m_cart);
-  MPI_Recv(data.E.dev_ptr(0) + receive_offset, m_grid.guard[1], y_type,
-           origin, 0, m_cart, &status);
-  MPI_Send(data.E.dev_ptr(1) + send_offset, m_grid.guard[1], y_type,
-           dest, 1, m_cart);
-  MPI_Recv(data.E.dev_ptr(1) + receive_offset, m_grid.guard[1], y_type,
-           origin, 1, m_cart, &status);
-  MPI_Send(data.E.dev_ptr(2) + send_offset, m_grid.guard[1], y_type,
-           dest, 2, m_cart);
-  MPI_Recv(data.E.dev_ptr(2) + receive_offset, m_grid.guard[1], y_type,
-           origin, 2, m_cart, &status);
+  // MPI_Send(data.E.dev_ptr(0) + send_offset, m_grid.guard[1], y_type,
+  //          dest, 0, m_cart);
+  // MPI_Recv(data.E.dev_ptr(0) + receive_offset, m_grid.guard[1], y_type,
+  //          origin, 0, m_cart, &status);
+  MPI_Sendrecv(data.E.dev_ptr(0) + send_offset, m_grid.guard[1], y_type, dest, 0,
+               data.E.dev_ptr(0) + receive_offset, m_grid.guard[1], y_type, origin, 0,
+               m_cart, &status);
+  // MPI_Send(data.E.dev_ptr(1) + send_offset, m_grid.guard[1], y_type,
+  //          dest, 1, m_cart);
+  // MPI_Recv(data.E.dev_ptr(1) + receive_offset, m_grid.guard[1], y_type,
+  //          origin, 1, m_cart, &status);
+  // MPI_Send(data.E.dev_ptr(2) + send_offset, m_grid.guard[1], y_type,
+  //          dest, 2, m_cart);
+  // MPI_Recv(data.E.dev_ptr(2) + receive_offset, m_grid.guard[1], y_type,
+  //          origin, 2, m_cart, &status);
 
-  MPI_Send(data.B.dev_ptr(0) + send_offset, m_grid.guard[1], y_type,
-           dest, 3, m_cart);
-  MPI_Recv(data.B.dev_ptr(0) + receive_offset, m_grid.guard[1], y_type,
-           origin, 3, m_cart, &status);
-  MPI_Send(data.B.dev_ptr(1) + send_offset, m_grid.guard[1], y_type,
-           dest, 4, m_cart);
-  MPI_Recv(data.B.dev_ptr(1) + receive_offset, m_grid.guard[1], y_type,
-           origin, 4, m_cart, &status);
-  MPI_Send(data.B.dev_ptr(2) + send_offset, m_grid.guard[1], y_type,
-           dest, 5, m_cart);
-  MPI_Recv(data.B.dev_ptr(2) + receive_offset, m_grid.guard[1], y_type,
-           origin, 5, m_cart, &status);
+  // MPI_Send(data.B.dev_ptr(0) + send_offset, m_grid.guard[1], y_type,
+  //          dest, 3, m_cart);
+  // MPI_Recv(data.B.dev_ptr(0) + receive_offset, m_grid.guard[1], y_type,
+  //          origin, 3, m_cart, &status);
+  // MPI_Send(data.B.dev_ptr(1) + send_offset, m_grid.guard[1], y_type,
+  //          dest, 4, m_cart);
+  // MPI_Recv(data.B.dev_ptr(1) + receive_offset, m_grid.guard[1], y_type,
+  //          origin, 4, m_cart, &status);
+  // MPI_Send(data.B.dev_ptr(2) + send_offset, m_grid.guard[1], y_type,
+  //          dest, 5, m_cart);
+  // MPI_Recv(data.B.dev_ptr(2) + receive_offset, m_grid.guard[1], y_type,
+  //          origin, 5, m_cart, &status);
 }
 
 void
@@ -131,6 +140,7 @@ sim_environment::send_guard_cell_z(sim_data& data, int dir) {
   MPI_Datatype MPI_SCALAR =
       (sizeof(Scalar) == 4 ? MPI_FLOAT : MPI_DOUBLE);
 
+  std::cout << "Sending guard cell z in dir " << dir << std::endl;
   dest = (dir == -1 ? m_neighbor_left[2] : m_neighbor_right[2]);
   origin = (dir == -1 ? m_neighbor_right[2] : m_neighbor_left[2]);
 
