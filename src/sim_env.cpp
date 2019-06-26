@@ -31,7 +31,7 @@ sim_environment::exchange_type(MPI_Datatype *y_type, MPI_Datatype *x_type) {
   // Data exchange along x direction
   MPI_Type_vector(m_grid.dims[1],m_grid.guard[0],m_grid.dims[0],MPI_SCALAR,&x_temp);
   MPI_Type_commit(&x_temp);
-  MPI_Type_creat_hvector(m_grid.dims[2],1,sizeof(Scalar)*m_grid.dims[0]*m_grid.dims[1],x_temp,x_type);
+  MPI_Type_create_hvector(m_grid.dims[2],1,sizeof(Scalar)*m_grid.dims[0]*m_grid.dims[1],x_temp,x_type);
   MPI_Type_commit(x_type);
 
 }
@@ -56,32 +56,26 @@ sim_environment::send_guard_cell_x(sim_data& data, int dir){
 // int MPI_Recv(void *buf, int count, MPI_Datatype datatype,
 //    int source, int tag, MPI_Comm comm, MPI_Status *status)
 
+// int MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+//    int dest, int sendtag, void *recvbuf, int recvcount,
+//    MPI_Datatype recvtype, int source, int recvtag,
+//    MPI_Comm comm, MPI_Status *status)
 
-  MPI_Send(data.E.dev_ptr(0)+send_offset,1,
-    x_type,dest,0,m_cart);
-  MPI_Recv(data.E.dev_ptr(0)+receive_offset,1,
-    x_type,origin,0,m_cart,&status);
-  MPI_Send(data.E.dev_ptr(1)+send_offset,1,
-    x_type,dest,1,m_cart);
-  MPI_Recv(data.E.dev_ptr(1)+receive_offset,1,
-    x_type,origin,1,m_cart,&status);
-  MPI_Send(data.E.dev_ptr(2)+send_offset,1,
-    x_type,dest,2,m_cart);
-  MPI_Recv(data.E.dev_ptr(2)+receive_offset,1,
-    x_type,origin,2,m_cart,&status);
 
-  MPI_Send(data.B.dev_ptr(0)+send_offset,1,
-    x_type,dest,3,m_cart);
-  MPI_Recv(data.B.dev_ptr(0)+receive_offset,1,
-    x_type,origin,3,m_cart,&status);
-  MPI_Send(data.B.dev_ptr(1)+send_offset,1,
-    x_type,dest,4,m_cart);
-  MPI_Recv(data.B.dev_ptr(1)+receive_offset,1,
-    x_type,origin,4,m_cart,&status);
-  MPI_Send(data.B.dev_ptr(2)+send_offset,1,
-    x_type,dest,5,m_cart);
-  MPI_Recv(data.B.dev_ptr(2)+receive_offset,1,
-    x_type,origin,5,m_cart,&status);
+  MPI_Sendrecv(data.E.dev_ptr(0)+send_offset,1,x_type,dest,0,
+    data.E.dev_ptr(0)+receive_offset,1,x_type,origin,0,m_cart,&status);
+  MPI_Sendrecv(data.E.dev_ptr(1)+send_offset,1,x_type,dest,1,
+    data.E.dev_ptr(1)+receive_offset,1,x_type,origin,1,m_cart,&status);
+  MPI_Sendrecv(data.E.dev_ptr(2)+send_offset,1,x_type,dest,2,
+    data.E.dev_ptr(2)+receive_offset,1,x_type,origin,2,m_cart,&status);
+  
+  MPI_Sendrecv(data.B.dev_ptr(0)+send_offset,1,x_type,dest,3,
+    data.B.dev_ptr(0)+receive_offset,1,x_type,origin,3,m_cart,&status);
+  MPI_Sendrecv(data.B.dev_ptr(1)+send_offset,1,x_type,dest,4,
+    data.B.dev_ptr(1)+receive_offset,1,x_type,origin,4,m_cart,&status);
+  MPI_Sendrecv(data.B.dev_ptr(2)+send_offset,1,x_type,dest,5,
+    data.B.dev_ptr(2)+receive_offset,1,x_type,origin,5,m_cart,&status);
+  
 
 } 
 
@@ -100,32 +94,21 @@ sim_environment::send_guard_cell_y(sim_data& data, int dir){
   send_offset = (dir == -1 ? m_grid.guard[1]: m_grid.dims[1]-2*m_grid.guard[1]) * m_grid.dims[0] ;
   receive_offset = (dir == -1 ? m_grid.dims[1]-m_grid.guard[1] : 0) * m_grid.dims[0];
 
-  MPI_Send(data.E.dev_ptr(0)+send_offset,1,
-    y_type,dest,0,m_cart);
-  MPI_Recv(data.E.dev_ptr(0)+receive_offset,1,
-    y_type,origin,0,m_cart,&status);
-  MPI_Send(data.E.dev_ptr(1)+send_offset,1,
-    y_type,dest,1,m_cart);
-  MPI_Recv(data.E.dev_ptr(1)+receive_offset,1,
-    y_type,origin,1,m_cart,&status);
-  MPI_Send(data.E.dev_ptr(2)+send_offset,1,
-    y_type,dest,2,m_cart);
-  MPI_Recv(data.E.dev_ptr(2)+receive_offset,1,
-    y_type,origin,2,m_cart,&status);
-
-  MPI_Send(data.B.dev_ptr(0)+send_offset,1,
-    y_type,dest,3,m_cart);
-  MPI_Recv(data.B.dev_ptr(0)+receive_offset,1,
-    y_type,origin,3,m_cart,&status);
-  MPI_Send(data.B.dev_ptr(1)+send_offset,1,
-    y_type,dest,4,m_cart);
-  MPI_Recv(data.B.dev_ptr(1)+receive_offset,1,
-    y_type,origin,4,m_cart,&status);
-  MPI_Send(data.B.dev_ptr(2)+send_offset,1,
-    y_type,dest,5,m_cart);
-  MPI_Recv(data.B.dev_ptr(2)+receive_offset,1,
-    y_type,origin,5,m_cart,&status);
-
+  MPI_Sendrecv(data.E.dev_ptr(0)+send_offset,1,y_type,dest,0,
+    data.E.dev_ptr(0)+receive_offset,1,y_type,origin,0,m_cart,&status);
+  MPI_Sendrecv(data.E.dev_ptr(1)+send_offset,1,y_type,dest,1,
+    data.E.dev_ptr(1)+receive_offset,1,y_type,origin,1,m_cart,&status);
+  MPI_Sendrecv(data.E.dev_ptr(2)+send_offset,1,y_type,dest,2,
+    data.E.dev_ptr(2)+receive_offset,1,y_type,origin,2,m_cart,&status);
+  
+  MPI_Sendrecv(data.B.dev_ptr(0)+send_offset,1,y_type,dest,3,
+    data.B.dev_ptr(0)+receive_offset,1,y_type,origin,3,m_cart,&status);
+  MPI_Sendrecv(data.B.dev_ptr(1)+send_offset,1,y_type,dest,4,
+    data.B.dev_ptr(1)+receive_offset,1,y_type,origin,4,m_cart,&status);
+  MPI_Sendrecv(data.B.dev_ptr(2)+send_offset,1,y_type,dest,5,
+    data.B.dev_ptr(2)+receive_offset,1,y_type,origin,5,m_cart,&status);
+  
+  
 } 
 
 void
@@ -145,31 +128,22 @@ sim_environment::send_guard_cell_z(sim_data& data, int dir){
   send_offset = (dir == -1 ? m_grid.guard[2]: m_grid.dims[2]-2*m_grid.guard[2]) * zsize ;
   receive_offset = (dir == -1 ? m_grid.dims[2]-m_grid.guard[2] : 0) * zsize;
 
-  MPI_Send(data.E.dev_ptr(0)+send_offset,m_grid.guard[2]*zsize,
-    MPI_SCALAR,dest,0,m_cart);
-  MPI_Recv(data.E.dev_ptr(0)+receive_offset,m_grid.guard[2]*zsize,
-    MPI_SCALAR,origin,0,m_cart,&status);
-  MPI_Send(data.E.dev_ptr(1)+send_offset,m_grid.guard[2]*zsize,
-    MPI_SCALAR,dest,1,m_cart);
-  MPI_Recv(data.E.dev_ptr(1)+receive_offset,m_grid.guard[2]*zsize,
-    MPI_SCALAR,origin,1,m_cart,&status);
-  MPI_Send(data.E.dev_ptr(2)+send_offset,m_grid.guard[2]*zsize,
-    MPI_SCALAR,dest,2,m_cart);
-  MPI_Recv(data.E.dev_ptr(2)+receive_offset,m_grid.guard[2]*zsize,
-    MPI_SCALAR,origin,2,m_cart,&status);
+  int zsize1 = zsize * m_grid.guard[2];
 
-  MPI_Send(data.B.dev_ptr(0)+send_offset,m_grid.guard[2]*zsize,
-    MPI_SCALAR,dest,3,m_cart);
-  MPI_Recv(data.B.dev_ptr(0)+receive_offset,m_grid.guard[2]*zsize,
-    MPI_SCALAR,origin,3,m_cart,&status);
-  MPI_Send(data.B.dev_ptr(1)+send_offset,m_grid.guard[2]*zsize,
-    MPI_SCALAR,dest,4,m_cart);
-  MPI_Recv(data.B.dev_ptr(1)+receive_offset,m_grid.guard[2]*zsize,
-    MPI_SCALAR,origin,4,m_cart,&status);
-  MPI_Send(data.B.dev_ptr(2)+send_offset,m_grid.guard[2]*zsize,
-    MPI_SCALAR,dest,5,m_cart);
-  MPI_Recv(data.B.dev_ptr(2)+receive_offset,m_grid.guard[2]*zsize,
-    MPI_SCALAR,origin,5,m_cart,&status);
+  MPI_Sendrecv(data.E.dev_ptr(0)+send_offset,zsize1,MPI_SCALAR,dest,0,
+    data.E.dev_ptr(0)+receive_offset,zsize1,MPI_SCALAR,origin,0,m_cart,&status);
+  MPI_Sendrecv(data.E.dev_ptr(1)+send_offset,zsize1,MPI_SCALAR,dest,1,
+    data.E.dev_ptr(1)+receive_offset,zsize1,MPI_SCALAR,origin,1,m_cart,&status);
+  MPI_Sendrecv(data.E.dev_ptr(2)+send_offset,zsize1,MPI_SCALAR,dest,2,
+    data.E.dev_ptr(2)+receive_offset,zsize1,MPI_SCALAR,origin,2,m_cart,&status);
+  
+  MPI_Sendrecv(data.B.dev_ptr(0)+send_offset,zsize1,MPI_SCALAR,dest,3,
+    data.B.dev_ptr(0)+receive_offset,zsize1,MPI_SCALAR,origin,3,m_cart,&status);
+  MPI_Sendrecv(data.B.dev_ptr(1)+send_offset,zsize1,MPI_SCALAR,dest,4,
+    data.B.dev_ptr(1)+receive_offset,zsize1,MPI_SCALAR,origin,4,m_cart,&status);
+  MPI_Sendrecv(data.B.dev_ptr(2)+send_offset,zsize1,MPI_SCALAR,dest,5,
+    data.B.dev_ptr(2)+receive_offset,zsize1,MPI_SCALAR,origin,5,m_cart,&status);
+
 
 } 
 
