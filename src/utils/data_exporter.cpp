@@ -120,19 +120,31 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   //     },
   //     datafile);
   ADD_GRID_OUTPUT(
-      data, "E1", { p(idx_out) = data.E(0, idx); }, datafile);
+      data, "Ex", { p(idx_out) =
+            0.25 * (data.E(0, idx) + data.E(0, idx.x, idx.y + 1, idx.z)
+                    + data.E(0, idx.x, idx.y, idx.z + 1)
+                    + data.E(0, idx.x, idx.y + 1, idx.z + 1)); }, datafile);
   ADD_GRID_OUTPUT(
-      data, "E2", { p(idx_out) = data.E(1, idx); }, datafile);
+      data, "Ey", { p(idx_out) =
+            0.25 * (data.E(1, idx) + data.E(1, idx.x + 1, idx.y, idx.z)
+                    + data.E(1, idx.x, idx.y, idx.z + 1)
+                    + data.E(1, idx.x + 1, idx.y, idx.z + 1)); }, datafile);
   ADD_GRID_OUTPUT(
-      data, "E3", { p(idx_out) = data.E(2, idx); }, datafile);
+      data, "Ez", { p(idx_out) =
+            0.25 * (data.E(2, idx) + data.E(2, idx.x + 1, idx.y, idx.z)
+                    + data.E(2, idx.x, idx.y + 1, idx.z)
+                    + data.E(2, idx.x + 1, idx.y + 1, idx.z)); }, datafile);
   ADD_GRID_OUTPUT(
-      data, "B1", { p(idx_out) = data.B(0, idx) + data.B0(0, idx); },
+      data, "Bx", { p(idx_out) =
+            0.5 * (data.B(0, idx) + data.B(0, idx.x - 1, idx.y, idx.z)); },
       datafile);
   ADD_GRID_OUTPUT(
-      data, "B2", { p(idx_out) = data.B(1, idx) + data.B0(1, idx); },
+      data, "By", { p(idx_out) =
+            0.5 * (data.B(1, idx) + data.B(1, idx.x, idx.y - 1, idx.z)); },
       datafile);
   ADD_GRID_OUTPUT(
-      data, "B3", { p(idx_out) = data.B(2, idx) + data.B0(2, idx); },
+      data, "Bz", { p(idx_out) =
+            0.5 * (data.B(2, idx) + data.B(2, idx.x, idx.y, idx.z - 1)); },
       datafile);
   ADD_GRID_OUTPUT(
       data, "EdotB",
