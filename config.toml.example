@@ -22,3 +22,7 @@ lower = [ 0.0, 0.0, 0.0 ]
 
 # Size of the box in numerical units in each dimension
 size = [ 1.0, 1.0, 1.0 ]
+
+# Size of the domain decomposition. You want the product of all the numbers to
+# be equal to the number of ranks you have
+nodes = [ 1, 1, 1 ]

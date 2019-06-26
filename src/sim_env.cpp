@@ -131,10 +131,6 @@ sim_environment::send_guard_cell_y(sim_data& data, int dir) {
 
   // if (dest == NEIGHBOR_NULL) dest = MPI_PROC_NULL;
   // if (origin == NEIGHBOR_NULL) origin = MPI_PROC_NULL;
-  std::cout << "MPI_PROC_NULL is " << MPI_PROC_NULL << std::endl;
-  std::cout << "Sending from " << m_rank << " to " << dest << std::endl;
-  std::cout << "Recving from " << origin << " to " << m_rank
-            << std::endl;
 
   send_offset = (dir == -1 ? m_grid.guard[1]
                            : m_grid.dims[1] - 2 * m_grid.guard[1]) *
@@ -337,12 +333,20 @@ void
 sim_environment::setup_domain() {
   // Split the whole world into number of cartesian dimensions
   int dims[3] = {1, 1, 1};
-  for (int i = 0; i < 3; i++)
+  int total_dim = 1;
+  for (int i = 0; i < 3; i++) {
     dims[i] = m_params.nodes[i];
-  // for (int i = 0; i < m_grid.dim(); i++) dims[i] = 0;
+    total_dim *= dims[i];
+  }
 
-  // MPI_Dims_create(m_size, m_grid.dim(), dims);
-  // for (int i = 0; i < 3; i++) m_mpi_dims[i] = dims[i];
+  if (total_dim != m_size) {
+    // Given node configuration is not correct, create one on our own
+    std::cerr << "Domain decomp in config file does not make sense!" << std::endl;
+    for (int i = 0; i < 3; i++) dims[i] = 0;
+    MPI_Dims_create(m_size, m_grid.dim(), dims);
+  }
+
+  for (int i = 0; i < 3; i++) m_mpi_dims[i] = dims[i];
 
   // Create a cartesian MPI group for communication
   MPI_Cart_create(m_world, m_grid.dim(), dims, m_is_periodic, true,
