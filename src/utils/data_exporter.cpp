@@ -16,7 +16,7 @@
 
 #define ADD_GRID_OUTPUT(input, name, func, file)               \
   add_grid_output(input, name,                                 \
-                  [](sim_data & data, multi_array<Scalar> & p, \
+                  [](sim_data & data, multi_array<float> & p, \
                      Index idx, Index idx_out) func,           \
                   file)
 

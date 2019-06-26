@@ -25,7 +25,7 @@ TEST_CASE("blah", "[a]") {
     grid.guard[i] = 2;
   }
   init_dev_grid(grid);
-  multi_array<float> E(10, 10, 10);
+  multi_array<Scalar> E(10, 10, 10);
   for (int k = 0; k < 10; ++k) {
     for (int j = 0; j < 10; ++j) {
       for (int i = 0; i < 10; ++i) {
@@ -34,7 +34,7 @@ TEST_CASE("blah", "[a]") {
     }
   }
   E.sync_to_device();
-  multi_array<float> Rho(10, 10, 10);
+  multi_array<Scalar> Rho(10, 10, 10);
   
   dim3 gridSize(8, 16, 16);
   dim3 blockSize(32, 4, 4);
