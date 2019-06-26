@@ -100,9 +100,9 @@ data_exporter::write_output(sim_data& data, uint32_t timestep,
   data.sync_to_host();
 
   // Launch a new thread to handle the field output
-  m_thread.reset(new std::thread(&data_exporter::write_field_output,
-                                 this, std::ref(data), timestep, time));
-  // write_field_output(data, timestep, time);
+  // m_thread.reset(new std::thread(&data_exporter::write_field_output,
+  //                                this, std::ref(data), timestep, time));
+  write_field_output(data, timestep, time);
   std::cout << "Output written!" << std::endl;
 }
 
