@@ -81,7 +81,11 @@ To run the code, in the folder `bin`, use the following commands:
 Here `-n` gives the number of resource sets; each resource set includes `-a` number of MPI tasks, 
 `-c` number of CPU cores and `-g` number of GPUs. `--smpiargs="-gpu"` is needed in order to enable CUDA-Aware MPI.
 
-To submit a batch job, we can use `bsub submit.lsf`, and an example for the submit file `submit.lsf` is the following:
+To submit a batch job, we can use the command 
+    
+    bsub submit.lsf
+
+And an example for the submit file `submit.lsf` is the following:
 
     #!/bin/bash
     # Begin LSF Directives
