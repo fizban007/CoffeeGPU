@@ -79,7 +79,28 @@ sim_environment::send_guard_cell_x(sim_data& data, int dir) {
             m_cart, &requests[0]);
   MPI_Isend(data.E.dev_ptr(0) + send_offset, 1, x_type, dest, 0, m_cart,
             &requests[1]);
-  MPI_Waitall(2, requests, NULL);
+  MPI_Irecv(data.E.dev_ptr(1) + receive_offset, 1, x_type, origin, 1,
+            m_cart, &requests[2]);
+  MPI_Isend(data.E.dev_ptr(1) + send_offset, 1, x_type, dest, 1, m_cart,
+            &requests[3]);
+  MPI_Irecv(data.E.dev_ptr(2) + receive_offset, 1, x_type, origin, 2,
+            m_cart, &requests[4]);
+  MPI_Isend(data.E.dev_ptr(2) + send_offset, 1, x_type, dest, 2, m_cart,
+            &requests[5]);
+
+  MPI_Irecv(data.B.dev_ptr(0) + receive_offset, 1, x_type, origin, 3,
+            m_cart, &requests[6]);
+  MPI_Isend(data.B.dev_ptr(0) + send_offset, 1, x_type, dest, 3, m_cart,
+            &requests[7]);
+  MPI_Irecv(data.B.dev_ptr(1) + receive_offset, 1, x_type, origin, 4,
+            m_cart, &requests[8]);
+  MPI_Isend(data.B.dev_ptr(1) + send_offset, 1, x_type, dest, 4, m_cart,
+            &requests[9]);
+  MPI_Irecv(data.B.dev_ptr(2) + receive_offset, 1, x_type, origin, 5,
+            m_cart, &requests[10]);
+  MPI_Isend(data.B.dev_ptr(2) + send_offset, 1, x_type, dest, 5, m_cart,
+            &requests[11]);
+  MPI_Waitall(12, requests, NULL);
   // MPI_Sendrecv(data.E.dev_ptr(1) + send_offset, 1, x_type, dest, 1,
   //              data.E.dev_ptr(1) + receive_offset, 1, x_type, origin,
   //              1, m_cart, &status);
@@ -125,7 +146,29 @@ sim_environment::send_guard_cell_y(sim_data& data, int dir) {
             m_cart, &requests[0]);
   MPI_Isend(data.E.dev_ptr(0) + send_offset, 1, y_type, dest, 0, m_cart,
             &requests[1]);
-  MPI_Waitall(2, requests, NULL);
+  MPI_Irecv(data.E.dev_ptr(1) + receive_offset, 1, y_type, origin, 1,
+            m_cart, &requests[2]);
+  MPI_Isend(data.E.dev_ptr(1) + send_offset, 1, y_type, dest, 1, m_cart,
+            &requests[3]);
+  MPI_Irecv(data.E.dev_ptr(2) + receive_offset, 1, y_type, origin, 2,
+            m_cart, &requests[4]);
+  MPI_Isend(data.E.dev_ptr(2) + send_offset, 1, y_type, dest, 2, m_cart,
+            &requests[5]);
+
+  MPI_Irecv(data.B.dev_ptr(0) + receive_offset, 1, y_type, origin, 3,
+            m_cart, &requests[6]);
+  MPI_Isend(data.B.dev_ptr(0) + send_offset, 1, y_type, dest, 3, m_cart,
+            &requests[7]);
+  MPI_Irecv(data.B.dev_ptr(1) + receive_offset, 1, y_type, origin, 4,
+            m_cart, &requests[8]);
+  MPI_Isend(data.B.dev_ptr(1) + send_offset, 1, y_type, dest, 4, m_cart,
+            &requests[9]);
+  MPI_Irecv(data.B.dev_ptr(2) + receive_offset, 1, y_type, origin, 5,
+            m_cart, &requests[10]);
+  MPI_Isend(data.B.dev_ptr(2) + send_offset, 1, y_type, dest, 5, m_cart,
+            &requests[11]);
+
+  MPI_Waitall(12, requests, NULL);
   // MPI_Sendrecv(data.E.dev_ptr(0) + send_offset, 1, y_type, dest, 0,
   //              data.E.dev_ptr(0) + receive_offset, 1, y_type, origin,
   //              0, m_cart, &status);
@@ -151,6 +194,7 @@ void
 sim_environment::send_guard_cell_z(sim_data& data, int dir) {
   int dest, origin;
   MPI_Status status;
+  MPI_Request requests[12];
   int send_offset, receive_offset;
   int zsize = m_grid.dims[0] * m_grid.dims[1];
   MPI_Datatype MPI_SCALAR =
@@ -170,25 +214,53 @@ sim_environment::send_guard_cell_z(sim_data& data, int dir) {
 
   int zsize1 = zsize * m_grid.guard[2];
 
-  MPI_Sendrecv(data.E.dev_ptr(0) + send_offset, zsize1, MPI_SCALAR,
-               dest, 0, data.E.dev_ptr(0) + receive_offset, zsize1,
-               MPI_SCALAR, origin, 0, m_cart, &status);
-  MPI_Sendrecv(data.E.dev_ptr(1) + send_offset, zsize1, MPI_SCALAR,
-               dest, 1, data.E.dev_ptr(1) + receive_offset, zsize1,
-               MPI_SCALAR, origin, 1, m_cart, &status);
-  MPI_Sendrecv(data.E.dev_ptr(2) + send_offset, zsize1, MPI_SCALAR,
-               dest, 2, data.E.dev_ptr(2) + receive_offset, zsize1,
-               MPI_SCALAR, origin, 2, m_cart, &status);
+  MPI_Irecv(data.E.dev_ptr(0) + receive_offset, zsize1, MPI_SCALAR, origin, 0,
+            m_cart, &requests[0]);
+  MPI_Isend(data.E.dev_ptr(0) + send_offset, zsize1, MPI_SCALAR, dest, 0, m_cart,
+            &requests[1]);
+  MPI_Irecv(data.E.dev_ptr(1) + receive_offset, zsize1, MPI_SCALAR, origin, 1,
+            m_cart, &requests[2]);
+  MPI_Isend(data.E.dev_ptr(1) + send_offset, zsize1, MPI_SCALAR, dest, 1, m_cart,
+            &requests[3]);
+  MPI_Irecv(data.E.dev_ptr(2) + receive_offset, zsize1, MPI_SCALAR, origin, 2,
+            m_cart, &requests[4]);
+  MPI_Isend(data.E.dev_ptr(2) + send_offset, zsize1, MPI_SCALAR, dest, 2, m_cart,
+            &requests[5]);
 
-  MPI_Sendrecv(data.B.dev_ptr(0) + send_offset, zsize1, MPI_SCALAR,
-               dest, 3, data.B.dev_ptr(0) + receive_offset, zsize1,
-               MPI_SCALAR, origin, 3, m_cart, &status);
-  MPI_Sendrecv(data.B.dev_ptr(1) + send_offset, zsize1, MPI_SCALAR,
-               dest, 4, data.B.dev_ptr(1) + receive_offset, zsize1,
-               MPI_SCALAR, origin, 4, m_cart, &status);
-  MPI_Sendrecv(data.B.dev_ptr(2) + send_offset, zsize1, MPI_SCALAR,
-               dest, 5, data.B.dev_ptr(2) + receive_offset, zsize1,
-               MPI_SCALAR, origin, 5, m_cart, &status);
+  MPI_Irecv(data.B.dev_ptr(0) + receive_offset, zsize1, MPI_SCALAR, origin, 3,
+            m_cart, &requests[6]);
+  MPI_Isend(data.B.dev_ptr(0) + send_offset, zsize1, MPI_SCALAR, dest, 3, m_cart,
+            &requests[7]);
+  MPI_Irecv(data.B.dev_ptr(1) + receive_offset, zsize1, MPI_SCALAR, origin, 4,
+            m_cart, &requests[8]);
+  MPI_Isend(data.B.dev_ptr(1) + send_offset, zsize1, MPI_SCALAR, dest, 4, m_cart,
+            &requests[9]);
+  MPI_Irecv(data.B.dev_ptr(2) + receive_offset, zsize1, MPI_SCALAR, origin, 5,
+            m_cart, &requests[10]);
+  MPI_Isend(data.B.dev_ptr(2) + send_offset, zsize1, MPI_SCALAR, dest, 5, m_cart,
+            &requests[11]);
+
+  MPI_Waitall(12, requests, NULL);
+
+  // MPI_Sendrecv(data.E.dev_ptr(0) + send_offset, zsize1, MPI_SCALAR,
+  //              dest, 0, data.E.dev_ptr(0) + receive_offset, zsize1,
+  //              MPI_SCALAR, origin, 0, m_cart, &status);
+  // MPI_Sendrecv(data.E.dev_ptr(1) + send_offset, zsize1, MPI_SCALAR,
+  //              dest, 1, data.E.dev_ptr(1) + receive_offset, zsize1,
+  //              MPI_SCALAR, origin, 1, m_cart, &status);
+  // MPI_Sendrecv(data.E.dev_ptr(2) + send_offset, zsize1, MPI_SCALAR,
+  //              dest, 2, data.E.dev_ptr(2) + receive_offset, zsize1,
+  //              MPI_SCALAR, origin, 2, m_cart, &status);
+
+  // MPI_Sendrecv(data.B.dev_ptr(0) + send_offset, zsize1, MPI_SCALAR,
+  //              dest, 3, data.B.dev_ptr(0) + receive_offset, zsize1,
+  //              MPI_SCALAR, origin, 3, m_cart, &status);
+  // MPI_Sendrecv(data.B.dev_ptr(1) + send_offset, zsize1, MPI_SCALAR,
+  //              dest, 4, data.B.dev_ptr(1) + receive_offset, zsize1,
+  //              MPI_SCALAR, origin, 4, m_cart, &status);
+  // MPI_Sendrecv(data.B.dev_ptr(2) + send_offset, zsize1, MPI_SCALAR,
+  //              dest, 5, data.B.dev_ptr(2) + receive_offset, zsize1,
+  //              MPI_SCALAR, origin, 5, m_cart, &status);
 }
 
 void
