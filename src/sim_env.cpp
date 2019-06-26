@@ -337,10 +337,12 @@ void
 sim_environment::setup_domain() {
   // Split the whole world into number of cartesian dimensions
   int dims[3] = {1, 1, 1};
-  for (int i = 0; i < m_grid.dim(); i++) dims[i] = 0;
+  for (int i = 0; i < 3; i++)
+    dims[i] = m_params.nodes[i];
+  // for (int i = 0; i < m_grid.dim(); i++) dims[i] = 0;
 
-  MPI_Dims_create(m_size, m_grid.dim(), dims);
-  for (int i = 0; i < 3; i++) m_mpi_dims[i] = dims[i];
+  // MPI_Dims_create(m_size, m_grid.dim(), dims);
+  // for (int i = 0; i < 3; i++) m_mpi_dims[i] = dims[i];
 
   // Create a cartesian MPI group for communication
   MPI_Cart_create(m_world, m_grid.dim(), dims, m_is_periodic, true,
