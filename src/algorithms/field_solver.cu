@@ -566,25 +566,31 @@ field_solver::evolve_fields() {
   copy_fields();
 
   // substep #1:
-  timer::stamp();
-  rk_push(); CudaSafeCall(cudaDeviceSynchronize());
-  timer::show_duration_since_stamp("rk_push", "ms"); timer::stamp();
-  rk_update(1.0, 0.0, 1.0); CudaSafeCall(cudaDeviceSynchronize());
-  timer::show_duration_since_stamp("rk_update", "ms"); timer::stamp();
-  check_eGTb(); CudaSafeCall(cudaDeviceSynchronize());
-  timer::show_duration_since_stamp("rk_eGTb", "ms"); timer::stamp();
+  // timer::stamp();
+  rk_push();
+  // CudaSafeCall(cudaDeviceSynchronize());
+  // timer::show_duration_since_stamp("rk_push", "ms"); timer::stamp();
+  rk_update(1.0, 0.0, 1.0);
+  // CudaSafeCall(cudaDeviceSynchronize());
+  // timer::show_duration_since_stamp("rk_update", "ms"); timer::stamp();
+  check_eGTb();
+  // CudaSafeCall(cudaDeviceSynchronize());
+  // timer::show_duration_since_stamp("rk_eGTb", "ms"); timer::stamp();
+  m_data.env.send_guard_cells(m_data);
 
   // substep #2:
   rk_push();
   rk_update(0.75, 0.25, 0.25);
   check_eGTb();
 
+  m_data.env.send_guard_cells(m_data);
   // substep #3:
   rk_push();
   rk_update(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
   clean_epar();
   check_eGTb();
 
+  m_data.env.send_guard_cells(m_data);
   // boundary call
   CudaSafeCall(cudaDeviceSynchronize());
 }
