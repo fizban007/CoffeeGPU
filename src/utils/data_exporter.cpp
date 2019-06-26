@@ -8,6 +8,7 @@
 #include "sim_env.h"
 #include "sim_params.h"
 #include <iomanip>
+#include <boost/filesystem.hpp>
 
 #define H5_USE_BOOST
 
@@ -78,6 +79,15 @@ data_exporter::data_exporter(sim_environment& env, uint32_t& timestep)
                     [tmp_grid_data.width()]);
   outputDirectory = "./Data/";
   m_thread = nullptr;
+  boost::filesystem::path outPath(outputDirectory);
+
+  boost::system::error_code returnedError;
+  boost::filesystem::create_directories(outPath, returnedError);
+
+  std::string path = outputDirectory + "config.toml";
+  boost::filesystem::copy_file(
+      "config.toml", path,
+      boost::filesystem::copy_option::overwrite_if_exists);
 }
 
 data_exporter::~data_exporter() {}
