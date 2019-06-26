@@ -150,9 +150,9 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
       data, "EdotB",
       {
         p(idx_out) =
-            data.E(0, idx) * (data.B(0, idx) + data.B0(0, idx)) +
-            data.E(1, idx) * (data.B(1, idx) + data.B0(1, idx)) +
-            data.E(2, idx) * (data.B(2, idx) + data.B0(2, idx));
+            data.E(0, idx) * data.B(0, idx) +
+            data.E(1, idx) * data.B(1, idx) +
+            data.E(2, idx) * data.B(2, idx);
       },
       datafile);
 
