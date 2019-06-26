@@ -76,10 +76,10 @@ Use `export OMP_NUM_THREADS=1` to set OpenMP thread.
 To run the code, in the folder `bin`, use the following commands:
 
     mkdir Data
-    jsrun -n4 -a1 -c1 -g1 ./coffee
+    jsrun --smpiargs="-gpu" -n4 -a1 -c1 -g1 ./coffee
     
 Here `-n` gives the number of resource sets; each resource set includes `-a` number of MPI tasks, 
-`-c` number of CPU cores and `-g` number of GPUs. 
+`-c` number of CPU cores and `-g` number of GPUs. `--smpiargs="-gpu"` is needed in order to enable CUDA-Aware MPI.
    
 # How the code is structured
 
