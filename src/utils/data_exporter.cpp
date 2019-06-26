@@ -7,6 +7,7 @@
 #include "data/vec3.h"
 #include "sim_env.h"
 #include "sim_params.h"
+#include <iomanip>
 
 #define H5_USE_BOOST
 
@@ -14,10 +15,10 @@
 #include <highfive/H5DataSpace.hpp>
 #include <highfive/H5File.hpp>
 
-#define ADD_GRID_OUTPUT(input, name, func, file)               \
-  add_grid_output(input, name,                                 \
+#define ADD_GRID_OUTPUT(input, name, func, file)              \
+  add_grid_output(input, name,                                \
                   [](sim_data & data, multi_array<float> & p, \
-                     Index idx, Index idx_out) func,           \
+                     Index idx, Index idx_out) func,          \
                   file)
 
 // using namespace H5;
@@ -104,10 +105,12 @@ data_exporter::sync() {
 void
 data_exporter::write_field_output(sim_data& data, uint32_t timestep,
                                   double time) {
+  std::stringstream ss;
+  ss << std::setw(5) << std::setfill('0')
+     << timestep / m_env.params().data_interval;
+  std::string num = ss.str();
   File datafile(
-      outputDirectory + std::string("fld") +
-          std::to_string(timestep / m_env.params().data_interval) +
-          std::string(".h5"),
+      outputDirectory + std::string("fld.") + num + std::string(".h5"),
       File::ReadWrite | File::Create | File::Truncate,
       MPIOFileDriver(MPI_COMM_WORLD, MPI_INFO_NULL));
   // H5F_ACC_TRUNC);
@@ -120,39 +123,59 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   //     },
   //     datafile);
   ADD_GRID_OUTPUT(
-      data, "Ex", { p(idx_out) =
-            0.25 * (data.E(0, idx) + data.E(0, idx.x, idx.y + 1, idx.z)
-                    + data.E(0, idx.x, idx.y, idx.z + 1)
-                    + data.E(0, idx.x, idx.y + 1, idx.z + 1)); }, datafile);
-  ADD_GRID_OUTPUT(
-      data, "Ey", { p(idx_out) =
-            0.25 * (data.E(1, idx) + data.E(1, idx.x + 1, idx.y, idx.z)
-                    + data.E(1, idx.x, idx.y, idx.z + 1)
-                    + data.E(1, idx.x + 1, idx.y, idx.z + 1)); }, datafile);
-  ADD_GRID_OUTPUT(
-      data, "Ez", { p(idx_out) =
-            0.25 * (data.E(2, idx) + data.E(2, idx.x + 1, idx.y, idx.z)
-                    + data.E(2, idx.x, idx.y + 1, idx.z)
-                    + data.E(2, idx.x + 1, idx.y + 1, idx.z)); }, datafile);
-  ADD_GRID_OUTPUT(
-      data, "Bx", { p(idx_out) =
-            0.5 * (data.B(0, idx) + data.B(0, idx.x - 1, idx.y, idx.z)); },
+      data, "Ex",
+      {
+        p(idx_out) = 0.25 * (data.E(0, idx) +
+                             data.E(0, idx.x, idx.y + 1, idx.z) +
+                             data.E(0, idx.x, idx.y, idx.z + 1) +
+                             data.E(0, idx.x, idx.y + 1, idx.z + 1));
+      },
       datafile);
   ADD_GRID_OUTPUT(
-      data, "By", { p(idx_out) =
-            0.5 * (data.B(1, idx) + data.B(1, idx.x, idx.y - 1, idx.z)); },
+      data, "Ey",
+      {
+        p(idx_out) = 0.25 * (data.E(1, idx) +
+                             data.E(1, idx.x + 1, idx.y, idx.z) +
+                             data.E(1, idx.x, idx.y, idx.z + 1) +
+                             data.E(1, idx.x + 1, idx.y, idx.z + 1));
+      },
       datafile);
   ADD_GRID_OUTPUT(
-      data, "Bz", { p(idx_out) =
-            0.5 * (data.B(2, idx) + data.B(2, idx.x, idx.y, idx.z - 1)); },
+      data, "Ez",
+      {
+        p(idx_out) = 0.25 * (data.E(2, idx) +
+                             data.E(2, idx.x + 1, idx.y, idx.z) +
+                             data.E(2, idx.x, idx.y + 1, idx.z) +
+                             data.E(2, idx.x + 1, idx.y + 1, idx.z));
+      },
+      datafile);
+  ADD_GRID_OUTPUT(
+      data, "Bx",
+      {
+        p(idx_out) =
+            0.5 * (data.B(0, idx) + data.B(0, idx.x - 1, idx.y, idx.z));
+      },
+      datafile);
+  ADD_GRID_OUTPUT(
+      data, "By",
+      {
+        p(idx_out) =
+            0.5 * (data.B(1, idx) + data.B(1, idx.x, idx.y - 1, idx.z));
+      },
+      datafile);
+  ADD_GRID_OUTPUT(
+      data, "Bz",
+      {
+        p(idx_out) =
+            0.5 * (data.B(2, idx) + data.B(2, idx.x, idx.y, idx.z - 1));
+      },
       datafile);
   ADD_GRID_OUTPUT(
       data, "EdotB",
       {
-        p(idx_out) =
-            data.E(0, idx) * data.B(0, idx) +
-            data.E(1, idx) * data.B(1, idx) +
-            data.E(2, idx) * data.B(2, idx);
+        p(idx_out) = data.E(0, idx) * data.B(0, idx) +
+                     data.E(1, idx) * data.B(1, idx) +
+                     data.E(2, idx) * data.B(2, idx);
       },
       datafile);
 
@@ -165,15 +188,13 @@ data_exporter::add_grid_output(sim_data& data, const std::string& name,
                                Func f, File& file) {
   // if (data.env.grid().dim() == 3) {
   int downsample = m_env.params().downsample;
-  sample_grid_quantity3d(data, m_env.grid(), downsample,
-                         tmp_grid_data, m_output, f);
-
+  sample_grid_quantity3d(data, m_env.grid(), downsample, tmp_grid_data,
+                         m_output, f);
 
   std::vector<size_t> dims(3);
   for (int i = 0; i < 3; i++) {
     dims[i] = m_env.params().N[2 - i];
-    if (dims[i] > downsample)
-      dims[i] /= downsample;
+    if (dims[i] > downsample) dims[i] /= downsample;
   }
   // Actually write the temp array to hdf
   DataSet dataset = file.createDataSet<float>(name, DataSpace(dims));
