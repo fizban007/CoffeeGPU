@@ -80,6 +80,27 @@ To run the code, in the folder `bin`, use the following commands:
     
 Here `-n` gives the number of resource sets; each resource set includes `-a` number of MPI tasks, 
 `-c` number of CPU cores and `-g` number of GPUs. `--smpiargs="-gpu"` is needed in order to enable CUDA-Aware MPI.
+
+To submit a batch job, we can use `bsub submit.lsf`, and an example for the submit file `submit.lsf` is the following:
+
+    #!/bin/bash
+    # Begin LSF Directives
+    #BSUB -P GEN127
+    #BSUB -W 0:30
+    #BSUB -nnodes 2
+    #BSUB -alloc_flags gpumps
+    #BSUB -J emwave
+    #BSUB -o emwave.%J
+    #BSUB -e emwave.%J
+
+    module load cmake/3.14.2
+    module load gcc/8.1.1
+    module load cuda/10.1.105
+    module load spectrum-mpi/10.3.0.0-20190419
+    module load hdf5/1.10.3
+    module load  boost/1.66.0
+    mkdir Data
+    jsrun --smpiargs="-gpu" -n8 -a1 -c1 -g1 ./coffee
    
 # How the code is structured
 
