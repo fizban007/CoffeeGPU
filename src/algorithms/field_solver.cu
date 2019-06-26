@@ -618,7 +618,7 @@ field_solver::rk_push() {
 void
 field_solver::rk_update(Scalar rk_c1, Scalar rk_c2, Scalar rk_c3) {
   // `E = c1 En + c2 E + c3 dE, B = c1 Bn + c2 B + c3 dB`
-  kernel_rk_update<<<gridSize, blockSize>>>(
+  kernel_rk_update<<<dim3(8, 16, 16), dim3(64, 4, 4)>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       En.dev_ptr(0), En.dev_ptr(1), En.dev_ptr(2), Bn.dev_ptr(0),
@@ -639,7 +639,7 @@ field_solver::clean_epar() {
 void
 field_solver::check_eGTb() {
   // renormalizing `E > B`
-  kernel_check_eGTb<<<gridSize, blockSize>>>(
+  kernel_check_eGTb<<<dim3(8, 16, 16), dim3(32, 4, 4)>>>(
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), m_data.E.dev_ptr(0),
       m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0),
       m_data.B.dev_ptr(1), m_data.B.dev_ptr(2));
