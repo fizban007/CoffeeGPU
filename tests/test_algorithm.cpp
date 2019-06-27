@@ -1,19 +1,22 @@
+#include "algorithms/field_solver.h"
+#include "catch.hpp"
 #include "data/fields.h"
 #include "data/sim_data.h"
 #include "sim_env.h"
 #include "utils/data_exporter.h"
-#include "algorithms/field_solver.h"
 #include "utils/timer.h"
-#include "catch.hpp"
 
+#define H5_USE_BOOST
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5DataSpace.hpp>
 #include <highfive/H5File.hpp>
 
+#include <boost/multi_array.hpp>
+
 using namespace Coffee;
 using namespace HighFive;
 
-TEST_CASE("Assign a single value to a multi_array", "[multi_array]") {
+TEST_CASE("Testing algorithm", "[algo]") {
   // Initialize the simulation environment
   sim_environment env(NULL, NULL);
 
@@ -42,7 +45,7 @@ TEST_CASE("Assign a single value to a multi_array", "[multi_array]") {
   Scalar enx = ny0 * bz0 - nz0 * by0;
   Scalar eny = nz0 * bx0 - nx0 * bz0;
   Scalar enz = nx0 * by0 - ny0 * bx0;
-  
+
   vector_field<Scalar> dA(env.grid());
 
   data.E.initialize(0, [&](Scalar x, Scalar y, Scalar z) {
@@ -64,26 +67,29 @@ TEST_CASE("Assign a single value to a multi_array", "[multi_array]") {
   });
 
   dA.initialize(0, [&](Scalar x, Scalar y, Scalar z) {
-  	Scalar phi = kx * x + ky * y + kz * z;
-  	return xi0 * std::cos(phi) * enx;
+    Scalar phi = kx * x + ky * y + kz * z;
+    return xi0 * std::cos(phi) * enx;
   });
 
   dA.initialize(1, [&](Scalar x, Scalar y, Scalar z) {
-  	Scalar phi = kx * x + ky * y + kz * z;
-  	return xi0 * std::cos(phi) * eny;
+    Scalar phi = kx * x + ky * y + kz * z;
+    return xi0 * std::cos(phi) * eny;
   });
 
   dA.initialize(2, [&](Scalar x, Scalar y, Scalar z) {
-  	Scalar phi = kx * x + ky * y + kz * z;
-  	return xi0 * std::cos(phi) * enz;
+    Scalar phi = kx * x + ky * y + kz * z;
+    return xi0 * std::cos(phi) * enz;
   });
 
-  for (int k = 1; k < env.grid().dims[2]-1; ++k) {
-    for (int j = 1; j < env.grid().dims[1]-1; ++j) {
-      for (int i = 1; i < env.grid().dims[0]-1; ++i) {
-        data.B(0,i,j,k) = bx0 + dA(2,i,j+1,k) - dA(2,i,j,k) - dA(1,i,j,k+1) + dA(1,i,j,k);
-        data.B(1,i,j,k) = by0 + dA(0,i,j,k+1) - dA(0,i,j,k) - dA(2,i+1,j,k) + dA(2,i,j,k);
-        data.B(2,i,j,k) = bz0 + dA(1,i+1,j,k) - dA(1,i,j,k) - dA(0,i,j+1,k) + dA(0,i,j,k);
+  for (int k = 1; k < env.grid().dims[2] - 1; ++k) {
+    for (int j = 1; j < env.grid().dims[1] - 1; ++j) {
+      for (int i = 1; i < env.grid().dims[0] - 1; ++i) {
+        data.B(0, i, j, k) = bx0 + dA(2, i, j + 1, k) - dA(2, i, j, k) -
+                             dA(1, i, j, k + 1) + dA(1, i, j, k);
+        data.B(1, i, j, k) = by0 + dA(0, i, j, k + 1) - dA(0, i, j, k) -
+                             dA(2, i + 1, j, k) + dA(2, i, j, k);
+        data.B(2, i, j, k) = bz0 + dA(1, i + 1, j, k) - dA(1, i, j, k) -
+                             dA(0, i, j + 1, k) + dA(0, i, j, k);
       }
     }
   }
@@ -101,19 +107,22 @@ TEST_CASE("Assign a single value to a multi_array", "[multi_array]") {
 
   data.B.sync_to_host();
 
-  std::vector<std::vector<std::vector<float>>> bx_in;
-  
+  // std::vector<std::vector<std::vector<float>>> bx_in;
+  boost::multi_array<float, 3> bx_in;
+
   File file("fout.001", File::ReadOnly);
 
-  DataSet dataset = file.getDataSet('bx');
+  DataSet dataset = file.getDataSet("bx");
   dataset.read(bx_in);
 
-  for (int k = env.grid().guard[2]; k < env.grid().dims[2]-env.grid().guard[2]; ++k) {
-    for (int j = env.grid().guard[1]; j < env.grid().dims[1]-env.grid().guard[1]; ++j) {
-      for (int i = env.grid().guard[0]; i < env.grid().dims[0]-env.grid().guard[0]; ++i) {
-        CHECK(data.B(0,i,j,k) == Approx(bx_in[k][j][i]));
+  for (int k = env.grid().guard[2];
+       k < env.grid().dims[2] - env.grid().guard[2]; ++k) {
+    for (int j = env.grid().guard[1];
+         j < env.grid().dims[1] - env.grid().guard[1]; ++j) {
+      for (int i = env.grid().guard[0];
+           i < env.grid().dims[0] - env.grid().guard[0]; ++i) {
+        CHECK(data.B(0, i, j, k) == Approx(bx_in[k][j][i]));
       }
     }
   }
-
 }
