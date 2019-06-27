@@ -19,15 +19,13 @@
 
 namespace Coffee {
 
-static dim3 gridSize(8, 16, 16);
+// static dim3 gridSize(8, 16, 16);
 static dim3 blockSize(BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z);
 
-static dim3 blockGroupSize((m_data.env.grid().reduced_dim(0) + SHIFT_GHOST * 2 + blockSize.x - 1) / blockSize.x,
-                           (m_data.env.grid().reduced_dim(1) + SHIFT_GHOST * 2 + blockSize.y - 1) / blockSize.y,
-                           (m_data.env.grid().reduced_dim(2) + SHIFT_GHOST * 2 + blockSize.z - 1) / blockSize.z);
+static dim3 blockGroupSize;
 
-__global__ void
-kernel_compute_rho(const Scalar *ex, const Scalar *ey, const Scalar *ez,
+// __global__ void
+// kernel_compute_rho(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                    Scalar *rho) {
   size_t ijk, iM1jk, ijM1k, ijkM1;
   for (int k = threadIdx.z + blockIdx.z * blockDim.z +
@@ -73,8 +71,8 @@ kernel_compute_rho_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
   }
 }
 
-__global__ void
-kernel_rk_push_shared(const Scalar *ex, const Scalar *ey, const Scalar *ez,
+// __global__ void
+// kernel_rk_push_shared(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                       const Scalar *bx, const Scalar *by, const Scalar *bz,
                       const Scalar *bx0, const Scalar *by0, const Scalar *bz0,
                       Scalar *dex, Scalar *dey, Scalar *dez, Scalar *dbx,
@@ -359,8 +357,8 @@ kernel_rk_push_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
   }
 }
 
-__global__ void
-kernel_rk_update(Scalar *ex, Scalar *ey, Scalar *ez, Scalar *bx,
+// __global__ void
+// kernel_rk_update(Scalar *ex, Scalar *ey, Scalar *ez, Scalar *bx,
                  Scalar *by, Scalar *bz, const Scalar *enx,
                  const Scalar *eny, const Scalar *enz,
                  const Scalar *bnx, const Scalar *bny,
@@ -431,8 +429,8 @@ kernel_rk_update_thread(Scalar *ex, Scalar *ey, Scalar *ez, Scalar *bx,
   }
 }
 
-__global__ void
-kernel_clean_epar(const Scalar *ex, const Scalar *ey, const Scalar *ez,
+// __global__ void
+// kernel_clean_epar(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                   const Scalar *bx, const Scalar *by, const Scalar *bz,
                   Scalar *dex, Scalar *dey, Scalar *dez) {
   Scalar intex, intey, intez, intbx, intby, intbz;
@@ -515,7 +513,6 @@ kernel_clean_epar_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                          Scalar *dex, Scalar *dey, Scalar *dez, int shift) {
   Scalar intex, intey, intez, intbx, intby, intbz;
   size_t ijk;
-  size_t ijk;
   int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j = threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
   int k = threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
@@ -580,8 +577,8 @@ kernel_clean_epar_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
   }
 }
 
-__global__ void
-kernel_check_eGTb(const Scalar *dex, const Scalar *dey,
+// __global__ void
+// kernel_check_eGTb(const Scalar *dex, const Scalar *dey,
                   const Scalar *dez, Scalar *ex, Scalar *ey, Scalar *ez,
                   const Scalar *bx, const Scalar *by,
                   const Scalar *bz) {
@@ -768,6 +765,10 @@ field_solver::field_solver(sim_data &mydata, sim_environment& env) : m_data(myda
 
   rho = multi_array<Scalar>(m_data.env.grid().extent());
   rho.assign_dev(0.0);
+
+  blockGroupSize = dim3((m_data.env.grid().reduced_dim(0) + SHIFT_GHOST * 2 + blockSize.x - 1) / blockSize.x,
+                        (m_data.env.grid().reduced_dim(1) + SHIFT_GHOST * 2 + blockSize.y - 1) / blockSize.y,
+                        (m_data.env.grid().reduced_dim(2) + SHIFT_GHOST * 2 + blockSize.z - 1) / blockSize.z);
 }
 
 field_solver::~field_solver() {}
