@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
 
   // Initialize all the simulation data structures
   sim_data data(env);
-  field_solver solver(data);
+  field_solver solver(data, env);
 
 // #include "user_init.hpp"
   #include "user_emwave.hpp"

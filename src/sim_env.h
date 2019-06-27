@@ -5,6 +5,7 @@
 #include "data/multi_array.h"
 #include "sim_params.h"
 #include <vector>
+#include <array>
 #include <mpi.h>
 
 #define NEIGHBOR_NULL -2
@@ -22,11 +23,11 @@ class sim_environment {
   sim_environment(sim_environment const&) = delete;
   sim_environment& operator=(sim_environment const&) = delete;
 
-  void send_guard_cells(sim_data& data) const;
+  void send_guard_cells(sim_data& data);
 
-  void send_guard_cell_x(sim_data& data, int dir) const;
-  void send_guard_cell_y(sim_data& data, int dir) const;
-  void send_guard_cell_z(sim_data& data, int dir) const;
+  void send_guard_cell_x(sim_data& data, int dir);
+  void send_guard_cell_y(sim_data& data, int dir);
+  void send_guard_cell_z(sim_data& data, int dir);
 
   const Grid& grid() const { return m_grid; }
   const sim_params& params() const { return m_params; }
@@ -41,7 +42,9 @@ class sim_environment {
  private:
   void initialize();
   void setup_domain();
-  void exchange_type(MPI_Datatype *y_type, MPI_Datatype *x_type);
+
+  void send_array_x(multi_array<Scalar>& array, int dir);
+  void send_array_y(multi_array<Scalar>& array, int dir);
 
   sim_params m_params;
   Grid m_grid;
@@ -59,6 +62,10 @@ class sim_environment {
 
   MPI_Comm m_world;
   MPI_Comm m_cart;
+  MPI_Datatype m_scalar_type;
+
+  std::vector<multi_array<Scalar>> m_send_buffers;
+  std::vector<multi_array<Scalar>> m_recv_buffers;
 };  // ----- end of class sim_environment
 
 }  // namespace Coffee

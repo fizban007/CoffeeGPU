@@ -544,7 +544,7 @@ kernel_check_eGTb(const Scalar *dex, const Scalar *dey,
   }
 }
 
-field_solver::field_solver(sim_data &mydata) : m_data(mydata) {
+field_solver::field_solver(sim_data &mydata, sim_environment& env) : m_data(mydata), m_env(env) {
   En = vector_field<Scalar>(m_data.env.grid());
   dE = vector_field<Scalar>(m_data.env.grid());
   En.copy_stagger(m_data.E);
@@ -563,36 +563,50 @@ field_solver::~field_solver() {}
 
 void
 field_solver::evolve_fields() {
+  std::cout << "......in evolve_fields\n";
   copy_fields();
+  std::cout << "......copy_fields done\n";
 
   // substep #1:
   // timer::stamp();
-  rk_push();
+  rk_push(); 
+  std::cout << "...rkpush 1\n";
   // CudaSafeCall(cudaDeviceSynchronize());
   // timer::show_duration_since_stamp("rk_push", "ms"); timer::stamp();
   rk_update(1.0, 0.0, 1.0);
+  std::cout << "...rkupdate 1\n";
   // CudaSafeCall(cudaDeviceSynchronize());
   // timer::show_duration_since_stamp("rk_update", "ms"); timer::stamp();
   check_eGTb();
+  std::cout << "...check_eGtb 1\n";
   // CudaSafeCall(cudaDeviceSynchronize());
   // timer::show_duration_since_stamp("rk_eGTb", "ms"); timer::stamp();
-  m_data.env.send_guard_cells(m_data);
+  CudaSafeCall(cudaDeviceSynchronize());
+  std::cout << "...safecall 1\n";
+  m_env.send_guard_cells(m_data);
+  std::cout << "...substep 1\n";
 
   // substep #2:
   rk_push();
   rk_update(0.75, 0.25, 0.25);
   check_eGTb();
 
-  m_data.env.send_guard_cells(m_data);
+  CudaSafeCall(cudaDeviceSynchronize());
+  std::cout << "...safecall 2\n";
+  m_env.send_guard_cells(m_data);
+  std::cout << "...substep 2\n";
   // substep #3:
   rk_push();
   rk_update(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
   clean_epar();
   check_eGTb();
 
-  m_data.env.send_guard_cells(m_data);
-  // boundary call
   CudaSafeCall(cudaDeviceSynchronize());
+  std::cout << "...safecall 3\n";
+  m_env.send_guard_cells(m_data);
+  std::cout << "...substep 3\n";
+  // boundary call
+
 }
 
 void
