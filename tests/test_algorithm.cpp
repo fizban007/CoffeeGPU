@@ -47,6 +47,7 @@ TEST_CASE("Testing algorithm", "[algo]") {
   Scalar enz = nx0 * by0 - ny0 * bx0;
 
   vector_field<Scalar> dA(env.grid());
+  dA.copy_stagger(data.E);
 
   data.E.initialize(0, [&](Scalar x, Scalar y, Scalar z) {
     // Put your initial condition for Ex here
