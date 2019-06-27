@@ -65,9 +65,9 @@ kernel_compute_rho_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
       k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
-    rho[ijk] = dev_grid.inv_delta[0] * (ex[ijk] - ex[ijk - 1]) +
-               dev_grid.inv_delta[1] * (ey[ijk] - ey[ijk - dev_grid.dims[0]]) +
-               dev_grid.inv_delta[2] * (ez[ijk] - ez[ijk - dev_grid.dims[0] * dev_grid.dims[1]]);
+    rho[ijk] = (ex[ijk] - ex[ijk - 1]) +
+               (ey[ijk] - ey[ijk - dev_grid.dims[0]]) +
+               (ez[ijk] - ez[ijk - dev_grid.dims[0] * dev_grid.dims[1]]);
   }
 }
 
