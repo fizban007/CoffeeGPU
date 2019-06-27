@@ -17,6 +17,8 @@
 
 #define SHIFT_GHOST 2
 
+#define TINY 1e-7
+
 namespace Coffee {
 
 // static dim3 gridSize(8, 16, 16);
@@ -65,9 +67,9 @@ kernel_compute_rho_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
       k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
-    rho[ijk] = (ex[ijk] - ex[ijk - 1]) +
-               (ey[ijk] - ey[ijk - dev_grid.dims[0]]) +
-               (ez[ijk] - ez[ijk - dev_grid.dims[0] * dev_grid.dims[1]]);
+    rho[ijk] = dev_grid.inv_delta[0] * (ex[ijk] - ex[ijk - 1]) +
+               dev_grid.inv_delta[1] * (ey[ijk] - ey[ijk - dev_grid.dims[0]]) +
+               dev_grid.inv_delta[2] * (ez[ijk] - ez[ijk - dev_grid.dims[0] * dev_grid.dims[1]]);
   }
 }
 
@@ -318,8 +320,8 @@ kernel_rk_push_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                         dev_grid.dims[0], dev_grid.dims[1]);
     intbz = interpolate(bz, ijk, Stagger(0b001), Stagger(0b011),
                         dev_grid.dims[0], dev_grid.dims[1]);
-    jx = CCx * intrho * (intey * intbz - intby * intez) /
-         (intbx * intbx + intby * intby + intbz * intbz);
+    jx = dev_params.dt * intrho * (intey * intbz - intby * intez) /
+         (intbx * intbx + intby * intby + intbz * intbz + TINY);
     //   `j_y`:
     intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b101),
                          dev_grid.dims[0], dev_grid.dims[1]);
@@ -335,8 +337,8 @@ kernel_rk_push_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                         dev_grid.dims[0], dev_grid.dims[1]);
     intbz = interpolate(bz, ijk, Stagger(0b001), Stagger(0b101),
                         dev_grid.dims[0], dev_grid.dims[1]);
-    jy = CCy * intrho * (intez * intbx - intex * intbz) /
-         (intbx * intbx + intby * intby + intbz * intbz);
+    jy = dev_params.dt * intrho * (intez * intbx - intex * intbz) /
+         (intbx * intbx + intby * intby + intbz * intbz + TINY);
     //   `j_z`:
     intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b110),
                          dev_grid.dims[0], dev_grid.dims[1]);
@@ -352,8 +354,8 @@ kernel_rk_push_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                         dev_grid.dims[0], dev_grid.dims[1]);
     intbz = interpolate(bz, ijk, Stagger(0b001), Stagger(0b110),
                         dev_grid.dims[0], dev_grid.dims[1]);
-    jz = CCz * intrho * (intex * intby - intbx * intey) /
-         (intbx * intbx + intby * intby + intbz * intbz);
+    jz = dev_params.dt * intrho * (intex * intby - intbx * intey) /
+         (intbx * intbx + intby * intby + intbz * intbz + TINY);
 
     dex[ijk] -= jx;
     dey[ijk] -= jy;
@@ -541,7 +543,7 @@ kernel_clean_epar_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
     dex[ijk] = ex[ijk] -
                (intex * intbx + intey * intby + intez * intbz) *
                    intbx /
-                   (intbx * intbx + intby * intby + intbz * intbz);
+                   (intbx * intbx + intby * intby + intbz * intbz + TINY);
 
     // y:
     intex = interpolate(ex, ijk, Stagger(0b011), Stagger(0b101),
@@ -559,7 +561,7 @@ kernel_clean_epar_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
     dey[ijk] = ey[ijk] -
                (intex * intbx + intey * intby + intez * intbz) *
                    intby /
-                   (intbx * intbx + intby * intby + intbz * intbz);
+                   (intbx * intbx + intby * intby + intbz * intbz + TINY);
 
     // z:
     intex = interpolate(ex, ijk, Stagger(0b011), Stagger(0b110),
@@ -577,7 +579,7 @@ kernel_clean_epar_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
     dez[ijk] = ez[ijk] -
                (intex * intbx + intey * intby + intez * intbz) *
                    intbz /
-                   (intbx * intbx + intby * intby + intbz * intbz);
+                   (intbx * intbx + intby * intby + intbz * intbz + TINY);
   }
 }
 
@@ -694,14 +696,14 @@ kernel_check_eGTb_thread(const Scalar *dex, const Scalar *dey,
                         dev_grid.dims[0], dev_grid.dims[1]);
     intez = interpolate(ez, ijk, Stagger(0b110), Stagger(0b011),
                         dev_grid.dims[0], dev_grid.dims[1]);
-    emag = intex * intex + intey * intey + intez * intez;
+    emag = intex * intex + intey * intey + intez * intez + TINY;
     intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b011),
                         dev_grid.dims[0], dev_grid.dims[1]);
     intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b011),
                         dev_grid.dims[0], dev_grid.dims[1]);
     intbz = interpolate(bz, ijk, Stagger(0b001), Stagger(0b011),
                         dev_grid.dims[0], dev_grid.dims[1]);
-    bmag = intbx * intbx + intby * intby + intbz * intbz;
+    bmag = intbx * intbx + intby * intby + intbz * intbz + TINY;
     if (emag > bmag) {
       temp = sqrt(bmag / emag);
     } else {
@@ -716,14 +718,14 @@ kernel_check_eGTb_thread(const Scalar *dex, const Scalar *dey,
                         dev_grid.dims[0], dev_grid.dims[1]);
     intez = interpolate(ez, ijk, Stagger(0b110), Stagger(0b101),
                         dev_grid.dims[0], dev_grid.dims[1]);
-    emag = intex * intex + intey * intey + intez * intez;
+    emag = intex * intex + intey * intey + intez * intez + TINY;
     intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b101),
                         dev_grid.dims[0], dev_grid.dims[1]);
     intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b101),
                         dev_grid.dims[0], dev_grid.dims[1]);
     intbz = interpolate(bz, ijk, Stagger(0b001), Stagger(0b101),
                         dev_grid.dims[0], dev_grid.dims[1]);
-    bmag = intbx * intbx + intby * intby + intbz * intbz;
+    bmag = intbx * intbx + intby * intby + intbz * intbz + TINY;
     if (emag > bmag) {
       temp = sqrt(bmag / emag);
     } else {
@@ -738,14 +740,14 @@ kernel_check_eGTb_thread(const Scalar *dex, const Scalar *dey,
                         dev_grid.dims[0], dev_grid.dims[1]);
     intez = interpolate(ez, ijk, Stagger(0b110), Stagger(0b110),
                         dev_grid.dims[0], dev_grid.dims[1]);
-    emag = intex * intex + intey * intey + intez * intez;
+    emag = intex * intex + intey * intey + intez * intez + TINY;
     intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b110),
                         dev_grid.dims[0], dev_grid.dims[1]);
     intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b110),
                         dev_grid.dims[0], dev_grid.dims[1]);
     intbz = interpolate(bz, ijk, Stagger(0b001), Stagger(0b110),
                         dev_grid.dims[0], dev_grid.dims[1]);
-    bmag = intbx * intbx + intby * intby + intbz * intbz;
+    bmag = intbx * intbx + intby * intby + intbz * intbz + TINY;
     if (emag > bmag) {
       temp = sqrt(bmag / emag);
     } else {
