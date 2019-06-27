@@ -71,6 +71,7 @@ for (int k = 0; k < env.grid().dims[2] - 1; ++k) {
   }
 }
 
+data.B.sync_to_device();
 // data.B.copy_from(data.B0);
 data.B0.initialize();
 
