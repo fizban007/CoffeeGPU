@@ -298,62 +298,62 @@ kernel_rk_push_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                       (bz0[iM1jk] - bz0[ijk] - bx0[ijkM1] + bx0[ijk]));
     dez[ijk] = CCz * ((bx[ijM1k] - bx[ijk] - by[iM1jk] + by[ijk]) -
                       (bx0[ijM1k] - bx0[ijk] - by0[iM1jk] + by0[ijk]));
-    // computing currents
-    //   `j_x`:
-    intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b011),
-                         dev_grid.dims[0], dev_grid.dims[1]);
-    intex = interpolate(ex, ijk, Stagger(0b011), Stagger(0b011),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intey = interpolate(ey, ijk, Stagger(0b101), Stagger(0b011),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intez = interpolate(ez, ijk, Stagger(0b110), Stagger(0b011),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b011),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b011),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intbz = interpolate(bz, ijk, Stagger(0b001), Stagger(0b011),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    jx = CCx * intrho * (intey * intbz - intby * intez) /
-         (intbx * intbx + intby * intby + intbz * intbz);
-    //   `j_y`:
-    intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b101),
-                         dev_grid.dims[0], dev_grid.dims[1]);
-    intex = interpolate(ex, ijk, Stagger(0b011), Stagger(0b101),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intey = interpolate(ey, ijk, Stagger(0b101), Stagger(0b101),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intez = interpolate(ez, ijk, Stagger(0b110), Stagger(0b101),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b101),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b101),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intbz = interpolate(bz, ijk, Stagger(0b001), Stagger(0b101),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    jy = CCy * intrho * (intez * intbx - intex * intbz) /
-         (intbx * intbx + intby * intby + intbz * intbz);
-    //   `j_z`:
-    intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b110),
-                         dev_grid.dims[0], dev_grid.dims[1]);
-    intex = interpolate(ex, ijk, Stagger(0b011), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intey = interpolate(ey, ijk, Stagger(0b101), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intez = interpolate(ez, ijk, Stagger(0b110), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    intbz = interpolate(bz, ijk, Stagger(0b001), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-    jz = CCz * intrho * (intex * intby - intbx * intey) /
-         (intbx * intbx + intby * intby + intbz * intbz);
-
-    dex[ijk] -= jx;
-    dey[ijk] -= jy;
-    dez[ijk] -= jz;
+    // // computing currents
+    // //   `j_x`:
+    // intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b011),
+    //                      dev_grid.dims[0], dev_grid.dims[1]);
+    // intex = interpolate(ex, ijk, Stagger(0b011), Stagger(0b011),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intey = interpolate(ey, ijk, Stagger(0b101), Stagger(0b011),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intez = interpolate(ez, ijk, Stagger(0b110), Stagger(0b011),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b011),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b011),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intbz = interpolate(bz, ijk, Stagger(0b001), Stagger(0b011),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // jx = CCx * intrho * (intey * intbz - intby * intez) /
+    //      (intbx * intbx + intby * intby + intbz * intbz);
+    // //   `j_y`:
+    // intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b101),
+    //                      dev_grid.dims[0], dev_grid.dims[1]);
+    // intex = interpolate(ex, ijk, Stagger(0b011), Stagger(0b101),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intey = interpolate(ey, ijk, Stagger(0b101), Stagger(0b101),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intez = interpolate(ez, ijk, Stagger(0b110), Stagger(0b101),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b101),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b101),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intbz = interpolate(bz, ijk, Stagger(0b001), Stagger(0b101),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // jy = CCy * intrho * (intez * intbx - intex * intbz) /
+    //      (intbx * intbx + intby * intby + intbz * intbz);
+    // //   `j_z`:
+    // intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b110),
+    //                      dev_grid.dims[0], dev_grid.dims[1]);
+    // intex = interpolate(ex, ijk, Stagger(0b011), Stagger(0b110),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intey = interpolate(ey, ijk, Stagger(0b101), Stagger(0b110),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intez = interpolate(ez, ijk, Stagger(0b110), Stagger(0b110),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b110),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b110),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // intbz = interpolate(bz, ijk, Stagger(0b001), Stagger(0b110),
+    //                     dev_grid.dims[0], dev_grid.dims[1]);
+    // jz = CCz * intrho * (intex * intby - intbx * intey) /
+    //      (intbx * intbx + intby * intby + intbz * intbz);
+    //
+    // dex[ijk] -= jx;
+    // dey[ijk] -= jy;
+    // dez[ijk] -= jz;
   }
 }
 
@@ -799,6 +799,8 @@ field_solver::evolve_fields() {
   // CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
 
+  CudaSafeCall(cudaDeviceSynchronize());
+
   //   timer::stamp();
   // copy_fields();
   // CudaSafeCall(cudaDeviceSynchronize());
@@ -862,9 +864,9 @@ void
 field_solver::rk_push() {
   // `rho = div E`
   // kernel_compute_rho<<<gridSize, blockSize>>>(
-  kernel_compute_rho_thread<<<blockGroupSize, blockSize>>>(
-      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-      rho.dev_ptr(), SHIFT_GHOST);
+  // kernel_compute_rho_thread<<<blockGroupSize, blockSize>>>(
+  //     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+  //     rho.dev_ptr(), SHIFT_GHOST);
   // `dE = curl B - curl B0 - j, dB = -curl E`
   // kernel_rk_push<<<g, blockSize>>>(
   kernel_rk_push_thread<<<blockGroupSize, blockSize>>>(
