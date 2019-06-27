@@ -69,7 +69,7 @@ template <typename T>
 void
 vector_field<T>::assign(T value) {
   for (int i = 0; i < 3; i++) {
-    m_data[i].assign(value);
+    m_data[i].assign_dev(value);
   }
 }
 
@@ -77,7 +77,7 @@ template <typename T>
 void
 vector_field<T>::assign(T value, int n) {
   check_component_range(n);
-  m_data[n].assign(value);
+  m_data[n].assign_dev(value);
 }
 
 template <typename T>

@@ -31,6 +31,7 @@ multi_array<T>::multi_array(int width, int height, int depth)
   m_size = width * height * depth;
 
   alloc_mem(m_size);
+  assign_dev(0);
 }
 
 template <typename T>

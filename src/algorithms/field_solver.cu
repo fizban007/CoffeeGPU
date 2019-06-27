@@ -298,6 +298,10 @@ kernel_rk_push_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                       (bz0[iM1jk] - bz0[ijk] - bx0[ijkM1] + bx0[ijk]));
     dez[ijk] = CCz * ((bx[ijM1k] - bx[ijk] - by[iM1jk] + by[ijk]) -
                       (bx0[ijM1k] - bx0[ijk] - by0[iM1jk] + by0[ijk]));
+    if (i == 10 && j == 10 && k == 10)
+      // printf("%d, %d, %d\n", dev_grid.dims[0], dev_grid.dims[1], dev_grid.dims[2]);
+      // printf("%f, %f, %f\n", dex[ijk], dey[ijk], dez[ijk]);
+      printf("%lu, %lu, %lu\n", ijkM1, ijM1k, iM1jk);
     // // computing currents
     // //   `j_x`:
     // intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b011),
@@ -757,11 +761,15 @@ field_solver::field_solver(sim_data &mydata, sim_environment& env) : m_data(myda
   dE = vector_field<Scalar>(m_data.env.grid());
   En.copy_stagger(m_data.E);
   dE.copy_stagger(m_data.E);
+  En.initialize();
+  dE.initialize();
 
   Bn = vector_field<Scalar>(m_data.env.grid());
   dB = vector_field<Scalar>(m_data.env.grid());
   Bn.copy_stagger(m_data.B);
   dB.copy_stagger(m_data.B);
+  Bn.initialize();
+  dB.initialize();
 
   rho = multi_array<Scalar>(m_data.env.grid().extent());
   rho.assign_dev(0.0);
@@ -769,6 +777,8 @@ field_solver::field_solver(sim_data &mydata, sim_environment& env) : m_data(myda
   blockGroupSize = dim3((m_data.env.grid().reduced_dim(0) + SHIFT_GHOST * 2 + blockSize.x - 1) / blockSize.x,
                         (m_data.env.grid().reduced_dim(1) + SHIFT_GHOST * 2 + blockSize.y - 1) / blockSize.y,
                         (m_data.env.grid().reduced_dim(2) + SHIFT_GHOST * 2 + blockSize.z - 1) / blockSize.z);
+  std::cout << blockSize.x << ", " << blockSize.y << ", " << blockSize.z << std::endl;
+  std::cout << blockGroupSize.x << ", " << blockGroupSize.y << ", " << blockGroupSize.z << std::endl;
 }
 
 field_solver::~field_solver() {}
@@ -858,6 +868,8 @@ field_solver::copy_fields() {
   // `En = E, Bn = B`:
   En.copy_from(m_data.E);
   Bn.copy_from(m_data.B);
+  dE.initialize();
+  dB.initialize();
 }
 
 void
