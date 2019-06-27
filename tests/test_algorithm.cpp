@@ -25,7 +25,7 @@ TEST_CASE("Testing algorithm", "[algo]") {
   field_solver solver(data, env);
 
   // Initial conditions
-  Scalar c = 1;
+  Scalar c = 1.0;
   Scalar bx0 = 1.5;
   Scalar by0 = 2.8;
   Scalar bz0 = 3.2;
@@ -93,6 +93,8 @@ TEST_CASE("Testing algorithm", "[algo]") {
       }
     }
   }
+  data.B.sync_to_device();
+  data.B0.initialize();
 
   uint32_t step = 0;
   // data_exporter exporter(env, step);
@@ -121,7 +123,9 @@ TEST_CASE("Testing algorithm", "[algo]") {
          j < env.grid().dims[1] - env.grid().guard[1]; ++j) {
       for (int i = env.grid().guard[0];
            i < env.grid().dims[0] - env.grid().guard[0]; ++i) {
-        CHECK(data.B(0, i, j, k) == Approx(bx_in[k][j][i]));
+        CHECK(0.25 * (data.B(0, i, j, k) + data.B(0, i, j, k - 1)
+                      + data.B(0, i, j - 1, k) + data.B(0, i, j - 1, k - 1))
+              == Approx(bx_in[k][j][i]));
       }
     }
   }
