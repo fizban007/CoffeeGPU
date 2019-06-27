@@ -298,10 +298,10 @@ kernel_rk_push_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                       (bz0[iM1jk] - bz0[ijk] - bx0[ijkM1] + bx0[ijk]));
     dez[ijk] = CCz * ((bx[ijM1k] - bx[ijk] - by[iM1jk] + by[ijk]) -
                       (bx0[ijM1k] - bx0[ijk] - by0[iM1jk] + by0[ijk]));
-    if (i == 10 && j == 10 && k == 10)
+    // if (i == 10 && j == 10 && k == 10)
       // printf("%d, %d, %d\n", dev_grid.dims[0], dev_grid.dims[1], dev_grid.dims[2]);
       // printf("%f, %f, %f\n", dex[ijk], dey[ijk], dez[ijk]);
-      printf("%lu, %lu, %lu\n", ijkM1, ijM1k, iM1jk);
+      // printf("%lu, %lu, %lu\n", ijkM1, ijM1k, iM1jk);
     // computing currents
     //   `j_x`:
     intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b011),
