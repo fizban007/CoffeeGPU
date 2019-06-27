@@ -776,9 +776,11 @@ field_solver::~field_solver() {}
 void
 field_solver::evolve_fields() {
   copy_fields();
-
+  CudaSafeCall(cudaDeviceSynchronize());
+  
   // substep #1:
   rk_push();
+  CudaSafeCall(cudaDeviceSynchronize());
   rk_update(1.0, 0.0, 1.0);
   // check_eGTb();
   CudaSafeCall(cudaDeviceSynchronize());
@@ -787,6 +789,7 @@ field_solver::evolve_fields() {
 
   // substep #2:
   rk_push();
+  CudaSafeCall(cudaDeviceSynchronize());
   rk_update(0.75, 0.25, 0.25);
   // check_eGTb();
   CudaSafeCall(cudaDeviceSynchronize());
@@ -795,6 +798,7 @@ field_solver::evolve_fields() {
 
   // substep #3:
   rk_push();
+  CudaSafeCall(cudaDeviceSynchronize());
   rk_update(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
   // clean_epar();
   // check_eGTb();
