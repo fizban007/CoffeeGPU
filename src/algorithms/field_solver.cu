@@ -871,9 +871,9 @@ void
 field_solver::rk_push() {
   // `rho = div E`
   // kernel_compute_rho<<<gridSize, blockSize>>>(
-  // kernel_compute_rho_thread<<<blockGroupSize, blockSize>>>(
-  //     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-  //     rho.dev_ptr(), SHIFT_GHOST);
+  kernel_compute_rho_thread<<<blockGroupSize, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      rho.dev_ptr(), SHIFT_GHOST);
   // `dE = curl B - curl B0 - j, dB = -curl E`
   // kernel_rk_push<<<g, blockSize>>>(
   kernel_rk_push_thread<<<blockGroupSize, blockSize>>>(
