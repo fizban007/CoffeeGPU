@@ -16,7 +16,7 @@ add_dependencies(check run_tests)
 
 add_executable(tests_cuda "test.cu"
   "test_array.cu"
-  "test_rho.cu"
+  # "test_rho.cu"
   )
 target_link_libraries(tests_cuda
   Coffee Coffee_cuda)
