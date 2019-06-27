@@ -29,12 +29,12 @@ int main(int argc, char *argv[]) {
   // Main simulation loop
   for (step = 0; step <= env.params().max_steps; step++) {
     // Do stuff here
-    timer::stamp();
-    solver.evolve_fields();
-    timer::show_duration_since_stamp("evolve field", "ms");
     if (step % env.params().data_interval == 0) {
       exporter.write_output(data, step, 0.0);
     }
+    timer::stamp();
+    solver.evolve_fields();
+    timer::show_duration_since_stamp("evolve field", "ms");
   }
 
   return 0;

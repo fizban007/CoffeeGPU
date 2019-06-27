@@ -46,5 +46,6 @@ data.B.initialize(2, [&](Scalar x, Scalar y, Scalar z) {
 });
 
 // data.B.copy_from(data.B0);
+data.B0.initialize();
 
 #endif  // _USER_INIT_H_
