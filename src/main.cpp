@@ -17,7 +17,8 @@ int main(int argc, char *argv[]) {
   field_solver solver(data, env);
 
 // #include "user_init.hpp"
-  #include "user_emwave.hpp"
+  // #include "user_emwave.hpp"
+  #include "user_alfven.hpp"
 
   uint32_t step = 0;
   data_exporter exporter(env, step);

@@ -792,72 +792,21 @@ field_solver::evolve_fields() {
   // substep #1:
   rk_push();
   rk_update(1.0, 0.0, 1.0);
-  // check_eGTb();
+  check_eGTb();
   m_env.send_guard_cells(m_data);
 
   // substep #2:
   rk_push();
   rk_update(0.75, 0.25, 0.25);
-  // check_eGTb();
+  check_eGTb();
   m_env.send_guard_cells(m_data);
 
   // substep #3:
   rk_push();
   rk_update(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
-  // clean_epar();
-  // check_eGTb();
+  clean_epar();
+  check_eGTb();
   m_env.send_guard_cells(m_data);
-
-  //   timer::stamp();
-  // copy_fields();
-  // CudaSafeCall(cudaDeviceSynchronize());
-  //   timer::show_duration_since_stamp("copy_fields", "ms");
-  //
-  // // substep #1:
-  //   timer::stamp();
-  // rk_push();
-  // CudaSafeCall(cudaDeviceSynchronize());
-  //   timer::show_duration_since_stamp("rk_push", "ms");
-  //
-  //   timer::stamp();
-  // rk_update(1.0, 0.0, 1.0);
-  // CudaSafeCall(cudaDeviceSynchronize());
-  //   timer::show_duration_since_stamp("rk_update", "ms");
-  //
-  //   timer::stamp();
-  // check_eGTb();
-  // CudaSafeCall(cudaDeviceSynchronize());
-  //   timer::show_duration_since_stamp("rk_eGTb", "ms");
-  //
-  //   timer::stamp();
-  // CudaSafeCall(cudaDeviceSynchronize()); // < this is the only one necessary
-  // m_env.send_guard_cells(m_data);
-  // CudaSafeCall(cudaDeviceSynchronize());
-  //   timer::show_duration_since_stamp("send_guard_cells 1", "ms");
-  //
-  // // // substep #2:
-  // // rk_push();
-  // // rk_update(0.75, 0.25, 0.25);
-  // // check_eGTb();
-  // //
-  // // CudaSafeCall(cudaDeviceSynchronize());
-  // // m_env.send_guard_cells(m_data);
-  // //
-  // // // substep #3:
-  // // rk_push();
-  // // rk_update(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
-  //
-  //   timer::stamp();
-  // clean_epar();
-  // CudaSafeCall(cudaDeviceSynchronize());
-  //   timer::show_duration_since_stamp("clean_epar", "ms");
-  //
-  //   timer::stamp();
-  // m_env.send_guard_cells(m_data);
-  // CudaSafeCall(cudaDeviceSynchronize());
-  //   timer::show_duration_since_stamp("send_guard_cells 2", "ms");
-  // // check_eGTb();
-  // //
 }
 
 void
