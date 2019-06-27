@@ -109,14 +109,20 @@ TEST_CASE("Testing algorithm", "[algo]") {
   }
 
   data.B.sync_to_host();
+  data.E.sync_to_host();
 
   // std::vector<std::vector<std::vector<float>>> bx_in;
-  boost::multi_array<float, 3> bx_in;
+  boost::multi_array<float, 3> ex_in;
 
-  File file("fout.001", File::ReadOnly);
+  // File file("idtest/fout.001", File::ReadOnly);
+  File file("fout.002", File::ReadOnly);
 
-  DataSet dataset = file.getDataSet("bx");
-  dataset.read(bx_in);
+  // data.E.initialize(0, [](Scalar x, Scalar y, Scalar z) {
+  //                        return 4.0 + x - 0.5;
+  //                      });
+
+  DataSet dataset = file.getDataSet("ex");
+  dataset.read(ex_in);
 
   for (int k = env.grid().guard[2];
        k < env.grid().dims[2] - env.grid().guard[2]; ++k) {
@@ -124,9 +130,18 @@ TEST_CASE("Testing algorithm", "[algo]") {
          j < env.grid().dims[1] - env.grid().guard[1]; ++j) {
       for (int i = env.grid().guard[0];
            i < env.grid().dims[0] - env.grid().guard[0]; ++i) {
-        CHECK(0.25 * (data.B(0, i, j, k) + data.B(0, i, j, k - 1)
-                      + data.B(0, i, j - 1, k) + data.B(0, i, j - 1, k - 1))
-              == Approx(bx_in[k][j][i]));
+        // CHECK(0.25 * (data.B(0, i, j, k) + data.B(0, i, j, k - 1)
+        //               + data.B(0, i, j - 1, k) + data.B(0, i, j - 1,
+        //               k - 1))
+        //       == Approx(bx_in[i][j][k]));
+        CHECK(
+            0.5 * (data.E(0, i, j, k) + data.E(0, i - 1, j, k)) ==
+            // CHECK(data.E(0, i, j, k) == Approx(bx_in[k - 2][j - 2][i
+            // - 2])); CHECK(data.E(0, i, j, k) ==
+            Approx(
+                ex_in[k - env.grid().guard[2]][j - env.grid().guard[1]]
+                     [i - env.grid().guard[0]])
+                .margin(1.0e-5));
       }
     }
   }
