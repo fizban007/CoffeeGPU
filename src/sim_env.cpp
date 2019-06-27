@@ -216,12 +216,14 @@ sim_environment::send_guard_cell_z(sim_data& data, int dir) {
 
 void
 sim_environment::send_guard_cells(sim_data& data) {
+  RANGE_PUSH("communication", CLR_GREEN);
   send_guard_cell_x(data, -1);
   send_guard_cell_x(data, 1);
   send_guard_cell_y(data, -1);
   send_guard_cell_y(data, 1);
   send_guard_cell_z(data, -1);
   send_guard_cell_z(data, 1);
+  RANGE_POP;
 }
 
 sim_environment::sim_environment(int* argc, char*** argv) {
