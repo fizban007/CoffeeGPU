@@ -2,6 +2,7 @@
 #define _DATA_EXPORTER_H_
 
 #include "data/multi_array.h"
+#include "data/typedefs.h"
 #include <boost/multi_array.hpp>
 #include <fstream>
 #include <memory>
@@ -37,6 +38,9 @@ class data_exporter {
   template <typename Func>
   void add_grid_output(sim_data& data, const std::string& name, Func f,
                        HighFive::File& file);
+
+  void add_grid_output(multi_array<Scalar>& array, const std::string& name,
+                       Stagger stagger, HighFive::File& file);
 
   // std::unique_ptr<Grid> grid;
   sim_environment& m_env;

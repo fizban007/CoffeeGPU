@@ -1,3 +1,4 @@
+#include "algorithms/interpolation.h"
 #include "cuda/cuda_utility.h"
 #include "multi_array.h"
 #include <algorithm>
@@ -13,6 +14,26 @@ assign_single_value(T* data, size_t size, T value) {
   for (size_t i = threadIdx.x + blockIdx.x * blockDim.x; i < size;
        i += blockDim.x * gridDim.x) {
     data[i] = value;
+  }
+}
+
+template <typename T>
+__global__ void
+downsample(T* orig_data, T* dst_data, Extent orig_ext, Extent dst_ext,
+           Index offset, Stagger st, int d) {
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  int j = threadIdx.y + blockIdx.y * blockDim.y;
+  int k = threadIdx.z + blockIdx.z * blockDim.z;
+  if (i < dst_ext.x && j < dst_ext.y && k < dst_ext.z) {
+    size_t orig_idx = i * d + offset.x +
+                      (j * d + offset.y) * orig_ext.x +
+                      (k * d + offset.z) * orig_ext.x * orig_ext.y;
+    size_t dst_idx = i + j * dst_ext.x + k * dst_ext.x * dst_ext.y;
+
+    // dst_data[dst_idx] = orig_data[orig_idx];
+    dst_data[dst_idx] =
+        interpolate(orig_data, orig_idx, st, Stagger(0b111), orig_ext.x,
+                    orig_ext.y);
   }
 }
 
@@ -204,6 +225,25 @@ void
 multi_array<T>::sync_to_device() {
   CudaSafeCall(cudaMemcpy(m_data_d, m_data_h, m_size * sizeof(T),
                           cudaMemcpyHostToDevice));
+}
+
+template <typename T>
+void
+multi_array<T>::downsample(int d, self_type& array, Index offset,
+                           Stagger stagger, T* h_ptr) {
+  auto& ext = array.m_extent;
+  dim3 blockSize(32, 8, 4);
+  dim3 gridSize((ext.x + blockSize.x - 1) / blockSize.x,
+                (ext.y + blockSize.y - 1) / blockSize.y,
+                (ext.z + blockSize.z - 1) / blockSize.z);
+  Kernels::downsample<<<gridSize, blockSize>>>(m_data_d, array.m_data_d,
+                                               m_extent, array.m_extent,
+                                               offset, stagger, d);
+  CudaCheckError();
+
+  CudaSafeCall(cudaMemcpy(h_ptr, array.m_data_d,
+                          array.size() * sizeof(T),
+                          cudaMemcpyDeviceToHost));
 }
 
 /////////////////////////////////////////////////////////////////

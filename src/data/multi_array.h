@@ -2,6 +2,7 @@
 #define _MULTI_ARRAY_H_
 
 #include "data/vec3.h"
+#include "data/stagger.h"
 
 namespace Coffee {
 
@@ -82,6 +83,9 @@ class multi_array {
 
   /// Copy the content from device to host
   void sync_to_host();
+
+  /// Downsample the multi_array to a new multi_array, and copy the result to a new host pointer
+  void downsample(int d, self_type& array, Index offset, Stagger stagger, T* h_ptr);
 
   // Returns various sizes of the array
   int width() const { return m_extent.width(); }
