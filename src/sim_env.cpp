@@ -216,7 +216,7 @@ sim_environment::send_guard_cell_z(sim_data& data, int dir) {
 
 void
 sim_environment::send_guard_cells(sim_data& data) {
-  RANGE_PUSH("communication", CLR_GREEN);
+  RANGE_PUSH("communication", CLR_CYAN);
   send_guard_cell_x(data, -1);
   send_guard_cell_x(data, 1);
   send_guard_cell_y(data, -1);
