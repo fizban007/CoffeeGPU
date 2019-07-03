@@ -45,9 +45,9 @@ parse_config(const std::string& filename) {
     for (int i = 0; i < 3; i++) result.nodes[i] = (*nodes)[i];
 
   // Problem specific
-  result.a0 = config->get_as<double>("a_L0");
-  result.h0 = config->get_as<double>("h_L0");
-  result.L0 = config->get_as<double>("L0");
+  result.a0 = config->get_as<double>("a_L0").value_or(defaults.a0);
+  result.h0 = config->get_as<double>("h_L0").value_or(defaults.h0);
+  result.L0 = config->get_as<double>("L0").value_or(defaults.L0);
 
   return result;
 }
