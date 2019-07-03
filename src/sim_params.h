@@ -28,7 +28,9 @@ struct sim_params {
   int nodes[3] = {1}; ///< Number of nodes in all directions
 
   // Problem specific
-  int kn[3] = {1, 1, 0};
+  Scalar a0 = 6.0;
+  Scalar h0 = 0.1;
+  Scalar L0 = 50.0;
 };
 
 

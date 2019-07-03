@@ -16,16 +16,12 @@ int main(int argc, char *argv[]) {
   sim_data data(env);
   field_solver solver(data, env);
 
-// #include "user_init.hpp"
+  // #include "user_init.hpp"
   // #include "user_emwave.hpp"
   #include "user_alfven.hpp"
 
   uint32_t step = 0;
   data_exporter exporter(env, step);
-
-  // std::cout << "Attempting to write output" << std::endl;
-  // exporter.write_output(data, step, 0.0);
-  // exporter.sync();
 
   // Main simulation loop
   for (step = 0; step <= env.params().max_steps; step++) {
