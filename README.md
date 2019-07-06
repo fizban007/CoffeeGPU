@@ -57,6 +57,54 @@ need to manually run them using `make check`. The first unit test
 `test_stagger.cpp` should be a good indication of how to write unit tests. For
 further information please look at the official documentation at
 <https://github.com/catchorg/Catch2/blob/master/docs/tutorial.md>.
+
+## Run on Ascent
+Note that in order to write data we need to use the scratch (GPFS) directories, e.g.,
+
+    /gpfs/wolf/gen127/scratch/userid
+
+After making the executable, go to the `bin` directory and create the configuration file `config.toml` 
+(see `CoffeeGPU/config.toml.example` as an example).
+
+For interactive job submission, first run
+
+    bsub -P PROJID -nnodes 1 -W 60 -alloc_flags gpumps -Is $SHELL
+
+`PROJID` should be GEN127 here, and the number of nodes can be varied (there are 6 GPUs per node).
+This opens up a new shell.
+Use `export OMP_NUM_THREADS=1` to set OpenMP thread.
+To run the code, in the folder `bin`, use the following commands:
+
+    mkdir Data
+    jsrun --smpiargs="-gpu" -n4 -a1 -c1 -g1 ./coffee
+    
+Here `-n` gives the number of resource sets; each resource set includes `-a` number of MPI tasks, 
+`-c` number of CPU cores and `-g` number of GPUs. `--smpiargs="-gpu"` is needed in order to enable CUDA-Aware MPI.
+
+To submit a batch job, we can use the command 
+    
+    bsub submit.lsf
+
+And an example for the submit file `submit.lsf` is the following:
+
+    #!/bin/bash
+    # Begin LSF Directives
+    #BSUB -P GEN127
+    #BSUB -W 0:30
+    #BSUB -nnodes 2
+    #BSUB -alloc_flags gpumps
+    #BSUB -J emwave
+    #BSUB -o emwave.%J
+    #BSUB -e emwave.%J
+
+    module load cmake/3.14.2
+    module load gcc/8.1.1
+    module load cuda/10.1.105
+    module load spectrum-mpi/10.3.0.0-20190419
+    module load hdf5/1.10.3
+    module load  boost/1.66.0
+    mkdir Data
+    jsrun --smpiargs="-gpu" -n8 -a1 -c1 -g1 ./coffee
    
 # How the code is structured
 

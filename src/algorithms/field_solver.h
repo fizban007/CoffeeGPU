@@ -5,17 +5,18 @@ namespace Coffee {
 
 class field_solver {
  public:
-  sim_data& m_data;
 
   vector_field<Scalar> En, Bn, dE, dB;
   multi_array<Scalar> rho;
 
-  field_solver(sim_data& mydata);
+  field_solver(sim_data& mydata, sim_environment& env);
   ~field_solver();
 
   void evolve_fields();
 
  private:
+  sim_data& m_data;
+  sim_environment& m_env;
   void copy_fields();
   void check_eGTb();
 

@@ -114,7 +114,7 @@ struct Grid {
   ///  between guard cells and physical cells. The function is only
   ///  defined for i >= 0 and i < DIM.
   HD_INLINE Scalar pos(int i, int n, int stagger) const {
-    return pos(i, n, (Scalar)(stagger * 0.5 + 0.5));
+    return pos(i, n, (Scalar)(stagger * -0.5 + 0.5));
   }
 
   ///  Coordinate of a point inside cell n in dimension i.

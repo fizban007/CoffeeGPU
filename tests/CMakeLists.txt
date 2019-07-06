@@ -4,6 +4,7 @@ add_executable(tests "test.cpp"
   "test_stagger.cpp"
   "test_multi_array.cpp"
   "test_interp.cpp"
+  "test_algorithm.cpp"
   )
 target_link_libraries(tests
   Coffee Coffee_cuda)
@@ -16,7 +17,7 @@ add_dependencies(check run_tests)
 
 add_executable(tests_cuda "test.cu"
   "test_array.cu"
-  "test_rho.cu"
+  # "test_rho.cu"
   )
 target_link_libraries(tests_cuda
   Coffee Coffee_cuda)

@@ -40,6 +40,10 @@ parse_config(const std::string& filename) {
   if (size)
     for (int i = 0; i < 3; i++) result.size[i] = (*size)[i];
 
+  auto nodes = config->get_array_of<double>("nodes");
+  if (nodes)
+    for (int i = 0; i < 3; i++) result.nodes[i] = (*nodes)[i];
+
   return result;
 }
 

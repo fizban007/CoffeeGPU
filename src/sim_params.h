@@ -25,6 +25,10 @@ struct sim_params {
   int guard[3] = {0}; ///< Number of guard cells at each boundary
   Scalar lower[3] = {0.0}; ///< Lower limits of the simulation box
   Scalar size[3] = {1.0}; ///< Sizes of the simulation box
+  int nodes[3] = {1}; ///< Number of nodes in all directions
+
+  // Problem specific
+  int kn[3] = {1, 1, 0};
 };
 
 

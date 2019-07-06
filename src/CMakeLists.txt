@@ -9,7 +9,7 @@ set(Coffee_src
   )
 
 add_library(Coffee ${Coffee_src})
-target_link_libraries(Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES})
+target_link_libraries(Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 
 
 set(Coffee_cuda_src
@@ -18,7 +18,7 @@ set(Coffee_cuda_src
   "algorithms/field_solver.cu")
 
 add_cuda_target(Coffee_cuda ${Coffee_cuda_src})
-target_link_libraries(Coffee_cuda ${MPI_LIBRARIES} ${HDF5_LIBRARIES} Coffee)
+target_link_libraries(Coffee_cuda ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES} Coffee)
 
 add_executable(coffee "main.cpp")
-target_link_libraries(coffee Coffee Coffee_cuda ${MPI_LIBRARIES} ${HDF5_LIBRARIES})
+target_link_libraries(coffee Coffee Coffee_cuda ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})

@@ -16,21 +16,6 @@ data.E.initialize(2, [](Scalar x, Scalar y, Scalar z) {
   return 0.0;
 });
 
-data.B.initialize(0, [](Scalar x, Scalar y, Scalar z) {
-  // Put your initial condition for Bx here
-  return 1.0;
-});
-
-data.B.initialize(1, [](Scalar x, Scalar y, Scalar z) {
-  // Put your initial condition for By here
-  return 2.0;
-});
-
-data.B.initialize(2, [](Scalar x, Scalar y, Scalar z) {
-  // Put your initial condition for Bz here
-  return 3.0;
-});
-
 data.B0.initialize(0, [](Scalar x, Scalar y, Scalar z) {
   // Put your initial condition for Bx here
   return 0.0;
@@ -45,5 +30,7 @@ data.B0.initialize(2, [](Scalar x, Scalar y, Scalar z) {
   // Put your initial condition for Bz here
   return 0.0;
 });
+
+data.B.copy_from(data.B0);
 
 #endif  // _USER_INIT_H_
