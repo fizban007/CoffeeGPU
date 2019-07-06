@@ -836,6 +836,7 @@ field_solver::rk_push() {
   kernel_compute_rho_thread<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       rho.dev_ptr(), SHIFT_GHOST);
+  CudaCheckError();
   // `dE = curl B - curl B0 - j, dB = -curl E`
   // kernel_rk_push<<<g, blockSize>>>(
   kernel_rk_push_thread<<<blockGroupSize, blockSize>>>(
@@ -844,6 +845,7 @@ field_solver::rk_push() {
       m_data.B0.dev_ptr(0), m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
       dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr(), SHIFT_GHOST);
+  CudaCheckError();
 }
 
 void
@@ -857,6 +859,7 @@ field_solver::rk_update(Scalar rk_c1, Scalar rk_c2, Scalar rk_c3) {
       Bn.dev_ptr(1), Bn.dev_ptr(2), dE.dev_ptr(0), dE.dev_ptr(1),
       dE.dev_ptr(2), dB.dev_ptr(0), dB.dev_ptr(1), dB.dev_ptr(2), rk_c1,
       rk_c2, rk_c3, SHIFT_GHOST);
+  CudaCheckError();
 }
 
 void
@@ -867,6 +870,7 @@ field_solver::clean_epar() {
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), SHIFT_GHOST);
+  CudaCheckError();
 }
 
 void
@@ -877,6 +881,7 @@ field_solver::check_eGTb() {
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), m_data.E.dev_ptr(0),
       m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0),
       m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), SHIFT_GHOST);
+  CudaCheckError();
 }
 
 }  // namespace Coffee
