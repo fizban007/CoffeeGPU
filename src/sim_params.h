@@ -29,6 +29,9 @@ struct sim_params {
 
   // Problem specific
   int kn[3] = {1, 1, 0};
+
+  // GR parameters
+  Scalar a = 0.99; ///<Black hole spin
 };
 
 

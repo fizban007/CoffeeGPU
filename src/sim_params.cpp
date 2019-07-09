@@ -44,6 +44,8 @@ parse_config(const std::string& filename) {
   if (nodes)
     for (int i = 0; i < 3; i++) result.nodes[i] = (*nodes)[i];
 
+  result.a = config->get_as<double>("a").value_or(defaults.a);
+
   return result;
 }
 
