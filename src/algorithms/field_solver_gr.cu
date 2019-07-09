@@ -43,37 +43,37 @@ HOST_DEVICE Scalar get_r(Scalar a, Scalar x, Scalar y, Scalar z) {
 HOST_DEVICE Scalar get_g() { return -1.0; }
 
 HOST_DEVICE Scalar get_beta_d1(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 2.0 * r * r * r * (r * x + a * y) / (a * a + r * r) / (r * r * r * r + a * a * z * z);
 }
 
 HOST_DEVICE Scalar get_beta_d2(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 2.0 * r * r * r * (- a * x + r * y) / (a * a + r * r) / (r * r * r * r + a * a * z * z);
 }
 
 HOST_DEVICE Scalar get_beta_d3(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 2.0 * r * r * z / (r * r * r * r + a * a * z * z);
 }
 
 HOST_DEVICE Scalar get_beta_u1(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 2.0 * r * r * r * (r * x + a * y) / (a * a + r * r) / (2.0 * r * r * r + r * r * r * r + a * a * z * z);
 }
 
 HOST_DEVICE Scalar get_beta_u2(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 2.0 * r * r * r * (- a * x + r * y) / (a * a + r * r) / (2.0 * r * r * r + r * r * r * r + a * a * z * z);
 }
 
 HOST_DEVICE Scalar get_beta_u3(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 2.0 * r * r * z / (2.0 * r * r * r + r * r * r * r + a * a * z * z);
 }
 
 HOST_DEVICE Scalar get_gamma(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 1.0 + 2.0 * r * r * r / (r * r * r * r + a * a * z * z);
 }
 
@@ -82,37 +82,37 @@ HOST_DEVICE Scalar get_sqrt_gamma(Scalar a, Scalar x, Scalar y, Scalar z) {
 }
 
 HOST_DEVICE Scalar get_alpha(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return std::sqrt(1.0 / (1.0 + 2.0 * r * r * r / (r * r * r * r + a * a * z * z)));
 }
 
 HOST_DEVICE Scalar get_gamma_d11(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 1.0 + 2.0 * r * r * r * square(r * x + a * y) / square(a * a + r * r) / (r * r * r * r + a * a * z * z);
 }
 
 HOST_DEVICE Scalar get_gamma_d12(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 2.0 * r * r * r * (r * x + a * y) * (- a * x + r * y) / square(a * a + r * r) / (r * r * r * r + a * a * z * z);
 }
 
 HOST_DEVICE Scalar get_gamma_d13(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 2.0 * r * r * (r * x + a * y) * z / (a * a + r * r) / (r * r * r * r + a * a * z * z);
 }
 
 HOST_DEVICE Scalar get_gamma_d22(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 1.0 + 2.0 * r * r * r * square(a * x - r * y) / square(a * a + r * r) / (r * r * r * r + a * a * z * z);
 }
 
 HOST_DEVICE Scalar get_gamma_d23(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 2.0 * r * r * (- a * x + r * y) * z / (a * a + r * r) / (r * r * r * r + a * a * z * z);
 }
 
 HOST_DEVICE Scalar get_gamma_d33(Scalar a, Scalar x, Scalar y, Scalar z) {
-  Scalar r = get_r(x, y, z);
+  Scalar r = get_r(a, x, y, z);
   return 1.0 + 2.0 * r * z * z / (r * r * r * r + a * a * z * z);
 }
 
@@ -291,6 +291,7 @@ kernel_compute_H_gr_thread(const Scalar *Dx, const Scalar *Dy, const Scalar *Dz,
 __global__ void
 kernel_rk_push_gr_thread(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
                       const Scalar *Hx, const Scalar *Hy, const Scalar *Hz,
+                      const Scalar *Bx, const Scalar *By, const Scalar *Bz,
                       const Scalar *B0x, const Scalar *B0y, const Scalar *B0z, 
                       Scalar *dDx, Scalar *dDy, Scalar *dDz, 
                       Scalar *dBx, Scalar *dBy, Scalar *dBz,
@@ -756,7 +757,7 @@ field_solver_gr::~field_solver_gr() {}
 void
 field_solver_gr::evolve_fields_gr() {
   RANGE_PUSH("Compute", CLR_GREEN);
-  copy_fields();
+  copy_fields_gr();
 
   // substep #1:
   compute_E_gr();
@@ -785,8 +786,8 @@ field_solver_gr::evolve_fields_gr() {
   compute_H_gr();
   rk_push_gr();
   rk_update_gr(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
-  clean_epar();
-  check_eGTb();
+  clean_epar_gr();
+  check_eGTb_gr();
   CudaSafeCall(cudaDeviceSynchronize());
   RANGE_POP;
 
@@ -815,6 +816,7 @@ field_solver_gr::rk_push_gr() {
   kernel_rk_push_gr_thread<<<blockGroupSize, blockSize>>>(
       Ed.dev_ptr(0), Ed.dev_ptr(1), Ed.dev_ptr(2),
       Hd.dev_ptr(0), Hd.dev_ptr(1), Hd.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       m_data.B0.dev_ptr(0), m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2),
       dD.dev_ptr(0), dD.dev_ptr(1), dD.dev_ptr(2), dB.dev_ptr(0),
       dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr(), SHIFT_GHOST);
@@ -846,7 +848,7 @@ field_solver_gr::compute_E_gr() {
 
 void
 field_solver_gr::compute_H_gr() {
-  kernel_compute_E_gr_thread<<<blockGroupSize, blockSize>>>(
+  kernel_compute_H_gr_thread<<<blockGroupSize, blockSize>>>(
     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
     m_data.B0.dev_ptr(0), m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2),
