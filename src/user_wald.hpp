@@ -31,5 +31,20 @@ data.B.initialize(2, [](Scalar x, Scalar y, Scalar z) {
   return 1.0;
 });
 
+data.B0.initialize(0, [](Scalar x, Scalar y, Scalar z) {
+  // Put your initial condition for Ex here
+  return 0.0;
+});
+
+data.B0.initialize(1, [](Scalar x, Scalar y, Scalar z) {
+  // Put your initial condition for Ey here
+  return 0.0;
+});
+
+data.B0.initialize(2, [](Scalar x, Scalar y, Scalar z) {
+  // Put your initial condition for Ez here
+  return 0.0;
+});
+
 
 #endif  // _USER_INIT_H_

@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
 
   // Main simulation loop
   for (step = 0; step <= env.params().max_steps; step++) {
+    std::cout << "step = " << step << std::endl;
     // Do stuff here
     if (step % env.params().data_interval == 0) {
       exporter.write_output(data, step, 0.0);
