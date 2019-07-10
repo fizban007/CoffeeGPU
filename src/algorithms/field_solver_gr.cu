@@ -8,8 +8,8 @@
 #include "utils/nvproftool.h"
 
 #define BLOCK_SIZE_X 32
-#define BLOCK_SIZE_Y 4
-#define BLOCK_SIZE_Z 4
+#define BLOCK_SIZE_Y 2
+#define BLOCK_SIZE_Z 2
 
 #define nghost 1
 
@@ -769,7 +769,7 @@ field_solver_gr::evolve_fields_gr() {
   compute_H_gr();
   rk_push_gr();
   rk_update_gr(1.0, 0.0, 1.0);
-  check_eGTb_gr();
+  if (m_env.params().check_egb) check_eGTb_gr();
   CudaSafeCall(cudaDeviceSynchronize());
   RANGE_POP;
   m_env.send_guard_cells(m_data);
@@ -780,7 +780,7 @@ field_solver_gr::evolve_fields_gr() {
   compute_H_gr();
   rk_push_gr();
   rk_update_gr(0.75, 0.25, 0.25);
-  check_eGTb_gr();
+  if (m_env.params().check_egb) check_eGTb_gr();
   CudaSafeCall(cudaDeviceSynchronize());
   RANGE_POP;
   m_env.send_guard_cells(m_data);
@@ -791,8 +791,8 @@ field_solver_gr::evolve_fields_gr() {
   compute_H_gr();
   rk_push_gr();
   rk_update_gr(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
-  clean_epar_gr();
-  check_eGTb_gr();
+  if (m_env.params().clean_ep) clean_epar_gr();
+  if (m_env.params().check_egb) check_eGTb_gr();
   CudaSafeCall(cudaDeviceSynchronize());
   RANGE_POP;
 

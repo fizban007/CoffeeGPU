@@ -34,6 +34,8 @@ struct sim_params {
   Scalar a = 0.99; ///<Black hole spin
 
   bool calc_current = 1; ///< Whether to calculate force-free current or not
+  bool clean_ep = 1; ///< Whether to clean E_parallel or not
+  bool check_egb =1; ///< Whether to clean E>B or not
 };
 
 

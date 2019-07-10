@@ -48,6 +48,10 @@ parse_config(const std::string& filename) {
 
   result.calc_current = config->get_as<bool>("calc_current")
       .value_or(defaults.calc_current);
+  result.clean_ep = config->get_as<bool>("clean_ep")
+      .value_or(defaults.clean_ep);
+  result.check_egb = config->get_as<bool>("check_egb")
+      .value_or(defaults.check_egb);
 
   return result;
 }
