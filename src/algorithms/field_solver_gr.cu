@@ -349,90 +349,95 @@ kernel_rk_push_gr_thread(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
       // printf("%d, %d, %d\n", dev_grid.dims[0], dev_grid.dims[1], dev_grid.dims[2]);
       // printf("%f, %f, %f\n", dEx[ijk], dEy[ijk], dEz[ijk]);
       // printf("%lu, %lu, %lu\n", ijkM1, ijM1k, iM1jk);
-    // computing currents
-    // Note that lower B is stored in B0
-    //   `j_x`:
-    x = dev_grid.pos(0, i, 0);
-    y = dev_grid.pos(1, j, 1);
-    z = dev_grid.pos(2, k, 1);
-    intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b110),
+    
+    if (dev_params.calc_current)
+    {
+      // computing currents
+      // Note that lower B is stored in B0
+      //   `j_x`:
+      x = dev_grid.pos(0, i, 0);
+      y = dev_grid.pos(1, j, 1);
+      z = dev_grid.pos(2, k, 1);
+      intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b110),
+                           dev_grid.dims[0], dev_grid.dims[1]);
+      intEx = interpolate(Ex, ijk, Stagger(0b110), Stagger(0b110),
                          dev_grid.dims[0], dev_grid.dims[1]);
-    intEx = interpolate(Ex, ijk, Stagger(0b110), Stagger(0b110),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intEy = interpolate(Ey, ijk, Stagger(0b101), Stagger(0b110),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intEz = interpolate(Ez, ijk, Stagger(0b011), Stagger(0b110),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b110),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBy = interpolate(By, ijk, Stagger(0b010), Stagger(0b110),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b110),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBdx = interpolate(B0x, ijk, Stagger(0b001), Stagger(0b110),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBdy = interpolate(B0y, ijk, Stagger(0b010), Stagger(0b110),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBdz = interpolate(B0z, ijk, Stagger(0b100), Stagger(0b110),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    jx = dev_params.dt * intrho * (intEy * intBdz - intBdy * intEz) / get_sqrt_gamma(dev_params.a, x, y, z) /
-         (intBx * intBdx + intBy * intBdy + intBz * intBdz + TINY);
-    //   `j_y`:
-    x = dev_grid.pos(0, i, 1);
-    y = dev_grid.pos(1, j, 0);
-    z = dev_grid.pos(2, k, 1);
-    intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b101),
+      intEy = interpolate(Ey, ijk, Stagger(0b101), Stagger(0b110),
                          dev_grid.dims[0], dev_grid.dims[1]);
-    intEx = interpolate(Ex, ijk, Stagger(0b110), Stagger(0b101),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intEy = interpolate(Ey, ijk, Stagger(0b101), Stagger(0b101),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intEz = interpolate(Ez, ijk, Stagger(0b011), Stagger(0b101),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b101),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBy = interpolate(By, ijk, Stagger(0b010), Stagger(0b101),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b101),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBdx = interpolate(B0x, ijk, Stagger(0b001), Stagger(0b101),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBdy = interpolate(B0y, ijk, Stagger(0b010), Stagger(0b101),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBdz = interpolate(B0z, ijk, Stagger(0b100), Stagger(0b101),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    jy = dev_params.dt * intrho * (intEz * intBdx - intEx * intBdz) / get_sqrt_gamma(dev_params.a, x, y, z) /
-         (intBx * intBdx + intBy * intBdy + intBz * intBdz + TINY);
-    //   `j_z`:
-    x = dev_grid.pos(0, i, 1);
-    y = dev_grid.pos(1, j, 1);
-    z = dev_grid.pos(2, k, 0);
-    intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b011),
+      intEz = interpolate(Ez, ijk, Stagger(0b011), Stagger(0b110),
                          dev_grid.dims[0], dev_grid.dims[1]);
-    intEx = interpolate(Ex, ijk, Stagger(0b110), Stagger(0b011),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intEy = interpolate(Ey, ijk, Stagger(0b101), Stagger(0b011),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intEz = interpolate(Ez, ijk, Stagger(0b011), Stagger(0b011),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b011),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBy = interpolate(By, ijk, Stagger(0b010), Stagger(0b011),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b011),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBdx = interpolate(B0x, ijk, Stagger(0b001), Stagger(0b011),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBdy = interpolate(B0y, ijk, Stagger(0b010), Stagger(0b011),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    intBdz = interpolate(B0z, ijk, Stagger(0b100), Stagger(0b011),
-                       dev_grid.dims[0], dev_grid.dims[1]);
-    jz = dev_params.dt * intrho * (intEx * intBdy - intBdx * intEy) / get_sqrt_gamma(dev_params.a, x, y, z) /
-         (intBx * intBdx + intBy * intBdy + intBz * intBdz + TINY);
+      intBx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b110),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBy = interpolate(By, ijk, Stagger(0b010), Stagger(0b110),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b110),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBdx = interpolate(B0x, ijk, Stagger(0b001), Stagger(0b110),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBdy = interpolate(B0y, ijk, Stagger(0b010), Stagger(0b110),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBdz = interpolate(B0z, ijk, Stagger(0b100), Stagger(0b110),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      jx = dev_params.dt * intrho * (intEy * intBdz - intBdy * intEz) / get_sqrt_gamma(dev_params.a, x, y, z) /
+           (intBx * intBdx + intBy * intBdy + intBz * intBdz + TINY);
+      //   `j_y`:
+      x = dev_grid.pos(0, i, 1);
+      y = dev_grid.pos(1, j, 0);
+      z = dev_grid.pos(2, k, 1);
+      intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b101),
+                           dev_grid.dims[0], dev_grid.dims[1]);
+      intEx = interpolate(Ex, ijk, Stagger(0b110), Stagger(0b101),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intEy = interpolate(Ey, ijk, Stagger(0b101), Stagger(0b101),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intEz = interpolate(Ez, ijk, Stagger(0b011), Stagger(0b101),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b101),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBy = interpolate(By, ijk, Stagger(0b010), Stagger(0b101),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b101),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBdx = interpolate(B0x, ijk, Stagger(0b001), Stagger(0b101),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBdy = interpolate(B0y, ijk, Stagger(0b010), Stagger(0b101),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBdz = interpolate(B0z, ijk, Stagger(0b100), Stagger(0b101),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      jy = dev_params.dt * intrho * (intEz * intBdx - intEx * intBdz) / get_sqrt_gamma(dev_params.a, x, y, z) /
+           (intBx * intBdx + intBy * intBdy + intBz * intBdz + TINY);
+      //   `j_z`:
+      x = dev_grid.pos(0, i, 1);
+      y = dev_grid.pos(1, j, 1);
+      z = dev_grid.pos(2, k, 0);
+      intrho = interpolate(rho, ijk, Stagger(0b111), Stagger(0b011),
+                           dev_grid.dims[0], dev_grid.dims[1]);
+      intEx = interpolate(Ex, ijk, Stagger(0b110), Stagger(0b011),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intEy = interpolate(Ey, ijk, Stagger(0b101), Stagger(0b011),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intEz = interpolate(Ez, ijk, Stagger(0b011), Stagger(0b011),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b011),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBy = interpolate(By, ijk, Stagger(0b010), Stagger(0b011),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b011),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBdx = interpolate(B0x, ijk, Stagger(0b001), Stagger(0b011),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBdy = interpolate(B0y, ijk, Stagger(0b010), Stagger(0b011),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      intBdz = interpolate(B0z, ijk, Stagger(0b100), Stagger(0b011),
+                         dev_grid.dims[0], dev_grid.dims[1]);
+      jz = dev_params.dt * intrho * (intEx * intBdy - intBdx * intEy) / get_sqrt_gamma(dev_params.a, x, y, z) /
+           (intBx * intBdx + intBy * intBdy + intBz * intBdz + TINY);
 
-    dDx[ijk] -= jx;
-    dDy[ijk] -= jy;
-    dDz[ijk] -= jz;
+      dDx[ijk] -= jx;
+      dDy[ijk] -= jy;
+      dDz[ijk] -= jz;
+    }
+    
   }
 }
 

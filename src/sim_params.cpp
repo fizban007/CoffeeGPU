@@ -46,6 +46,9 @@ parse_config(const std::string& filename) {
 
   result.a = config->get_as<double>("a").value_or(defaults.a);
 
+  result.calc_current = config->get_as<bool>("calc_current")
+      .value_or(defaults.calc_current);
+
   return result;
 }
 

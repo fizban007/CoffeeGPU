@@ -32,6 +32,8 @@ struct sim_params {
 
   // GR parameters
   Scalar a = 0.99; ///<Black hole spin
+
+  bool calc_current = 1; ///< Whether to calculate force-free current or not
 };
 
 
