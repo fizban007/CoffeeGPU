@@ -2,7 +2,7 @@
 #include "data/sim_data.h"
 #include "sim_env.h"
 #include "utils/data_exporter.h"
-#include "algorithms/field_solver.h"
+#include "algorithms/field_solver_gr.h"
 #include "utils/timer.h"
 
 using namespace std;
@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
 
   // Initialize all the simulation data structures
   sim_data data(env);
-  field_solver solver(data, env);
+  field_solver_gr solver(data, env);
 
   // #include "user_init.hpp"
   // #include "user_emwave.hpp"
