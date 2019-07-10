@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
       exporter.write_output(data, step, 0.0);
     }
     timer::stamp();
-    solver.evolve_fields();
+    solver.evolve_fields_gr();
     timer::show_duration_since_stamp("evolve field", "ms");
   }
 
