@@ -1,3 +1,4 @@
+#include "data/typedefs.h"
 
 template <typename T>
 HD_INLINE T square(T x);
