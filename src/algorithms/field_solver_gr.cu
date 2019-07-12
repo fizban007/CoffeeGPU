@@ -18,7 +18,7 @@
 #define full_SIZE_Y (BLOCK_SIZE_Y + 2 * nghost)
 #define full_SIZE_Z (BLOCK_SIZE_Z + 2 * nghost)
 
-#define SHIFT_GHOST 2
+#define SHIFT_GHOST 5
 
 #define TINY 1e-7
 
