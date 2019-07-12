@@ -5,6 +5,9 @@
 #include "algorithms/field_solver_gr.h"
 #include "utils/timer.h"
 
+#include "algorithms/metric.h"
+#include "algorithms/interpolation.h"
+
 using namespace std;
 using namespace Coffee;
 
@@ -19,7 +22,9 @@ int main(int argc, char *argv[]) {
   // #include "user_init.hpp"
   // #include "user_emwave.hpp"
   // #include "user_alfven.hpp"
-  #include "user_wald.hpp"
+
+  // Initialization for Wald problem
+   #include "user_wald.hpp" 
 
   uint32_t step = 0;
   data_exporter exporter(env, step);
