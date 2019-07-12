@@ -4,6 +4,7 @@
 #include "cuda/cuda_control.h"
 #include "field_solver_gr.h"
 #include "interpolation.h"
+#include "metric.h"
 #include "utils/timer.h"
 #include "utils/nvproftool.h"
 
@@ -27,9 +28,6 @@ namespace Coffee {
 static dim3 blockSize(BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z);
 
 static dim3 blockGroupSize;
-
-template <typename T>
-HD_INLINE T square(T x) { return x * x; }
 
 HOST_DEVICE Scalar get_R2(Scalar x, Scalar y, Scalar z) {
   return x * x + y * y + z * z;

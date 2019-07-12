@@ -8,6 +8,7 @@ Scalar a0 = env.params().a;
 Scalar x, y, z;
 Scalar intBx, intBy, intBz, intEdx, intEdy, intEdz;
 Scalar Eux, Euy, Euz, Bdx, Bdy, Bdz;
+size_t ijk; 
 
 A.initialize(0, [&](Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a0, x, y, z);
@@ -85,19 +86,21 @@ for (int k = 0; k < env.grid().dims[2] - 1; ++k) {
 for (int k = 1; k < env.grid().dims[2] - 1; ++k) {
   for (int j = 1; j < env.grid().dims[1] - 1; ++j) {
     for (int i = 1; i < env.grid().dims[0] - 1; ++i) {
+      ijk = i + j * env.grid().dims[0] +
+                k * env.grid().dims[0] * env.grid().dims[1];
       x = env.grid().pos(0, i, 0);
       y = env.grid().pos(1, j, 1);
       z = env.grid().pos(2, k, 1);
       intEdx = solver.Ed(0, i, j, k);
-      intEdy = interpolate(solver.Ed.host_ptr(1), Stagger(0b101), Stagger(0b110),
+      intEdy = interpolate(solver.Ed.host_ptr(1), ijk, Stagger(0b101), Stagger(0b110),
                             env.grid().dims[0], env.grid().dims[1]);
-      intEdz = interpolate(solver.Ed.host_ptr(2), Stagger(0b011), Stagger(0b110),
+      intEdz = interpolate(solver.Ed.host_ptr(2), ijk, Stagger(0b011), Stagger(0b110),
                             env.grid().dims[0], env.grid().dims[1]);
-      intBx = interpolate(data.B.host_ptr(0), Stagger(0b001), Stagger(0b110),
+      intBx = interpolate(data.B.host_ptr(0), ijk, Stagger(0b001), Stagger(0b110),
                             env.grid().dims[0], env.grid().dims[1]);
-      intBy = interpolate(data.B.host_ptr(1), Stagger(0b010), Stagger(0b110),
+      intBy = interpolate(data.B.host_ptr(1), ijk, Stagger(0b010), Stagger(0b110),
                             env.grid().dims[0], env.grid().dims[1]);
-      intBz = interpolate(data.B.host_ptr(2), Stagger(0b100), Stagger(0b110),
+      intBz = interpolate(data.B.host_ptr(2), ijk, Stagger(0b100), Stagger(0b110),
                             env.grid().dims[0], env.grid().dims[1]);
       Eux = get_gamma_u11(a0, x, y, z) * intEdx + get_gamma_u12(a0, x, y, z) * intEdy
             + get_gamma_u13(a0, x, y, z) * intEdz;
@@ -111,16 +114,16 @@ for (int k = 1; k < env.grid().dims[2] - 1; ++k) {
       x = env.grid().pos(0, i, 1);
       y = env.grid().pos(1, j, 0);
       z = env.grid().pos(2, k, 1);
-      intEdx = interpolate(solver.Ed.host_ptr(0), Stagger(0b110), Stagger(0b101),
+      intEdx = interpolate(solver.Ed.host_ptr(0), ijk, Stagger(0b110), Stagger(0b101),
                             env.grid().dims[0], env.grid().dims[1]);
       intEdy = solver.Ed(1, i, j, k);
-      intEdz = interpolate(solver.Ed.host_ptr(2), Stagger(0b011), Stagger(0b101),
+      intEdz = interpolate(solver.Ed.host_ptr(2), ijk, Stagger(0b011), Stagger(0b101),
                             env.grid().dims[0], env.grid().dims[1]);
-      intBx = interpolate(data.B.host_ptr(0), Stagger(0b001), Stagger(0b101),
+      intBx = interpolate(data.B.host_ptr(0), ijk, Stagger(0b001), Stagger(0b101),
                             env.grid().dims[0], env.grid().dims[1]);
-      intBy = interpolate(data.B.host_ptr(1), Stagger(0b010), Stagger(0b101),
+      intBy = interpolate(data.B.host_ptr(1), ijk, Stagger(0b010), Stagger(0b101),
                             env.grid().dims[0], env.grid().dims[1]);
-      intBz = interpolate(data.B.host_ptr(2), Stagger(0b100), Stagger(0b101),
+      intBz = interpolate(data.B.host_ptr(2), ijk, Stagger(0b100), Stagger(0b101),
                             env.grid().dims[0], env.grid().dims[1]);
       Euy = get_gamma_u12(a0, x, y, z) * intEdx + get_gamma_u22(a0, x, y, z) * intEdy
             + get_gamma_u23(a0, x, y, z) * intEdz;
@@ -134,16 +137,16 @@ for (int k = 1; k < env.grid().dims[2] - 1; ++k) {
       x = env.grid().pos(0, i, 1);
       y = env.grid().pos(1, j, 1);
       z = env.grid().pos(2, k, 0);
-      intEdx = interpolate(solver.Ed.host_ptr(0), Stagger(0b110), Stagger(0b011),
+      intEdx = interpolate(solver.Ed.host_ptr(0), ijk, Stagger(0b110), Stagger(0b011),
                             env.grid().dims[0], env.grid().dims[1]);
-      intEdy = interpolate(solver.Ed.host_ptr(1), Stagger(0b101), Stagger(0b011),
+      intEdy = interpolate(solver.Ed.host_ptr(1), ijk, Stagger(0b101), Stagger(0b011),
                             env.grid().dims[0], env.grid().dims[1]);
       intEdz = solver.Ed(2, i, j, k);
-      intBx = interpolate(data.B.host_ptr(0), Stagger(0b001), Stagger(0b011),
+      intBx = interpolate(data.B.host_ptr(0), ijk, Stagger(0b001), Stagger(0b011),
                             env.grid().dims[0], env.grid().dims[1]);
-      intBy = interpolate(data.B.host_ptr(1), Stagger(0b010), Stagger(0b011),
+      intBy = interpolate(data.B.host_ptr(1), ijk, Stagger(0b010), Stagger(0b011),
                             env.grid().dims[0], env.grid().dims[1]);
-      intBz = interpolate(data.B.host_ptr(2), Stagger(0b100), Stagger(0b011),
+      intBz = interpolate(data.B.host_ptr(2), ijk, Stagger(0b100), Stagger(0b011),
                             env.grid().dims[0], env.grid().dims[1]);
       Euz = get_gamma_u13(a0, x, y, z) * intEdx + get_gamma_u23(a0, x, y, z) * intEdy
             + get_gamma_u33(a0, x, y, z) * intEdz;
