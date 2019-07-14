@@ -165,5 +165,6 @@ data.B.sync_to_device();
 data.E.sync_to_device();
 
 data.B0.initialize();
+data.B0.sync_to_device();
 
 #endif  // _USER_INIT_H_
