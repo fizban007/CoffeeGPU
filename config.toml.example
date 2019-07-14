@@ -1,28 +1,34 @@
 # Simulation timestep size in numerical units
-dt = 0.01
+dt = 0.02
 
 # Total number of timesteps to run
-max_steps = 10000
+max_steps = 10
 
 # How many steps between data outputs
-data_interval = 100
+data_interval = 1
 
 # Whether to use periodic boundary condition in the three dimensions
 periodic_boundary = [ false, false, false ]
 
 ## Grid parameters ##################
 # Number of cells in each direction (excluding guard cells)
-N = [ 256, 256, 256 ]
+N = [ 200, 200, 200 ]
 
 # Number of guard cells in each direction (at each boundary)
-guard = [ 1, 1, 1 ]
+guard = [ 7, 7, 7 ]
 
 # Lower limits of the simulation box
-lower = [ 0.0, 0.0, 0.0 ]
+lower = [ -5.0, -5.0, -5.0 ]
 
 # Size of the box in numerical units in each dimension
-size = [ 1.0, 1.0, 1.0 ]
+size = [ 10.0, 10.0, 10.0 ]
 
 # Size of the domain decomposition. You want the product of all the numbers to
 # be equal to the number of ranks you have
-nodes = [ 1, 1, 1 ]
+nodes = [ 1, 2, 2 ]
+
+a = 0.9
+
+calc_current = 0
+clean_ep = 0
+check_egb = 0
