@@ -746,6 +746,42 @@ kernel_check_eGTb_gr_thread(const Scalar *dDx, const Scalar *dDy,
   }
 }
 
+__global__ void
+kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Scalar *Dnz,
+                      const Scalar *Bnx, const Scalar *Bny, const Scalar *Bnz,
+                      Scalar *Dx, Scalar *Dy, Scalar *Dz, 
+                      Scalar *Bx, Scalar *By, Scalar *Bz,
+                      int shift) {
+  Scalar x, y, z;
+  size_t ijk;
+  Scalar rH = 1.0 + sqrt(1.0 - square(dev_params.a));
+  Scalar sigma = 0.5 / dev_params.dt;
+
+  int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j = threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k = threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+    x = dev_grid.pos(0, i, 1);
+    y = dev_grid.pos(1, j, 1);
+    z = dev_grid.pos(2, k, 1);
+
+    // Inside event horizon
+    Scalar r = get_r(dev_params.a, x, y, z);
+    if (r < 0.8 * rH) {
+      Dx[ijk] = Dnx[ijk];
+      Dy[ijk] = Dny[ijk];
+      Dz[ijk] = Dnz[ijk];
+      Bx[ijk] = Bnx[ijk];
+      By[ijk] = Bny[ijk];
+      Bz[ijk] = Bnz[ijk];
+    }
+  }
+}
+
 
 field_solver_gr::field_solver_gr(sim_data &mydata, sim_environment& env) : m_data(mydata), m_env(env) {
   // Note that m_data.E contain D upper components
@@ -816,6 +852,7 @@ field_solver_gr::evolve_fields_gr() {
   rk_update_gr(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
   if (m_env.params().clean_ep) clean_epar_gr();
   if (m_env.params().check_egb) check_eGTb_gr();
+  absorbing_boundary();
   CudaSafeCall(cudaDeviceSynchronize());
   RANGE_POP;
 
@@ -904,6 +941,16 @@ field_solver_gr::check_eGTb_gr() {
       dD.dev_ptr(0), dD.dev_ptr(1), dD.dev_ptr(2), m_data.E.dev_ptr(0),
       m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0),
       m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2), SHIFT_GHOST);
+  CudaCheckError();
+}
+
+void
+field_solver_gr::absorbing_boundary() {
+  kernel_absorbing_boundary_thread<<<blockGroupSize, blockSize>>>(
+      Dn.dev_ptr(0), Dn.dev_ptr(1), Dn.dev_ptr(2), Bn.dev_ptr(0),
+      Bn.dev_ptr(1), Bn.dev_ptr(2), m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), 
+      m_data.E.dev_ptr(2), m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), 
+      m_data.B.dev_ptr(2), SHIFT_GHOST);
   CudaCheckError();
 }
 
