@@ -33,9 +33,9 @@ struct sim_params {
   // GR parameters
   Scalar a = 0.99; ///<Black hole spin
 
-  bool calc_current = 1; ///< Whether to calculate force-free current or not
-  bool clean_ep = 1; ///< Whether to clean E_parallel or not
-  bool check_egb =1; ///< Whether to clean E>B or not
+  bool calc_current = true; ///< Whether to calculate force-free current or not
+  bool clean_ep = true; ///< Whether to clean E_parallel or not
+  bool check_egb = true; ///< Whether to clean E>B or not
 };
 
 
