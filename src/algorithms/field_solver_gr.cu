@@ -779,6 +779,18 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
       By[ijk] = Bny[ijk];
       Bz[ijk] = Bnz[ijk];
     }
+
+    // Outer boundary
+    if (x < dev_params.lower[0] || x >= dev_params.lower[0]+dev_params.size[0]
+      || y < dev_params.lower[1] || y >= dev_params.lower[1]+dev_params.size[1]
+      || z < dev_params.lower[2] || z >= dev_params.lower[2]+dev_params.size[2]) {
+      Dx[ijk] = Dnx[ijk];
+      Dy[ijk] = Dny[ijk];
+      Dz[ijk] = Dnz[ijk];
+      Bx[ijk] = Bnx[ijk];
+      By[ijk] = Bny[ijk];
+      Bz[ijk] = Bnz[ijk];
+    }
   }
 }
 
