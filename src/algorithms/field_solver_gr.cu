@@ -840,7 +840,10 @@ field_solver_gr::evolve_fields_gr() {
   compute_H_gr();
   rk_push_gr();
   rk_update_gr(1.0, 0.0, 1.0);
-  if (m_env.params().check_egb) check_eGTb_gr();
+  if (m_env.params().check_egb) {
+    check_eGTb_gr();
+    std::cout << "substep 1, check_eGTb done." << std::endl;
+  }
   CudaSafeCall(cudaDeviceSynchronize());
   RANGE_POP;
   m_env.send_guard_cells(m_data);
@@ -851,7 +854,10 @@ field_solver_gr::evolve_fields_gr() {
   compute_H_gr();
   rk_push_gr();
   rk_update_gr(0.75, 0.25, 0.25);
-  if (m_env.params().check_egb) check_eGTb_gr();
+  if (m_env.params().check_egb) {
+    check_eGTb_gr();
+    std::cout << "substep 2, check_eGTb done." << std::endl;
+  }
   CudaSafeCall(cudaDeviceSynchronize());
   RANGE_POP;
   m_env.send_guard_cells(m_data);
@@ -862,8 +868,14 @@ field_solver_gr::evolve_fields_gr() {
   compute_H_gr();
   rk_push_gr();
   rk_update_gr(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
-  if (m_env.params().clean_ep) clean_epar_gr();
-  if (m_env.params().check_egb) check_eGTb_gr();
+  if (m_env.params().clean_ep) {
+    clean_epar_gr();
+    std::cout << "substep 3, clean_epar done." << std::endl;
+  }
+  if (m_env.params().check_egb) {
+    check_eGTb_gr();
+    std::cout << "substep 3, check_eGTb done." << std::endl;
+  }
   absorbing_boundary();
   CudaSafeCall(cudaDeviceSynchronize());
   RANGE_POP;
