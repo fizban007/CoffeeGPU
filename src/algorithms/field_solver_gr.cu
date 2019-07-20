@@ -765,9 +765,9 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
   Scalar dd = 0.2 * rH;
   Scalar sig;
   Scalar sig0 = 0.1;
-  Scalar dx = dev_params.inv_delta[0] / 2.0;
-  Scalar dy = dev_params.inv_delta[1] / 2.0;
-  Scalar dz = dev_params.inv_delta[2] / 2.0;
+  Scalar dx = dev_grid.inv_delta[0] / 2.0;
+  Scalar dy = dev_grid.inv_delta[1] / 2.0;
+  Scalar dz = dev_grid.inv_delta[2] / 2.0;
 
   int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j = threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
