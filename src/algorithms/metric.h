@@ -6,7 +6,7 @@ template <typename T>
 HD_INLINE T square(T x) { return x * x; }
 
 template <typename T>
-HD_INLINE T cube(T x) { return x * x & x; }
+HD_INLINE T cube(T x) { return x * x * x; }
 
 HOST_DEVICE Scalar get_R2(Scalar x, Scalar y, Scalar z);
 HOST_DEVICE Scalar get_r(Scalar a, Scalar x, Scalar y, Scalar z);
