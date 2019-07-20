@@ -765,9 +765,9 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
   Scalar dd = 0.2 * rH;
   Scalar sig;
   Scalar sig0 = 1.0;
-  Scalar dx = dev_grid.inv_delta[0] / 2.0;
-  Scalar dy = dev_grid.inv_delta[1] / 2.0;
-  Scalar dz = dev_grid.inv_delta[2] / 2.0;
+  Scalar dx = dev_grid.delta[0] / 2.0;
+  Scalar dy = dev_grid.delta[1] / 2.0;
+  Scalar dz = dev_grid.delta[2] / 2.0;
 
   int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j = threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
@@ -786,28 +786,28 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
     if (r < r1) {
       // Dx
       sig = sigma(dev_params.a, x + dx, y, z, r1, dd, sig0) * dev_params.dt;
-      // if (sig > 0) Dx[ijk] = exp (- sig) * Dnx[ijk] + (1.0 - exp(- sig)) / sig * (Dx[ijk] - Dnx[ijk]); 
-      if (sig > 0) Dx[ijk] = exp (- sig) * Dx[ijk]; 
+      // if (sig > 0) Dx[ijk] = exp(- sig) * Dnx[ijk] + (1.0 - exp(- sig)) / sig * (Dx[ijk] - Dnx[ijk]); 
+      if (sig > 0) Dx[ijk] = exp(- sig) * Dx[ijk]; 
       // Dy
       sig = sigma(dev_params.a, x, y + dy, z, r1, dd, sig0) * dev_params.dt;
-      // if (sig > 0) Dy[ijk] = exp (- sig) * Dny[ijk] + (1.0 - exp(- sig)) / sig * (Dy[ijk] - Dny[ijk]); 
-      if (sig > 0) Dy[ijk] = exp (- sig) * Dy[ijk]; 
+      // if (sig > 0) Dy[ijk] = exp(- sig) * Dny[ijk] + (1.0 - exp(- sig)) / sig * (Dy[ijk] - Dny[ijk]); 
+      if (sig > 0) Dy[ijk] = exp(- sig) * Dy[ijk]; 
       // Dz
       sig = sigma(dev_params.a, x, y, z + dz, r1, dd, sig0) * dev_params.dt;
-      // if (sig > 0) Dz[ijk] = exp (- sig) * Dnz[ijk] + (1.0 - exp(- sig)) / sig * (Dz[ijk] - Dnz[ijk]);
-      if (sig > 0) Dz[ijk] = exp (- sig) * Dz[ijk];
+      // if (sig > 0) Dz[ijk] = exp(- sig) * Dnz[ijk] + (1.0 - exp(- sig)) / sig * (Dz[ijk] - Dnz[ijk]);
+      if (sig > 0) Dz[ijk] = exp(- sig) * Dz[ijk];
       // Bx
       sig = sigma(dev_params.a, x, y + dy, z + dz, r1, dd, sig0) * dev_params.dt;
-      // if (sig > 0) Bx[ijk] = exp (- sig) * Bnx[ijk] + (1.0 - exp(- sig)) / sig * (Bx[ijk] - Bnx[ijk]);
-      if (sig > 0) Bx[ijk] = exp (- sig) * Bx[ijk]; 
+      // if (sig > 0) Bx[ijk] = exp(- sig) * Bnx[ijk] + (1.0 - exp(- sig)) / sig * (Bx[ijk] - Bnx[ijk]);
+      if (sig > 0) Bx[ijk] = exp(- sig) * Bx[ijk]; 
       // By
       sig = sigma(dev_params.a, x + dx, y, z + dz, r1, dd, sig0) * dev_params.dt;
-      // if (sig > 0) By[ijk] = exp (- sig) * Bny[ijk] + (1.0 - exp(- sig)) / sig * (By[ijk] - Bny[ijk]);
-      if (sig > 0) By[ijk] = exp (- sig) * By[ijk];
+      // if (sig > 0) By[ijk] = exp(- sig) * Bny[ijk] + (1.0 - exp(- sig)) / sig * (By[ijk] - Bny[ijk]);
+      if (sig > 0) By[ijk] = exp(- sig) * By[ijk];
       // Bz
       sig = sigma(dev_params.a, x + dx, y + dy, z, r1, dd, sig0) * dev_params.dt;
-      // if (sig > 0) Bz[ijk] = exp (- sig) * Bnz[ijk] + (1.0 - exp(- sig)) / sig * (Bz[ijk] - Bnz[ijk]);
-      if (sig > 0) Bz[ijk] = exp (- sig) * Bz[ijk];   
+      // if (sig > 0) Bz[ijk] = exp(- sig) * Bnz[ijk] + (1.0 - exp(- sig)) / sig * (Bz[ijk] - Bnz[ijk]);
+      if (sig > 0) Bz[ijk] = exp(- sig) * Bz[ijk];   
     }
     else if (r < r2) {
       Dx[ijk] = 0;
