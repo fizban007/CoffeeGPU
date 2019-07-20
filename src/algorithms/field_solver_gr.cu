@@ -746,8 +746,8 @@ kernel_check_eGTb_gr_thread(const Scalar *dDx, const Scalar *dDy,
   }
 }
 
-HOST_DEVICE Scalar sigma(Scalar x, Scalar y, Scalar z, Scalar r0, Scalar d, Scalar sig0) {
-  Scalar r = get_r(dev_params.a, x, y, z);
+HOST_DEVICE Scalar sigma(Scalar a, Scalar x, Scalar y, Scalar z, Scalar r0, Scalar d, Scalar sig0) {
+  Scalar r = get_r(a, x, y, z);
   return sig0 * cube((r0 - r) / d);
 }
 
@@ -785,22 +785,22 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
     Scalar r = get_r(dev_params.a, x, y, z);
     if (r < r1) {
       // Dx
-      sig = sigma(x + dx, y, z, r1, dd, sig0) * dev_params.dt;
+      sig = sigma(dev_params.a, x + dx, y, z, r1, dd, sig0) * dev_params.dt;
       if (sig > 0) Dx[ijk] = exp (- sig) * Dnx[ijk] + (1.0 - exp(- sig)) / sig * (Dx[ijk] - Dnx[ijk]); 
       // Dy
-      sig = sigma(x, y + dy, z, r1, dd, sig0) * dev_params.dt;
+      sig = sigma(dev_params.a, x, y + dy, z, r1, dd, sig0) * dev_params.dt;
       if (sig > 0) Dy[ijk] = exp (- sig) * Dny[ijk] + (1.0 - exp(- sig)) / sig * (Dy[ijk] - Dny[ijk]); 
       // Dz
-      sig = sigma(x, y, z + dz, r1, dd, sig0) * dev_params.dt;
+      sig = sigma(dev_params.a, x, y, z + dz, r1, dd, sig0) * dev_params.dt;
       if (sig > 0) Dz[ijk] = exp (- sig) * Dnz[ijk] + (1.0 - exp(- sig)) / sig * (Dz[ijk] - Dnz[ijk]);
       // Bx
-      sig = sigma(x, y + dy, z + dz, r1, dd, sig0) * dev_params.dt;
+      sig = sigma(dev_params.a, x, y + dy, z + dz, r1, dd, sig0) * dev_params.dt;
       if (sig > 0) Bx[ijk] = exp (- sig) * Bnx[ijk] + (1.0 - exp(- sig)) / sig * (Bx[ijk] - Bnx[ijk]); 
       // By
-      sig = sigma(x + dx, y, z + dz, r1, dd, sig0) * dev_params.dt;
+      sig = sigma(dev_params.a, x + dx, y, z + dz, r1, dd, sig0) * dev_params.dt;
       if (sig > 0) By[ijk] = exp (- sig) * Bny[ijk] + (1.0 - exp(- sig)) / sig * (By[ijk] - Bny[ijk]);
       // Bz
-      sig = sigma(x + dx, y + dy, z, r1, dd, sig0) * dev_params.dt;
+      sig = sigma(dev_params.a, x + dx, y + dy, z, r1, dd, sig0) * dev_params.dt;
       if (sig > 0) Bz[ijk] = exp (- sig) * Bnz[ijk] + (1.0 - exp(- sig)) / sig * (Bz[ijk] - Bnz[ijk]);   
     }
     else if (r < r2) {
