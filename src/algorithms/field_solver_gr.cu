@@ -746,6 +746,11 @@ kernel_check_eGTb_gr_thread(const Scalar *dDx, const Scalar *dDy,
   }
 }
 
+HOST_DEVICE Scalar sigma(Scalar x, Scalar y, Scalar z, Scalar r0, Scalar d, Scalar sig0) {
+  Scalar r = get_r(dev_params.a, x, y, z);
+  return sig0 * cube((r0 - r) / d);
+}
+
 __global__ void
 kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Scalar *Dnz,
                       const Scalar *Bnx, const Scalar *Bny, const Scalar *Bnz,
@@ -755,7 +760,14 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
   Scalar x, y, z;
   size_t ijk;
   Scalar rH = 1.0 + sqrt(1.0 - square(dev_params.a));
-  Scalar sigma = 0.5 / dev_params.dt;
+  Scalar r1 = 0.8 * rH;
+  Scalar r2 = 0.2 * rH;
+  Scalar dd = 0.2 * rH;
+  Scalar sig;
+  Scalar sig0 = 0.1;
+  Scalar dx = dev_params.inv_delta[0] / 2.0;
+  Scalar dy = dev_params.inv_delta[1] / 2.0;
+  Scalar dz = dev_params.inv_delta[2] / 2.0;
 
   int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j = threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
@@ -771,13 +783,33 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
 
     // Inside event horizon
     Scalar r = get_r(dev_params.a, x, y, z);
-    if (r < 0.8 * rH) {
-      Dx[ijk] = Dnx[ijk];
-      Dy[ijk] = Dny[ijk];
-      Dz[ijk] = Dnz[ijk];
-      Bx[ijk] = Bnx[ijk];
-      By[ijk] = Bny[ijk];
-      Bz[ijk] = Bnz[ijk];
+    if (r < r1) {
+      // Dx
+      sig = sigma(x + dx, y, z, r1, dd, sig0) * dev_params.dt;
+      if (sig > 0) Dx[ijk] = exp (- sig) * Dnx[ijk] + (1.0 - exp(- sig)) / sig * (Dx[ijk] - Dnx[ijk]); 
+      // Dy
+      sig = sigma(x, y + dy, z, r1, dd, sig0) * dev_params.dt;
+      if (sig > 0) Dy[ijk] = exp (- sig) * Dny[ijk] + (1.0 - exp(- sig)) / sig * (Dy[ijk] - Dny[ijk]); 
+      // Dz
+      sig = sigma(x, y, z + dz, r1, dd, sig0) * dev_params.dt;
+      if (sig > 0) Dz[ijk] = exp (- sig) * Dnz[ijk] + (1.0 - exp(- sig)) / sig * (Dz[ijk] - Dnz[ijk]);
+      // Bx
+      sig = sigma(x, y + dy, z + dz, r1, dd, sig0) * dev_params.dt;
+      if (sig > 0) Bx[ijk] = exp (- sig) * Bnx[ijk] + (1.0 - exp(- sig)) / sig * (Bx[ijk] - Bnx[ijk]); 
+      // By
+      sig = sigma(x + dx, y, z + dz, r1, dd, sig0) * dev_params.dt;
+      if (sig > 0) By[ijk] = exp (- sig) * Bny[ijk] + (1.0 - exp(- sig)) / sig * (By[ijk] - Bny[ijk]);
+      // Bz
+      sig = sigma(x + dx, y + dy, z, r1, dd, sig0) * dev_params.dt;
+      if (sig > 0) Bz[ijk] = exp (- sig) * Bnz[ijk] + (1.0 - exp(- sig)) / sig * (Bz[ijk] - Bnz[ijk]);   
+    }
+    else if (r < r2) {
+      Dx[ijk] = 0;
+      Dy[ijk] = 0;
+      Dz[ijk] = 0;
+      Bx[ijk] = 0;
+      By[ijk] = 0;
+      Bz[ijk] = 0;
     }
 
     // Outer boundary
