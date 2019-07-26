@@ -27,3 +27,7 @@ add_custom_target(run_cuda_tests
   DEPENDS tests_cuda
   WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 add_dependencies(check run_cuda_tests)
+
+add_executable(test_mpi "test_mpi.cpp")
+target_link_libraries(test_mpi
+  Coffee Coffee_cuda)

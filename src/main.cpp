@@ -2,8 +2,11 @@
 #include "data/sim_data.h"
 #include "sim_env.h"
 #include "utils/data_exporter.h"
-#include "algorithms/field_solver.h"
+#include "algorithms/field_solver_gr.h"
 #include "utils/timer.h"
+
+#include "algorithms/metric.h"
+#include "algorithms/interpolation.h"
 
 using namespace std;
 using namespace Coffee;
@@ -14,7 +17,7 @@ int main(int argc, char *argv[]) {
 
   // Initialize all the simulation data structures
   sim_data data(env);
-  field_solver solver(data, env);
+  field_solver_gr solver(data, env);
 
   #include "user_init.hpp"
   // #include "user_emwave.hpp"
@@ -29,12 +32,13 @@ int main(int argc, char *argv[]) {
 
   // Main simulation loop
   for (step = 0; step <= env.params().max_steps; step++) {
+    std::cout << "step = " << step << std::endl;
     // Do stuff here
     if (step % env.params().data_interval == 0) {
       exporter.write_output(data, step, 0.0);
     }
     timer::stamp();
-    solver.evolve_fields();
+    solver.evolve_fields_gr();
     timer::show_duration_since_stamp("evolve field", "ms");
   }
 

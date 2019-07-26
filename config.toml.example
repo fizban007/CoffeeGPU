@@ -2,10 +2,10 @@
 dt = 0.008
 
 # Total number of timesteps to run
-max_steps = 10000
+max_steps = 10
 
 # How many steps between data outputs
-data_interval = 100
+data_interval = 1
 
 # Whether to use periodic boundary condition in the three dimensions
 periodic_boundary = [ false, false, false ]
