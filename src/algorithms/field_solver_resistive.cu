@@ -34,7 +34,7 @@ template <typename T>
 HD_INLINE T square(T x) { return x * x; }
 
 __global__ void
-kernel_compute_rho_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
+kernel_compute_rho_rsstv(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                           Scalar *rho, int shift) {
   size_t ijk;
   int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -54,7 +54,7 @@ kernel_compute_rho_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
 
 
 __global__ void
-kernel_rk_push_noj_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
+kernel_rk_push_noj_rsstv(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                       const Scalar *bx, const Scalar *by, const Scalar *bz,
                       const Scalar *bx0, const Scalar *by0,
                       const Scalar *bz0, Scalar *dex, Scalar *dey,
@@ -95,14 +95,11 @@ kernel_rk_push_noj_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
 }
 
 __global__ void
-kernel_rk_push_ffjperp_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
+kernel_rk_push_ffjperp_rsstv(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                       const Scalar *bx, const Scalar *by, const Scalar *bz,
                       Scalar *dex, Scalar *dey, Scalar *dez, 
                       Scalar *dbx, Scalar *dby, Scalar *dbz,
                       Scalar *rho, int shift) {
-  Scalar CCx = dev_params.dt * dev_grid.inv_delta[0];
-  Scalar CCy = dev_params.dt * dev_grid.inv_delta[1];
-  Scalar CCz = dev_params.dt * dev_grid.inv_delta[2];
   Scalar intex, intey, intez, intbx, intby, intbz, intrho;
   Scalar jx, jy, jz;
   size_t ijk;
@@ -184,7 +181,7 @@ HOST_DEVICE Scalar iphi(Scalar r, Scalar ri, Scalar r0, Scalar mag, Scalar alpha
 }
 
 __global__ void
-kernel_rk_push_jvacuum_thread(Scalar *dex, Scalar *dey, Scalar *dez, int shift) {
+kernel_rk_push_jvacuum_rsstv(Scalar *dex, Scalar *dey, Scalar *dez, int shift) {
   Scalar x, y, z, rd;
   Scalar jx, jy;
   size_t ijk;
@@ -199,7 +196,7 @@ kernel_rk_push_jvacuum_thread(Scalar *dex, Scalar *dey, Scalar *dez, int shift) 
           k * dev_grid.dims[0] * dev_grid.dims[1];
     // computing currents
     z = dev_grid.pos(2, k, 1);
-    if (std::abs(z) < dev_params.delta[2] / 4.0) {
+    if (std::abs(z) < dev_grid.delta[2] / 4.0) {
       // jx
       x = dev_grid.pos(0, k, 0);
       y = dev_grid.pos(1, k, 1);
@@ -217,7 +214,7 @@ kernel_rk_push_jvacuum_thread(Scalar *dex, Scalar *dey, Scalar *dez, int shift) 
 }
 
 __global__ void
-kernel_rk_push_rjperp_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
+kernel_rk_push_rjperp_rsstv(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                       const Scalar *bx, const Scalar *by, const Scalar *bz,
                       Scalar *dex, Scalar *dey, Scalar *dez, 
                       Scalar *dbx, Scalar *dby, Scalar *dbz,
@@ -319,7 +316,7 @@ kernel_rk_push_rjperp_thread(const Scalar *ex, const Scalar *ey, const Scalar *e
 
 
 __global__ void
-kernel_rk_update_thread(Scalar *ex, Scalar *ey, Scalar *ez, Scalar *bx,
+kernel_rk_update_rsstv(Scalar *ex, Scalar *ey, Scalar *ez, Scalar *bx,
                         Scalar *by, Scalar *bz, const Scalar *enx,
                         const Scalar *eny, const Scalar *enz,
                         const Scalar *bnx, const Scalar *bny,
@@ -351,9 +348,9 @@ kernel_rk_update_thread(Scalar *ex, Scalar *ey, Scalar *ez, Scalar *bx,
 }
 
 __global__ void
-kernel_rk_update_rjparsub_thread(Scalar *ex, Scalar *ey, Scalar *ez, Scalar *bx,
+kernel_rk_update_rjparsub_rsstv(Scalar *ex, Scalar *ey, Scalar *ez, Scalar *bx,
                         Scalar *by, Scalar *bz, Scalar *dex, Scalar *dey,
-                        Scalar *dez, Scalar rk_c3, int shift) {
+                        Scalar *dez, Scalar *rho, Scalar rk_c3, int shift) {
   Scalar intex, intey, intez, intbx, intby, intbz, intrho;
   Scalar jxpar, jypar, jzpar;
   Scalar Bsq, Esq, edotb, B0sq, E00, B00, E0sq;
@@ -460,7 +457,7 @@ kernel_rk_update_rjparsub_thread(Scalar *ex, Scalar *ey, Scalar *ez, Scalar *bx,
 
 
 __global__ void
-kernel_clean_epar_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
+kernel_clean_epar_rsstv(const Scalar *ex, const Scalar *ey, const Scalar *ez,
                          const Scalar *bx, const Scalar *by, const Scalar *bz,
                          Scalar *dex, Scalar *dey, Scalar *dez, int shift) {
   Scalar intex, intey, intez, intbx, intby, intbz;
@@ -532,7 +529,7 @@ kernel_clean_epar_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
 
 
 __global__ void
-kernel_check_eGTb_thread(const Scalar *dex, const Scalar *dey,
+kernel_check_eGTb_rsstv(const Scalar *dex, const Scalar *dey,
                          const Scalar *dez, Scalar *ex, Scalar *ey, Scalar *ez,
                          const Scalar *bx, const Scalar *by,
                          const Scalar *bz, int shift) {
@@ -622,7 +619,7 @@ HOST_DEVICE Scalar pmlsigma(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Sca
 }
 
 __global__ void
-kernel_absorbing_boundary_thread(const Scalar *enx, const Scalar *eny,
+kernel_absorbing_boundary_rsstv(const Scalar *enx, const Scalar *eny,
                          const Scalar *enz, const Scalar *bnx, const Scalar *bny,
                          const Scalar *bnz, Scalar *ex, Scalar *ey, Scalar *ez,
                          Scalar *bx, Scalar *by, Scalar *bz, int shift) {
@@ -643,7 +640,7 @@ kernel_absorbing_boundary_thread(const Scalar *enx, const Scalar *eny,
     x = dev_grid.pos(0, i, 1);
     y = dev_grid.pos(1, j, 1);
     z = dev_grid.pos(2, k, 1);
-    scalar xh = dev_params.lower[0] + dev_params.size[0] - dev_params.pml[0] * dev_grid.delta[0];
+    Scalar xh = dev_params.lower[0] + dev_params.size[0] - dev_params.pml[0] * dev_grid.delta[0];
     Scalar xl = dev_params.lower[0] + dev_params.pml[0] * dev_grid.delta[0];
     Scalar yh = dev_params.lower[1] + dev_params.size[1] - dev_params.pml[1] * dev_grid.delta[1];
     Scalar yl = dev_params.lower[1] + dev_params.pml[1] * dev_grid.delta[1];
@@ -672,7 +669,7 @@ HOST_DEVICE Scalar shape(Scalar x, Scalar y, Scalar z, Scalar r0) {
 } 
 
 __global__ void
-kernel_disk_boundary_thread(Scalar *ex, Scalar *ey, Scalar *ez,
+kernel_disk_boundary_rsstv(Scalar *ex, Scalar *ey, Scalar *ez,
                          Scalar *bx, Scalar *by, Scalar *bz, int shift) {
   Scalar x, y, z, rd;
   Scalar rmax = (dev_grid.dims[0] / 2 - dev_params.pml[0] - 20) * dev_grid.delta[0];
@@ -693,7 +690,7 @@ kernel_disk_boundary_thread(Scalar *ex, Scalar *ey, Scalar *ez,
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
     z = dev_grid.pos(2, k, 1);
-    if (std::abs(z) < dev_params.delta[2] / 4.0) {
+    if (std::abs(z) < dev_grid.delta[2] / 4.0) {
 
       // Set Ex
       x = dev_grid.pos(0, i, 0);
@@ -763,7 +760,7 @@ kernel_disk_boundary_thread(Scalar *ex, Scalar *ey, Scalar *ez,
               - dev_params.eta * gm * (cosph * (cosph * intbx + sinph * intby) - omz * x * intez);
         s = shape(x / scaleEpar, y / scaleEpar, z / scaleEpar, dev_params.r1 / scaleEpar);
         ey[ijk] = eyn * s + ey[ijk] * (1.0 - s);
-
+      }
     }
   }
 }
@@ -872,7 +869,7 @@ void
 field_solver_resistive::rk_push_noj() {
   // `dE = curl B - curl B0 - j, dB = -curl E`
   // kernel_rk_push<<<g, blockSize>>>(
-  kernel_rk_push_noj_thread<<<blockGroupSize, blockSize>>>(
+  kernel_rk_push_noj_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       m_data.B0.dev_ptr(0), m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2),
@@ -886,13 +883,13 @@ void
 field_solver_resistive::rk_push_ffjperp() {
   // `rho = div E`
   // kernel_compute_rho<<<gridSize, blockSize>>>(
-  kernel_compute_rho_thread<<<blockGroupSize, blockSize>>>(
+  kernel_compute_rho_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       rho.dev_ptr(), SHIFT_GHOST);
   CudaCheckError();
   // `dE = curl B - curl B0 - j, dB = -curl E`
   // kernel_rk_push<<<g, blockSize>>>(
-  kernel_rk_push_ffjperp_thread<<<blockGroupSize, blockSize>>>(
+  kernel_rk_push_ffjperp_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
@@ -903,7 +900,7 @@ field_solver_resistive::rk_push_ffjperp() {
 // Vacuum push, with current only in the accretion disk
 void
 field_solver_resistive::rk_push_jvacuum() {
-  kernel_rk_push_jvacuum_thread<<<blockGroupSize, blockSize>>>(
+  kernel_rk_push_jvacuum_rsstv<<<blockGroupSize, blockSize>>>(
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), SHIFT_GHOST);
   CudaCheckError();
 }
@@ -913,13 +910,13 @@ void
 field_solver_resistive::rk_push_rjperp() {
   // `rho = div E`
   // kernel_compute_rho<<<gridSize, blockSize>>>(
-  kernel_compute_rho_thread<<<blockGroupSize, blockSize>>>(
+  kernel_compute_rho_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       rho.dev_ptr(), SHIFT_GHOST);
   CudaCheckError();
   // `dE = curl B - curl B0 - j, dB = -curl E`
   // kernel_rk_push<<<g, blockSize>>>(
-  kernel_rk_push_rjperp_thread<<<blockGroupSize, blockSize>>>(
+  kernel_rk_push_rjperp_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
@@ -931,7 +928,7 @@ void
 field_solver_resistive::rk_update(Scalar rk_c1, Scalar rk_c2, Scalar rk_c3) {
   // `E = c1 En + c2 E + c3 dE, B = c1 Bn + c2 B + c3 dB`
   // kernel_rk_update<<<dim3(8, 16, 16), dim3(64, 4, 4)>>>(
-  kernel_rk_update_thread<<<blockGroupSize, blockSize>>>(
+  kernel_rk_update_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       En.dev_ptr(0), En.dev_ptr(1), En.dev_ptr(2), Bn.dev_ptr(0),
@@ -944,16 +941,16 @@ field_solver_resistive::rk_update(Scalar rk_c1, Scalar rk_c2, Scalar rk_c3) {
 void
 field_solver_resistive::rk_update_rjparsub(Scalar rk_c3) {
   // first conpute rho
-  kernel_compute_rho_thread<<<blockGroupSize, blockSize>>>(
+  kernel_compute_rho_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       rho.dev_ptr(), SHIFT_GHOST);
   CudaCheckError();
 
   // Update; results stored in dE
-  kernel_rk_update_rjparsub_thread<<<blockGroupSize, blockSize>>>(
+  kernel_rk_update_rjparsub_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      dE.dev_ptr(0), dE.dev_ptr(1),dE.dev_ptr(2), 
+      dE.dev_ptr(0), dE.dev_ptr(1),dE.dev_ptr(2), rho.dev_ptr(),
       rk_c3, SHIFT_GHOST);
   CudaCheckError();
 
@@ -965,7 +962,7 @@ void
 field_solver_resistive::clean_epar() {
   // clean `E || B`
   // kernel_clean_epar<<<gridSize, blockSize>>>(
-  kernel_clean_epar_thread<<<blockGroupSize, blockSize>>>(
+  kernel_clean_epar_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), SHIFT_GHOST);
@@ -976,7 +973,7 @@ void
 field_solver_resistive::check_eGTb() {
   // renormalizing `E > B`
   // kernel_check_eGTb<<<dim3(8, 16, 16), dim3(32, 4, 4)>>>(
-  kernel_check_eGTb_thread<<<blockGroupSize, blockSize>>>(
+  kernel_check_eGTb_rsstv<<<blockGroupSize, blockSize>>>(
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), m_data.E.dev_ptr(0),
       m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0),
       m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), SHIFT_GHOST);
@@ -985,7 +982,7 @@ field_solver_resistive::check_eGTb() {
 
 void
 field_solver_resistive::absorbing_boundary() {
-  kernel_absorbing_boundary_thread<<<blockGroupSize, blockSize>>>(
+  kernel_absorbing_boundary_rsstv<<<blockGroupSize, blockSize>>>(
     En.dev_ptr(0), En.dev_ptr(1), En.dev_ptr(2), Bn.dev_ptr(0),
     Bn.dev_ptr(1), Bn.dev_ptr(2), m_data.E.dev_ptr(0), 
     m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0), 
@@ -995,7 +992,7 @@ field_solver_resistive::absorbing_boundary() {
 
 void
 field_solver_resistive::disk_boundary() {
-  kernel_disk_boundary_thread<<<blockGroupSize, blockSize>>>(
+  kernel_disk_boundary_rsstv<<<blockGroupSize, blockSize>>>(
     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), 
     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), SHIFT_GHOST);
   CudaCheckError();

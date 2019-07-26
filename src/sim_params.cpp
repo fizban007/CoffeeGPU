@@ -59,7 +59,7 @@ parse_config(const std::string& filename) {
   result.omega0 = config->get_as<double>("omega0").value_or(defaults.omega0);
   result.omegad0 = config->get_as<double>("omegad0").value_or(defaults.omegad0);
 
-  auto pml = config->get_array_of<int>("pml");
+  auto pml = config->get_array_of<int64_t>("pml");
   if (pml)
     for (int i = 0; i < 3; i++) result.pml[i] = (*pml)[i];
 

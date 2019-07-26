@@ -2,7 +2,7 @@
 #include "data/sim_data.h"
 #include "sim_env.h"
 #include "utils/data_exporter.h"
-#include "algorithms/field_solver_gr.h"
+#include "algorithms/field_solver_resistive.h"
 #include "utils/timer.h"
 
 #include "algorithms/metric.h"
@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
 
   // Initialize all the simulation data structures
   sim_data data(env);
-  field_solver_gr solver(data, env);
+  field_solver_resistive solver(data, env);
 
   #include "user_init.hpp"
   // #include "user_emwave.hpp"
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
       exporter.write_output(data, step, 0.0);
     }
     timer::stamp();
-    solver.evolve_fields_gr();
+    solver.evolve_fields();
     timer::show_duration_since_stamp("evolve field", "ms");
   }
 
