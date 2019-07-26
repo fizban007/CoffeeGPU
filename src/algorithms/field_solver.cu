@@ -291,16 +291,16 @@ kernel_rk_push_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
     ijkP1 = ijk + dev_grid.dims[0] * dev_grid.dims[1];
     ijkM1 = ijk - dev_grid.dims[0] * dev_grid.dims[1];
     // push B-field
-    dbx[ijk] = CCx * (ey[ijkP1] - ey[ijk] - ez[ijP1k] + ez[ijk]);
-    dby[ijk] = CCy * (ez[iP1jk] - ez[ijk] - ex[ijkP1] + ex[ijk]);
-    dbz[ijk] = CCz * (ex[ijP1k] - ex[ijk] - ey[iP1jk] + ey[ijk]);
+    dbx[ijk] = CCz * (ey[ijkP1] - ey[ijk]) - CCy * (ez[ijP1k] - ez[ijk]);
+    dby[ijk] = CCx * (ez[iP1jk] - ez[ijk]) - CCz * (ex[ijkP1] - ex[ijk]);
+    dbz[ijk] = CCy * (ex[ijP1k] - ex[ijk]) - CCx * (ey[iP1jk] - ey[ijk]);
     // push E-field
-    dex[ijk] = CCx * ((by[ijkM1] - by[ijk] - bz[ijM1k] + bz[ijk]) -
-                      (by0[ijkM1] - bz0[ijk] - bz0[ijM1k] + bz0[ijk]));
-    dey[ijk] = CCy * ((bz[iM1jk] - bz[ijk] - bx[ijkM1] + bx[ijk]) -
-                      (bz0[iM1jk] - bz0[ijk] - bx0[ijkM1] + bx0[ijk]));
-    dez[ijk] = CCz * ((bx[ijM1k] - bx[ijk] - by[iM1jk] + by[ijk]) -
-                      (bx0[ijM1k] - bx0[ijk] - by0[iM1jk] + by0[ijk]));
+    dex[ijk] = (CCz * (by[ijkM1] - by[ijk]) - CCy * (bz[ijM1k] - bz[ijk])) -
+                      (CCz * (by0[ijkM1] - bz0[ijk]) - CCy * (bz0[ijM1k] - bz0[ijk]));
+    dey[ijk] = (CCx * (bz[iM1jk] - bz[ijk]) - CCz * (bx[ijkM1] - bx[ijk])) -
+                      (CCx * (bz0[iM1jk] - bz0[ijk]) - CCz * (bx0[ijkM1] - bx0[ijk]));
+    dez[ijk] = (CCy * (bx[ijM1k] - bx[ijk]) - CCx * (by[iM1jk] - by[ijk])) -
+                      (CCy * (bx0[ijM1k] - bx0[ijk]) - CCx * (by0[iM1jk] - by0[ijk]));
     // if (i == 10 && j == 10 && k == 10)
       // printf("%d, %d, %d\n", dev_grid.dims[0], dev_grid.dims[1], dev_grid.dims[2]);
       // printf("%f, %f, %f\n", dex[ijk], dey[ijk], dez[ijk]);

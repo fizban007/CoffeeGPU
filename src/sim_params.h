@@ -28,7 +28,25 @@ struct sim_params {
   int nodes[3] = {1}; ///< Number of nodes in all directions
 
   // Problem specific
-  int kn[3] = {1, 1, 0};
+  bool vacuum = true; ///< Whether the evolution is in vacuum or not
+  bool resistive =true; ///< Whether to use resistive formalism or not
+  // Parameter for resistive formalism
+  Scalar sigsq = 1.0; ///< Conductivity squared
+  int subsamp = 10; ///< Number of substeps in the stiff part
+  // disk setup
+  Scalar r1 = 1.0; ///< Radius of the central compact object
+  Scalar r2 = 1.44; ///< Inner boundary of the accretion disk
+  Scalar eta = 0.0; ///< Resistivity of the membrane
+  Scalar omega0 = 0.48; ///< Angular velocity of the central compact object
+  Scalar omegad0 = 0.0; ///< Angular velocity of the inner boundary of the accretion disk
+  // Initial current distribution in the disk
+  Scalar j0 = 1000.0; ///< Magnitude of the initial current in the disk
+  Scalar wid = 5.0; ///< Disk current distribution length scale
+  Scalar alpha = 1.0; ///< How fast current decreases with radius
+  // Absorbing layer
+  int pml[3] = {60, 60, 60}; ///< Number of cells in absorbing layer at each boundary 
+  int pmllen = 10; ///< Absorbing layer resistivety variation length scale in terms of cells
+  Scalar sigpml = 0.1; ///< Parameter for the resistivity in the absorbing layer
 };
 
 

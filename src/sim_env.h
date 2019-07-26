@@ -31,6 +31,8 @@ class sim_environment {
 
   const Grid& grid() const { return m_grid; }
   const sim_params& params() const { return m_params; }
+  sim_params& params() { return m_params; }
+
 
   int size() const { return m_size; }
   int rank() const { return m_rank; }

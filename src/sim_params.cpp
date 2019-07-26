@@ -44,6 +44,28 @@ parse_config(const std::string& filename) {
   if (nodes)
     for (int i = 0; i < 3; i++) result.nodes[i] = (*nodes)[i];
 
+  result.vacuum = config->get_as<bool>("vacuum").value_or(defaults.vacuum);
+  result.resistive = config->get_as<bool>("resistive").value_or(defaults.resistive);
+  result.sigsq = config->get_as<double>("sigsq").value_or(defaults.sigsq);
+  result.subsamp = config->get_as<int>("subsamp").value_or(defaults.subsamp);
+
+  result.r1 = config->get_as<double>("r1").value_or(defaults.r1);
+  result.r2 = config->get_as<double>("r2").value_or(defaults.r2);
+  result.j0 = config->get_as<double>("j0").value_or(defaults.j0);  
+  result.wid = config->get_as<double>("wid").value_or(defaults.wid);
+  result.alpha = config->get_as<double>("alpha").value_or(defaults.alpha);
+
+  result.eta = config->get_as<double>("eta").value_or(defaults.eta);
+  result.omega0 = config->get_as<double>("omega0").value_or(defaults.omega0);
+  result.omegad0 = config->get_as<double>("omegad0").value_or(defaults.omegad0);
+
+  auto pml = config->get_array_of<int>("pml");
+  if (pml)
+    for (int i = 0; i < 3; i++) result.pml[i] = (*pml)[i];
+
+  result.pmllen = config->get_as<int>("pmllen").value_or(defaults.pmllen);
+  result.sigpml = config->get_as<double>("sigpml").value_or(defaults.sigpml);
+
   return result;
 }
 
