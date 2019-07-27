@@ -54,6 +54,7 @@ parse_config(const std::string& filename) {
   result.j0 = config->get_as<double>("j0").value_or(defaults.j0);  
   result.wid = config->get_as<double>("wid").value_or(defaults.wid);
   result.alpha = config->get_as<double>("alpha").value_or(defaults.alpha);
+  result.vacstep = config->get_as<int>("vacstep").value_or(defaults.vacstep);
 
   result.eta = config->get_as<double>("eta").value_or(defaults.eta);
   result.omega0 = config->get_as<double>("omega0").value_or(defaults.omega0);

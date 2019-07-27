@@ -43,6 +43,7 @@ struct sim_params {
   Scalar j0 = 1000.0; ///< Magnitude of the initial current in the disk
   Scalar wid = 5.0; ///< Disk current distribution length scale
   Scalar alpha = 1.0; ///< How fast current decreases with radius
+  int vacstep = 1000; ///< Number of time steps for vacuum evolution
   // Absorbing layer
   int pml[3] = {60, 60, 60}; ///< Number of cells in absorbing layer at each boundary 
   int pmllen = 10; ///< Absorbing layer resistivety variation length scale in terms of cells

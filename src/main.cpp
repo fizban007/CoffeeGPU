@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
   // exporter.sync();
 
   // Main simulation loop
+  env.params().vacuum = true;
   for (step = 0; step <= env.params().max_steps; step++) {
     std::cout << "step = " << step << std::endl;
     // Do stuff here
@@ -38,6 +39,7 @@ int main(int argc, char *argv[]) {
       exporter.write_output(data, step, 0.0);
     }
     timer::stamp();
+    if (step == env.params().vacstep) env.params().vacuum = false;
     solver.evolve_fields();
     timer::show_duration_since_stamp("evolve field", "ms");
   }
