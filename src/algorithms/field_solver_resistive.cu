@@ -11,8 +11,6 @@
 #define BLOCK_SIZE_Y 4
 #define BLOCK_SIZE_Z 4
 
-#define nghost 1
-
 
 #define SHIFT_GHOST 11
 
@@ -198,14 +196,14 @@ kernel_rk_push_jvacuum_rsstv(Scalar *dex, Scalar *dey, Scalar *dez, int shift) {
     z = dev_grid.pos(2, k, 1);
     if (std::abs(z) < dev_grid.delta[2] / 4.0) {
       // jx
-      x = dev_grid.pos(0, k, 0);
-      y = dev_grid.pos(1, k, 1);
+      x = dev_grid.pos(0, i, 0);
+      y = dev_grid.pos(1, j, 1);
       rd = sqrt(x * x + y * y);
       jx = - y / rd * iphi(rd, dev_params.r2, dev_params.wid, dev_params.j0, dev_params.alpha);
       dex[ijk] -= dev_params.dt * jx;
       // jy
-      x = dev_grid.pos(0, k, 1);
-      y = dev_grid.pos(1, k, 0);
+      x = dev_grid.pos(0, i, 1);
+      y = dev_grid.pos(1, j, 0);
       rd = sqrt(x * x + y * y);
       jy = x / rd * iphi(rd, dev_params.r2, dev_params.wid, dev_params.j0, dev_params.alpha);
       dey[ijk] -= dev_params.dt * jy;
@@ -811,6 +809,7 @@ field_solver_resistive::evolve_fields() {
     }
   }
   if (!m_env.params().vacuum && !m_env.params().resistive) check_eGTb();
+  if (!m_env.params().vacuum) disk_boundary();
   CudaSafeCall(cudaDeviceSynchronize());
   RANGE_POP;
   m_env.send_guard_cells(m_data);
@@ -830,6 +829,7 @@ field_solver_resistive::evolve_fields() {
     }
   }
   if (!m_env.params().vacuum && !m_env.params().resistive) check_eGTb();
+  if (!m_env.params().vacuum) disk_boundary();
   CudaSafeCall(cudaDeviceSynchronize());
   RANGE_POP;
   m_env.send_guard_cells(m_data);
@@ -850,6 +850,8 @@ field_solver_resistive::evolve_fields() {
   }
   if (!m_env.params().vacuum && !m_env.params().resistive) clean_epar();
   if (!m_env.params().vacuum && !m_env.params().resistive) check_eGTb();
+  if (!m_env.params().vacuum) disk_boundary();
+  absorbing_boundary();
   CudaSafeCall(cudaDeviceSynchronize());
   RANGE_POP;
 
