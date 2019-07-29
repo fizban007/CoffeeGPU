@@ -12,6 +12,7 @@ using namespace std;
 using namespace Coffee;
 
 int main(int argc, char *argv[]) {
+  timer::stamp("begin");
   // Initialize the simulation environment
   sim_environment env(&argc, &argv);
 
@@ -38,11 +39,13 @@ int main(int argc, char *argv[]) {
     if (step % env.params().data_interval == 0) {
       exporter.write_output(data, step, 0.0);
     }
-    timer::stamp();
+    timer::stamp("step");
     if (step == env.params().vacstep) env.params().vacuum = false;
     solver.evolve_fields();
-    timer::show_duration_since_stamp("evolve field", "ms");
+    timer::show_duration_since_stamp("evolve field", "ms", "step");
   }
+
+  timer::show_duration_since_stamp("evolve field", "s", "begin");
 
   return 0;
 }
