@@ -801,7 +801,7 @@ field_solver_resistive::evolve_fields() {
   else if (m_env.params().resistive) rk_push_rjperp();
   else rk_push_ffjperp();
   rk_update(1.0, 0.0, 1.0);
-  if (m_env.params().resistive) {
+  if (m_env.params().resistive && !m_env.params().vacuum) {
     for (int i = 0; i < m_env.params().subsamp; ++i)
     {
       disk_boundary();
@@ -821,7 +821,7 @@ field_solver_resistive::evolve_fields() {
   else if (m_env.params().resistive) rk_push_rjperp();
   else rk_push_ffjperp();
   rk_update(0.75, 0.25, 0.25);
-  if (m_env.params().resistive) {
+  if (m_env.params().resistive && !m_env.params().vacuum) {
     for (int i = 0; i < m_env.params().subsamp; ++i)
     {
       disk_boundary();
@@ -841,7 +841,7 @@ field_solver_resistive::evolve_fields() {
   else if (m_env.params().resistive) rk_push_rjperp();
   else rk_push_ffjperp();
   rk_update(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
-  if (m_env.params().resistive) {
+  if (m_env.params().resistive && !m_env.params().vacuum) {
     for (int i = 0; i < m_env.params().subsamp; ++i)
     {
       disk_boundary();
