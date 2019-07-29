@@ -642,20 +642,20 @@ kernel_absorbing_boundary_rsstv(const Scalar *enx, const Scalar *eny,
     Scalar xl = dev_params.lower[0] + dev_params.pml[0] * dev_grid.delta[0];
     Scalar yh = dev_params.lower[1] + dev_params.size[1] - dev_params.pml[1] * dev_grid.delta[1];
     Scalar yl = dev_params.lower[1] + dev_params.pml[1] * dev_grid.delta[1];
-    Scalar zh = dev_params.lower[2] + dev_params.size[2] - dev_params.pml[1] * dev_grid.delta[1];
-    Scalar zl = dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[1];
+    Scalar zh = dev_params.lower[2] + dev_params.size[2] - dev_params.pml[2] * dev_grid.delta[2];
+    Scalar zl = dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[2];
     if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
       sigx = pmlsigma(x, xl, xh, dev_params.pmllen * dev_grid.delta[0], dev_params.sigpml);
       sigy = pmlsigma(y, yl, yh, dev_params.pmllen * dev_grid.delta[0], dev_params.sigpml);
       sigz = pmlsigma(z, zl, zh, dev_params.pmllen * dev_grid.delta[0], dev_params.sigpml);
       sig = sigx + sigy + sigz;
-      if (sig > 0) {
-        ex[ijk] = exp(-sig) * ex[ijk] + (1.0 - exp(-sig)) / sig * (ex[ijk] - enx[ijk]);
-        ey[ijk] = exp(-sig) * ey[ijk] + (1.0 - exp(-sig)) / sig * (ey[ijk] - eny[ijk]);
-        ez[ijk] = exp(-sig) * ez[ijk] + (1.0 - exp(-sig)) / sig * (ez[ijk] - enz[ijk]); 
-        bx[ijk] = exp(-sig) * bx[ijk] + (1.0 - exp(-sig)) / sig * (bx[ijk] - bnx[ijk]);
-        by[ijk] = exp(-sig) * by[ijk] + (1.0 - exp(-sig)) / sig * (by[ijk] - bny[ijk]);
-        bz[ijk] = exp(-sig) * bz[ijk] + (1.0 - exp(-sig)) / sig * (bz[ijk] - bnz[ijk]); 
+      if (sig > TINY) {
+        ex[ijk] = exp(-sig) * enx[ijk] + (1.0 - exp(-sig)) / sig * (ex[ijk] - enx[ijk]);
+        ey[ijk] = exp(-sig) * eny[ijk] + (1.0 - exp(-sig)) / sig * (ey[ijk] - eny[ijk]);
+        ez[ijk] = exp(-sig) * enz[ijk] + (1.0 - exp(-sig)) / sig * (ez[ijk] - enz[ijk]); 
+        bx[ijk] = exp(-sig) * bnx[ijk] + (1.0 - exp(-sig)) / sig * (bx[ijk] - bnx[ijk]);
+        by[ijk] = exp(-sig) * bny[ijk] + (1.0 - exp(-sig)) / sig * (by[ijk] - bny[ijk]);
+        bz[ijk] = exp(-sig) * bnz[ijk] + (1.0 - exp(-sig)) / sig * (bz[ijk] - bnz[ijk]); 
       }
     }
   }
