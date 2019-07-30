@@ -848,8 +848,10 @@ field_solver_resistive::evolve_fields() {
       rk_update_rjparsub(2.0 / 3.0);
     }
   }
-  if (!m_env.params().vacuum && !m_env.params().resistive) clean_epar();
-  if (!m_env.params().vacuum && !m_env.params().resistive) check_eGTb();
+  if (!m_env.params().vacuum && !m_env.params().resistive) {
+    clean_epar();
+    check_eGTb();
+  }
   if (!m_env.params().vacuum) disk_boundary();
   absorbing_boundary();
   CudaSafeCall(cudaDeviceSynchronize());

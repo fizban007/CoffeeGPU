@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     timer::show_duration_since_stamp("evolve field", "ms", "step");
   }
 
-  timer::show_duration_since_stamp("evolve field", "s", "begin");
+  timer::show_duration_since_stamp("the whole program", "s", "begin");
 
   return 0;
 }
