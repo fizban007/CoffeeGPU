@@ -12,8 +12,6 @@
 #define BLOCK_SIZE_Z 4
 
 
-#define SHIFT_GHOST 11
-
 #define TINY 1e-7
 
 namespace Coffee {
@@ -781,9 +779,9 @@ field_solver_resistive::field_solver_resistive(sim_data &mydata, sim_environment
   rho = multi_array<Scalar>(m_data.env.grid().extent());
   rho.assign_dev(0.0);
 
-  blockGroupSize = dim3((m_data.env.grid().reduced_dim(0) + SHIFT_GHOST * 2 + blockSize.x - 1) / blockSize.x,
-                        (m_data.env.grid().reduced_dim(1) + SHIFT_GHOST * 2 + blockSize.y - 1) / blockSize.y,
-                        (m_data.env.grid().reduced_dim(2) + SHIFT_GHOST * 2 + blockSize.z - 1) / blockSize.z);
+  blockGroupSize = dim3((m_data.env.grid().reduced_dim(0) + m_env.params().shift_ghost * 2 + blockSize.x - 1) / blockSize.x,
+                        (m_data.env.grid().reduced_dim(1) + m_env.params().shift_ghost * 2 + blockSize.y - 1) / blockSize.y,
+                        (m_data.env.grid().reduced_dim(2) + m_env.params().shift_ghost * 2 + blockSize.z - 1) / blockSize.z);
   std::cout << blockSize.x << ", " << blockSize.y << ", " << blockSize.z << std::endl;
   std::cout << blockGroupSize.x << ", " << blockGroupSize.y << ", " << blockGroupSize.z << std::endl;
 }
@@ -878,7 +876,7 @@ field_solver_resistive::rk_push_noj() {
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       m_data.B0.dev_ptr(0), m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
-      dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr(), SHIFT_GHOST);
+      dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -889,7 +887,7 @@ field_solver_resistive::rk_push_ffjperp() {
   // kernel_compute_rho<<<gridSize, blockSize>>>(
   kernel_compute_rho_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-      rho.dev_ptr(), SHIFT_GHOST);
+      rho.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
   // `dE = curl B - curl B0 - j, dB = -curl E`
   // kernel_rk_push<<<g, blockSize>>>(
@@ -897,7 +895,7 @@ field_solver_resistive::rk_push_ffjperp() {
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
-      dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr(), SHIFT_GHOST);
+      dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -905,7 +903,7 @@ field_solver_resistive::rk_push_ffjperp() {
 void
 field_solver_resistive::rk_push_jvacuum() {
   kernel_rk_push_jvacuum_rsstv<<<blockGroupSize, blockSize>>>(
-      dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), SHIFT_GHOST);
+      dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -916,7 +914,7 @@ field_solver_resistive::rk_push_rjperp() {
   // kernel_compute_rho<<<gridSize, blockSize>>>(
   kernel_compute_rho_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-      rho.dev_ptr(), SHIFT_GHOST);
+      rho.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
   // `dE = curl B - curl B0 - j, dB = -curl E`
   // kernel_rk_push<<<g, blockSize>>>(
@@ -924,7 +922,7 @@ field_solver_resistive::rk_push_rjperp() {
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
-      dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr(), SHIFT_GHOST);
+      dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -938,7 +936,7 @@ field_solver_resistive::rk_update(Scalar rk_c1, Scalar rk_c2, Scalar rk_c3) {
       En.dev_ptr(0), En.dev_ptr(1), En.dev_ptr(2), Bn.dev_ptr(0),
       Bn.dev_ptr(1), Bn.dev_ptr(2), dE.dev_ptr(0), dE.dev_ptr(1),
       dE.dev_ptr(2), dB.dev_ptr(0), dB.dev_ptr(1), dB.dev_ptr(2), rk_c1,
-      rk_c2, rk_c3, SHIFT_GHOST);
+      rk_c2, rk_c3, m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -947,7 +945,7 @@ field_solver_resistive::rk_update_rjparsub(Scalar rk_c3) {
   // first conpute rho
   kernel_compute_rho_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-      rho.dev_ptr(), SHIFT_GHOST);
+      rho.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 
   // Update; results stored in dE
@@ -955,7 +953,7 @@ field_solver_resistive::rk_update_rjparsub(Scalar rk_c3) {
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1),dE.dev_ptr(2), rho.dev_ptr(),
-      rk_c3, SHIFT_GHOST);
+      rk_c3, m_env.params().shift_ghost);
   CudaCheckError();
 
   // Copy results back to E, B
@@ -969,7 +967,7 @@ field_solver_resistive::clean_epar() {
   kernel_clean_epar_rsstv<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), SHIFT_GHOST);
+      dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -980,7 +978,7 @@ field_solver_resistive::check_eGTb() {
   kernel_check_eGTb_rsstv<<<blockGroupSize, blockSize>>>(
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), m_data.E.dev_ptr(0),
       m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0),
-      m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), SHIFT_GHOST);
+      m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -990,7 +988,7 @@ field_solver_resistive::absorbing_boundary() {
     En.dev_ptr(0), En.dev_ptr(1), En.dev_ptr(2), Bn.dev_ptr(0),
     Bn.dev_ptr(1), Bn.dev_ptr(2), m_data.E.dev_ptr(0), 
     m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0), 
-    m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), SHIFT_GHOST);
+    m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -998,7 +996,7 @@ void
 field_solver_resistive::disk_boundary() {
   kernel_disk_boundary_rsstv<<<blockGroupSize, blockSize>>>(
     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), 
-    m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), SHIFT_GHOST);
+    m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), m_env.params().shift_ghost);
   CudaCheckError();
 }
 

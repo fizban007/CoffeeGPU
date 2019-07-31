@@ -44,6 +44,8 @@ parse_config(const std::string& filename) {
   if (nodes)
     for (int i = 0; i < 3; i++) result.nodes[i] = (*nodes)[i];
 
+  result.shift_ghost = config->get_as<int>("shift_ghost").value_or(defaults.shift_ghost);
+
   result.vacuum = config->get_as<bool>("vacuum").value_or(defaults.vacuum);
   result.resistive = config->get_as<bool>("resistive").value_or(defaults.resistive);
   result.sigsq = config->get_as<double>("sigsq").value_or(defaults.sigsq);

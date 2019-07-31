@@ -26,6 +26,7 @@ struct sim_params {
   Scalar lower[3] = {0.0}; ///< Lower limits of the simulation box
   Scalar size[3] = {1.0}; ///< Sizes of the simulation box
   int nodes[3] = {1}; ///< Number of nodes in all directions
+  int shift_ghost = 0; ///< Number of ghost cells to be updated in field_solver
 
   // Problem specific
   bool vacuum = true; ///< Whether the evolution is in vacuum or not
