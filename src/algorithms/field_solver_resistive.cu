@@ -7,12 +7,19 @@
 #include "utils/nvproftool.h"
 #include <cmath>
 
+#include <highfive/H5DataSet.hpp>
+#include <highfive/H5DataSpace.hpp>
+#include <highfive/H5File.hpp>
+
 #define BLOCK_SIZE_X 32
 #define BLOCK_SIZE_Y 4
 #define BLOCK_SIZE_Z 4
 
 
 #define TINY 1e-7
+
+// using namespace H5;
+using namespace HighFive;
 
 namespace Coffee {
 
@@ -761,6 +768,62 @@ kernel_disk_boundary_rsstv(Scalar *ex, Scalar *ey, Scalar *ez,
   }
 }
 
+
+__global__ void
+kernel_emissivity_rsstv(const Scalar *ex, const Scalar *ey, const Scalar *ez, 
+                        const Scalar *bx, const Scalar *by, const Scalar *bz, 
+                        Scalar* em[], int shift) {
+  Scalar intex, intey, intez, intbx, intby, intbz;
+  Scalar P0, vx, vy, vz, beta, gm, x, y, z, r, th, cth, sth, mu;
+  Scalar Bsq, Esq, edotb, B0sq, E00, B00, E0sq;
+  size_t ijk;
+  int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j = threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k = threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+
+    intex = interpolate(ex, ijk, Stagger(0b110), Stagger(0b111),
+                       dev_grid.dims[0], dev_grid.dims[1]);
+    intey = interpolate(ey, ijk, Stagger(0b101), Stagger(0b111),
+                       dev_grid.dims[0], dev_grid.dims[1]);
+    intez = interpolate(ez, ijk, Stagger(0b011), Stagger(0b111),
+                       dev_grid.dims[0], dev_grid.dims[1]);
+    intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b111),
+                       dev_grid.dims[0], dev_grid.dims[1]);
+    intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b111),
+                       dev_grid.dims[0], dev_grid.dims[1]);
+    intbz = interpolate(bz, ijk, Stagger(0b100), Stagger(0b111),
+                       dev_grid.dims[0], dev_grid.dims[1]);
+
+    Bsq = intbx * intbx + intby * intby + intbz * intbz;
+    Esq = intex * intex + intey * intey + intez * intez;
+    edotb = intex * intbx + intey * intby + intez * intbz;
+    B0sq = std::abs(0.5 * ((Bsq - Esq) + sqrt(square(Bsq - Esq) + 4.0 * square(edotb))));
+    E00 = sqrt(std::abs(B0sq - Bsq + Esq));
+    B00 = sgn (edotb) * sqrt(B0sq);
+    E0sq = E00 * E00;
+    P0 = sqrt(dev_params.sigsq) * E0sq;
+    vx = 1.0 / (Bsq + E0sq + TINY) * (intey * intbz - intez * intby);
+    vy = 1.0 / (Bsq + E0sq + TINY) * (intez * intbx - intex * intbz);
+    vz = 1.0 / (Bsq + E0sq + TINY) * (intex * intby - intey * intbx);
+    beta = sqrt(vx * vx + vy * vy + vz * vz);
+    if (beta>1) beta = 1.0 - TINY;
+    gm = 1.0 / sqrt(1.0 - beta * beta);
+    for (int ith = 0; ith < 4 ; ++ith) {
+      th = ith * M_PI /6.0;
+      cth = cos(th);
+      sth = sin(th);
+      if (beta < TINY) mu = 0;
+      else mu = (sth * vx + cth * vz) / beta;
+      em[ith][ijk]=1.0/(pow(gm, 4) * pow(1.0 - beta * mu, 4)) * P0;
+    }
+  }
+}
+
 field_solver_resistive::field_solver_resistive(sim_data &mydata, sim_environment& env) : m_data(mydata), m_env(env) {
   En = vector_field<Scalar>(m_data.env.grid());
   dE = vector_field<Scalar>(m_data.env.grid());
@@ -998,6 +1061,68 @@ field_solver_resistive::disk_boundary() {
     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), 
     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), m_env.params().shift_ghost);
   CudaCheckError();
+}
+
+void 
+field_solver_resistive::light_curve(uint32_t step) {
+  Scalar *em[4];
+  em[0] = En.dev_ptr(0);
+  em[1] = En.dev_ptr(1);
+  em[2] = En.dev_ptr(2);
+  em[3] = rho.dev_ptr();
+  kernel_emissivity_rsstv<<<blockGroupSize, blockSize>>>(
+    m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), 
+    m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), 
+    em, m_env.params().shift_ghost);
+  CudaCheckError();
+  En.sync_to_host();
+  rho.sync_to_host();
+  em[0] = En.host_ptr(0);
+  em[1] = En.host_ptr(1);
+  em[2] = En.host_ptr(2);
+  em[3] = rho.host_ptr();
+
+  int l0 = m_env.params.size[2] * sqrt(3.0) / 2.0 / m_env.params().dt;
+  int len = int((m_env.params().max_steps + l0 * 2) / m_env.params().lc_interval + 2);
+  // std::vector<Scalar> lc(len * 12, 0), lc0(len * 12, 0);
+  if (lc.size() != len * 12) lc.resize(len * 12, 0);
+  if (lc0.size() != len * 12) lc0.resize(len * 12, 0);
+  for (int k = m_env.grid().guard[2]; k < m_env.grid().dims[2] - m_env.grid().guard[2]; ++k) {
+    for (int j = m_env.grid().guard[1]; j < m_env.grid().dims[1] - m_env.grid().guard[1]; ++j) {
+      for (int i = m_env.grid().guard[0]; i < m_env.grid().dims[0] - m_env.grid().guard[0]; ++i) {
+        int ijk = i + j * m_env.grid().dims[0] +
+          k * m_env.grid().dims[0] * m_env.grid().dims[1];
+        Scalar x = m_env.grid().pos(0, i, 1);
+        Scalar y = m_env.grid().pos(1, j, 1);
+        Scalar z = m_env.grid().pos(2, k, 1);
+        Scalar r = sqrt(x * x + y * y + z * z);
+        for (int ith = 0; ith < 4; ++ith) {
+          Scalar th = ith * M_PI / 6.0;
+          Scalar cth = cos(th);
+          Scalar sth = sin(th);
+          Scalar cosd = (x * sth + y * cth) / r;
+          Scalar dd = r * cosd;
+          int il = int(floor(l0 - dd / m_env.params().dt) + 1 + step);
+          for (int ih = 0; ih < 3; ++ih) {
+            if (z > ih) lc[il + ih * len + ith * len * 3] += em[ith][ijk];
+          } // ih
+        } // ith
+      } // i
+    } // j
+  } // k
+
+  MPI_Reduce(lc, lc0, len * 12, m_env.scalar_type(), MPI_SUM, 0, m_env.world());
+
+  if (m_env.rank() == 0) {
+    std::stringstream ss;
+    ss << std::setw(5) << std::setfill('0')
+      << step / m_env.params().lc_interval;
+    std::string num = ss.str();
+    File file(std::string("./Data/lc") + num + std::string(".h5"), 
+      File::ReadWrite | File::Create | File::Truncate);
+    DataSet dataset = file.createDataSet<Scalar>("/lc",  DataSpace::From(lc0));
+    dataset.write(lc0);
+  }
 }
 
 }  // namespace Coffee

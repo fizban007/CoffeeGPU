@@ -39,6 +39,9 @@ int main(int argc, char *argv[]) {
     if (step % env.params().data_interval == 0) {
       exporter.write_output(data, step, 0.0);
     }
+    if (step % env.params().lc_interval == 0) {
+      solver.light_curve(step);
+    }
     timer::stamp("step");
     if (step == env.params().vacstep) env.params().vacuum = false;
     solver.evolve_fields();

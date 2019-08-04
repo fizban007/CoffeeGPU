@@ -49,6 +49,8 @@ struct sim_params {
   int pml[3] = {60, 60, 60}; ///< Number of cells in absorbing layer at each boundary 
   int pmllen = 10; ///< Absorbing layer resistivety variation length scale in terms of cells
   Scalar sigpml = 0.1; ///< Parameter for the resistivity in the absorbing layer
+  // lightcurve parameters
+  int lc_interval = 10; ///< Number of steps between light curve calculation
 };
 
 

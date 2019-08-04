@@ -13,10 +13,12 @@ class field_solver_resistive {
   ~field_solver_resistive();
 
   void evolve_fields();
+  void light_curve(uint32_t step);
 
  private:
   sim_data& m_data;
   sim_environment& m_env;
+  std::vector<Scalar> lc, lc0;
   void copy_fields();
 
   void rk_push_noj();

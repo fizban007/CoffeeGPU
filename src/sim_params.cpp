@@ -69,6 +69,8 @@ parse_config(const std::string& filename) {
   result.pmllen = config->get_as<int>("pmllen").value_or(defaults.pmllen);
   result.sigpml = config->get_as<double>("sigpml").value_or(defaults.sigpml);
 
+  result.lc_interval = config->get_as<int>("lc_interval").value_or(defaults.lc_interval);
+
   return result;
 }
 
