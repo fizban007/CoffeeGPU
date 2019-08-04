@@ -6,6 +6,7 @@
 #include "utils/timer.h"
 #include "utils/nvproftool.h"
 #include <cmath>
+#include <iomanip>
 
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5DataSpace.hpp>
@@ -1082,7 +1083,7 @@ field_solver_resistive::light_curve(uint32_t step) {
   em[2] = En.host_ptr(2);
   em[3] = rho.host_ptr();
 
-  int l0 = m_env.params.size[2] * sqrt(3.0) / 2.0 / m_env.params().dt;
+  int l0 = m_env.params().size[2] * sqrt(3.0) / 2.0 / m_env.params().dt;
   int len = int((m_env.params().max_steps + l0 * 2) / m_env.params().lc_interval + 2);
   // std::vector<Scalar> lc(len * 12, 0), lc0(len * 12, 0);
   if (lc.size() != len * 12) lc.resize(len * 12, 0);
@@ -1111,7 +1112,7 @@ field_solver_resistive::light_curve(uint32_t step) {
     } // j
   } // k
 
-  MPI_Reduce(lc, lc0, len * 12, m_env.scalar_type(), MPI_SUM, 0, m_env.world());
+  MPI_Reduce(lc.data(), lc0.data(), len * 12, m_env.scalar_type(), MPI_SUM, 0, m_env.world());
 
   if (m_env.rank() == 0) {
     std::stringstream ss;
