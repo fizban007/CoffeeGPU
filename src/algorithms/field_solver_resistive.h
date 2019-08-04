@@ -8,6 +8,7 @@ class field_solver_resistive {
 
   vector_field<Scalar> En, Bn, dE, dB;
   multi_array<Scalar> rho;
+  std::vector<Scalar> lc, lc0;
 
   field_solver_resistive(sim_data& mydata, sim_environment& env);
   ~field_solver_resistive();
@@ -18,7 +19,7 @@ class field_solver_resistive {
  private:
   sim_data& m_data;
   sim_environment& m_env;
-  std::vector<Scalar> lc, lc0;
+
   void copy_fields();
 
   void rk_push_noj();

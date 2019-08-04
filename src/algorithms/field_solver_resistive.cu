@@ -6,11 +6,6 @@
 #include "utils/timer.h"
 #include "utils/nvproftool.h"
 #include <cmath>
-#include <iomanip>
-
-#include <highfive/H5DataSet.hpp>
-#include <highfive/H5DataSpace.hpp>
-#include <highfive/H5File.hpp>
 
 #define BLOCK_SIZE_X 32
 #define BLOCK_SIZE_Y 4
@@ -18,9 +13,6 @@
 
 
 #define TINY 1e-7
-
-// using namespace H5;
-using namespace HighFive;
 
 namespace Coffee {
 
@@ -1114,16 +1106,6 @@ field_solver_resistive::light_curve(uint32_t step) {
 
   MPI_Reduce(lc.data(), lc0.data(), len * 12, m_env.scalar_type(), MPI_SUM, 0, m_env.world());
 
-  if (m_env.rank() == 0) {
-    std::stringstream ss;
-    ss << std::setw(5) << std::setfill('0')
-      << step / m_env.params().lc_interval;
-    std::string num = ss.str();
-    File file(std::string("./Data/lc") + num + std::string(".h5"), 
-      File::ReadWrite | File::Create | File::Truncate);
-    DataSet dataset = file.createDataSet<Scalar>("/lc",  DataSpace::From(lc0));
-    dataset.write(lc0);
-  }
 }
 
 }  // namespace Coffee

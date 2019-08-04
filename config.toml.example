@@ -84,3 +84,6 @@ sigpml = 0.1
 
 # Number of time steps for vacuum evolution
 vacstep = 1500
+
+# Number of steps between light curve calculation
+lc_interval = 10
