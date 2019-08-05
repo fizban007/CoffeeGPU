@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     if (step % env.params().data_interval == 0) {
       exporter.write_output(data, step, 0.0);
     }
-    if (env.params().lc_interval > 0 && step % env.params().lc_interval == 0) {
+    if (env.params().lc_interval > 0 && step > 0 && step % env.params().lc_interval == 0) {
       solver.light_curve(step);
       if (env.rank() == 0) {
         std::stringstream ss;
