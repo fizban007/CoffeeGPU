@@ -804,7 +804,7 @@ kernel_emissivity_rsstv(const Scalar *ex, const Scalar *ey, const Scalar *ez,
     vy = 1.0 / (Bsq + E0sq + TINY) * (intez * intbx - intex * intbz);
     vz = 1.0 / (Bsq + E0sq + TINY) * (intex * intby - intey * intbx);
     beta = sqrt(vx * vx + vy * vy + vz * vz);
-    if (beta>1) beta = 1.0 - TINY;
+    if (beta > 1) beta = 1.0 - TINY;
     gm = 1.0 / sqrt(1.0 - beta * beta);
     for (int ith = 0; ith < 4 ; ++ith) {
       th = ith * M_PI /6.0;
@@ -812,7 +812,7 @@ kernel_emissivity_rsstv(const Scalar *ex, const Scalar *ey, const Scalar *ez,
       sth = sin(th);
       if (beta < TINY) mu = 0;
       else mu = (sth * vx + cth * vz) / beta;
-      em[ith][ijk]=1.0/(pow(gm, 4) * pow(1.0 - beta * mu, 4)) * P0;
+      em[ith][ijk]=1.0 / (pow(gm, 4) * pow(1.0 - beta * mu, 4)) * P0;
     }
   }
 }
@@ -1075,8 +1075,8 @@ field_solver_resistive::light_curve(uint32_t step) {
   em[2] = En.host_ptr(2);
   em[3] = rho.host_ptr();
 
-  int l0 = m_env.params().size[2] * sqrt(3.0) / 2.0 / m_env.params().dt;
-  int len = int((m_env.params().max_steps + l0 * 2) / m_env.params().lc_interval + 2);
+  int l0 = int(m_env.params().size[2] * sqrt(3.0) / 2.0 / m_env.params().dt);
+  int len = int((m_env.params().max_steps + l0 * 2) / m_env.params().lc_interval) + 2;
   // std::vector<Scalar> lc(len * 12, 0), lc0(len * 12, 0);
   if (lc.size() != len * 12) lc.resize(len * 12, 0);
   if (lc0.size() != len * 12) lc0.resize(len * 12, 0);
