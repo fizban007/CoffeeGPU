@@ -1110,7 +1110,8 @@ field_solver_resistive::light_curve(uint32_t step) {
           Scalar dd = r * cosd;
           int il = int(floor((l0 - dd / m_env.params().dt + step) / m_env.params().lc_interval)) + 1;
           for (int ih = 0; ih < 3; ++ih) {
-            if (z > ih) lc[il + ih * len + ith * len * 3] += em[ith][ijk];
+            if (z > ih) lc[il + ih * len + ith * len * 3] += em[ith][ijk] * m_env.grid().delta[0] 
+              * m_env.grid().delta[1] * m_env.grid().delta[2];
           } // ih
         } // ith
       } // i
