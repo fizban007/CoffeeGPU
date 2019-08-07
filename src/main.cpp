@@ -49,15 +49,17 @@ int main(int argc, char *argv[]) {
     }
     if (env.params().lc_interval > 0 && step > env.params().vacstep && step % env.params().lc_interval == 0) {
       solver.light_curve(step);
-      if (env.rank() == 0) {
-        std::stringstream ss;
-        ss << std::setw(5) << std::setfill('0')
-          << step / env.params().lc_interval;
-        std::string num = ss.str();
-        File file(std::string("./Data/lc") + num + std::string(".h5"), 
-          File::ReadWrite | File::Create | File::Truncate);
-        DataSet dataset = file.createDataSet<Scalar>("/lc",  DataSpace::From(solver.lc0));
-        dataset.write(solver.lc0);
+      if (step % env.params().data_interval == 0) {
+        if (env.rank() == 0) {
+          std::stringstream ss;
+          ss << std::setw(5) << std::setfill('0')
+            << step / env.params().data_interval;
+          std::string num = ss.str();
+          File file(std::string("./Data/lc") + num + std::string(".h5"), 
+            File::ReadWrite | File::Create | File::Truncate);
+          DataSet dataset = file.createDataSet<Scalar>("/lc",  DataSpace::From(solver.lc0));
+          dataset.write(solver.lc0);
+        }
       }
     }
     timer::stamp("step");
