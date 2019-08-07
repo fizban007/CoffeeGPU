@@ -765,7 +765,7 @@ kernel_disk_boundary_rsstv(Scalar *ex, Scalar *ey, Scalar *ez,
 __global__ void
 kernel_emissivity_rsstv(const Scalar *ex, const Scalar *ey, const Scalar *ez, 
                         const Scalar *bx, const Scalar *by, const Scalar *bz, 
-                        Scalar* em[], int shift) {
+                        Scalar** emt, int shift) {
   Scalar intex, intey, intez, intbx, intby, intbz;
   Scalar P0, vx, vy, vz, beta, gm, x, y, z, r, th, cth, sth, mu;
   Scalar Bsq, Esq, edotb, B0sq, E00, B00, E0sq;
@@ -807,12 +807,12 @@ kernel_emissivity_rsstv(const Scalar *ex, const Scalar *ey, const Scalar *ez,
     if (beta > 1) beta = 1.0 - TINY;
     gm = 1.0 / sqrt(1.0 - beta * beta);
     for (int ith = 0; ith < 4 ; ++ith) {
-      th = ith * M_PI /6.0;
+      th = ith * M_PI / 6.0;
       cth = cos(th);
       sth = sin(th);
-      if (beta < TINY) mu = 0;
+      if (beta < 0.001) mu = 0;
       else mu = (sth * vx + cth * vz) / beta;
-      em[ith][ijk]=1.0 / (pow(gm, 4) * pow(1.0 - beta * mu, 4)) * P0;
+      emt[ith][ijk] = 1.0 / (pow(gm, 4) * pow(1.0 - beta * mu, 4)) * P0;
     }
   }
 }
@@ -1067,13 +1067,19 @@ field_solver_resistive::light_curve(uint32_t step) {
     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), 
     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), 
     em, m_env.params().shift_ghost);
+  CudaSafeCall(cudaDeviceSynchronize());
   CudaCheckError();
+  std::cout << "light curve: completed kernel_emissivity" << std::endl;
+
   En.sync_to_host();
   rho.sync_to_host();
+  std::cout << "light curve: completed sync to host" << std::endl;
   em[0] = En.host_ptr(0);
   em[1] = En.host_ptr(1);
   em[2] = En.host_ptr(2);
   em[3] = rho.host_ptr();
+
+  std::cout << "light curve: completed assigning em to host pointers" << std::endl;
 
   int l0 = int(m_env.params().size[2] * sqrt(3.0) / 2.0 / m_env.params().dt);
   int len = int((m_env.params().max_steps + l0 * 2) / m_env.params().lc_interval) + 2;
@@ -1095,7 +1101,7 @@ field_solver_resistive::light_curve(uint32_t step) {
           Scalar sth = sin(th);
           Scalar cosd = (x * sth + y * cth) / r;
           Scalar dd = r * cosd;
-          int il = int(floor(l0 - dd / m_env.params().dt) + 1 + step);
+          int il = int(floor((l0 - dd / m_env.params().dt + step) / m_env.params().lc_interval)) + 1;
           for (int ih = 0; ih < 3; ++ih) {
             if (z > ih) lc[il + ih * len + ith * len * 3] += em[ith][ijk];
           } // ih
