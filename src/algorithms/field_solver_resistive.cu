@@ -21,6 +21,8 @@ static dim3 blockSize(BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z);
 
 static dim3 blockGroupSize;
 
+Scalar** dev_emt;
+
 template <typename T> 
 HD_INLINE int sgn(T val) {
     return (T(0) < val) - (val < T(0));
@@ -840,9 +842,13 @@ field_solver_resistive::field_solver_resistive(sim_data &mydata, sim_environment
                         (m_data.env.grid().reduced_dim(2) + m_env.params().shift_ghost * 2 + blockSize.z - 1) / blockSize.z);
   std::cout << blockSize.x << ", " << blockSize.y << ", " << blockSize.z << std::endl;
   std::cout << blockGroupSize.x << ", " << blockGroupSize.y << ", " << blockGroupSize.z << std::endl;
+
+  CudaSafeCall(cudaMalloc(&dev_emt, 4 * sizeof(Scalar*)));
 }
 
-field_solver_resistive::~field_solver_resistive() {}
+field_solver_resistive::~field_solver_resistive() {
+  CudaSafeCall(cudaFree(dev_emt));
+}
 
 void
 field_solver_resistive::evolve_fields() {
@@ -1063,10 +1069,11 @@ field_solver_resistive::light_curve(uint32_t step) {
   em[1] = En.dev_ptr(1);
   em[2] = En.dev_ptr(2);
   em[3] = rho.dev_ptr();
+  CudaSafeCall(cudaMemcpy(dev_emt, &em[0], 4 * sizeof(Scalar*), cudaMemcpyHostToDevice));
   kernel_emissivity_rsstv<<<blockGroupSize, blockSize>>>(
     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), 
     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), 
-    em, m_env.params().shift_ghost);
+    dev_emt, m_env.params().shift_ghost);
   CudaSafeCall(cudaDeviceSynchronize());
   CudaCheckError();
   std::cout << "light curve: completed kernel_emissivity" << std::endl;
