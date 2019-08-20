@@ -110,32 +110,32 @@ HOST_DEVICE Scalar get_gamma_d33(Scalar a, Scalar x, Scalar y, Scalar z) {
 
 HOST_DEVICE Scalar get_gamma_u11(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
-  return 1.0 - 2.0 * r * r * r * square(r * x + a * y) / square(a * a + r * r + TINY) / (2.0 * r * r * r +r * r * r * r + a * a * z * z + TINY);
+  return 1.0 - 2.0 * r * r * r * square(r * x + a * y) / square(a * a + r * r + TINY) / (2.0 * r * r * r + r * r * r * r + a * a * z * z + TINY);
 }
 
 HOST_DEVICE Scalar get_gamma_u12(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
-  return - 2.0 * r * r * r * (r * x + a * y) * (- a * x + r * y) / square(a * a + r * r + TINY) / (2.0 * r * r * r +r * r * r * r + a * a * z * z + TINY);
+  return - 2.0 * r * r * r * (r * x + a * y) * (- a * x + r * y) / square(a * a + r * r + TINY) / (2.0 * r * r * r + r * r * r * r + a * a * z * z + TINY);
 }
 
 HOST_DEVICE Scalar get_gamma_u13(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
-  return - 2.0 * r * r * (r * x + a * y) * z / (a * a + r * r + TINY) / (2.0 * r * r * r +r * r * r * r + a * a * z * z + TINY);
+  return - 2.0 * r * r * (r * x + a * y) * z / (a * a + r * r + TINY) / (2.0 * r * r * r + r * r * r * r + a * a * z * z + TINY);
 }
 
 HOST_DEVICE Scalar get_gamma_u22(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
-  return 1.0 - 2.0 * r * r * r * square(a * x - r * y) / square(a * a + r * r + TINY) / (2.0 * r * r * r +r * r * r * r + a * a * z * z + TINY);
+  return 1.0 - 2.0 * r * r * r * square(a * x - r * y) / square(a * a + r * r + TINY) / (2.0 * r * r * r + r * r * r * r + a * a * z * z + TINY);
 }
 
 HOST_DEVICE Scalar get_gamma_u23(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
-  return 2.0 * r * r * (a * x - r * y) * z / (a * a + r * r + TINY) / (2.0 * r * r * r +r * r * r * r + a * a * z * z + TINY);
+  return 2.0 * r * r * (a * x - r * y) * z / (a * a + r * r + TINY) / (2.0 * r * r * r + r * r * r * r + a * a * z * z + TINY);
 }
 
 HOST_DEVICE Scalar get_gamma_u33(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
-  return 1.0 - 2.0 * r * z * z / (2.0 * r * r * r +r * r * r * r + a * a * z * z + TINY);
+  return 1.0 - 2.0 * r * z * z / (2.0 * r * r * r + r * r * r * r + a * a * z * z + TINY);
 }
 
 __global__ void
@@ -366,7 +366,7 @@ kernel_rk_push_gr_thread(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     x = dev_grid.pos(0, i, 1);
     y = dev_grid.pos(1, j, 1);
     z = dev_grid.pos(2, k, 0);
-    dDz[ijk] = CCy * (Hx[ijM1k] - Hx[ijk]) - CCx * (Hy[iM1jk] - Hy[ijk]) / get_sqrt_gamma(dev_params.a, x, y, z);
+    dDz[ijk] = (CCy * (Hx[ijM1k] - Hx[ijk]) - CCx * (Hy[iM1jk] - Hy[ijk])) / get_sqrt_gamma(dev_params.a, x, y, z);
     // if (i == 10 && j == 10 && k == 10)
       // printf("%d, %d, %d\n", dev_grid.dims[0], dev_grid.dims[1], dev_grid.dims[2]);
       // printf("%f, %f, %f\n", dEx[ijk], dEy[ijk], dEz[ijk]);
