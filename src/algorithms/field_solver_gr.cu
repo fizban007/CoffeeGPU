@@ -760,7 +760,7 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
   Scalar x, y, z;
   size_t ijk;
   Scalar rH = 1.0 + sqrt(1.0 - square(dev_params.a));
-  Scalar r1 = 0.9 * rH;
+  Scalar r1 = 0.8 * rH;
   Scalar r2 = 0.2 * rH;
   Scalar dd = 0.2 * rH;
   Scalar sig;
@@ -786,28 +786,28 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
     if (r < r1) {
       // Dx
       sig = sigma(dev_params.a, x + dx, y, z, r1, dd, sig0) * dev_params.dt;
-      // if (sig > 0) Dx[ijk] = exp(- sig) * Dnx[ijk] + (1.0 - exp(- sig)) / sig * (Dx[ijk] - Dnx[ijk]); 
-      if (sig > 0) Dx[ijk] = exp(- sig) * Dx[ijk]; 
+      if (sig > TINY) Dx[ijk] = exp(- sig) * Dnx[ijk] + (1.0 - exp(- sig)) / sig * (Dx[ijk] - Dnx[ijk]); 
+      // if (sig > 0) Dx[ijk] = exp(- sig) * Dx[ijk]; 
       // Dy
       sig = sigma(dev_params.a, x, y + dy, z, r1, dd, sig0) * dev_params.dt;
-      // if (sig > 0) Dy[ijk] = exp(- sig) * Dny[ijk] + (1.0 - exp(- sig)) / sig * (Dy[ijk] - Dny[ijk]); 
-      if (sig > 0) Dy[ijk] = exp(- sig) * Dy[ijk]; 
+      if (sig > TINY) Dy[ijk] = exp(- sig) * Dny[ijk] + (1.0 - exp(- sig)) / sig * (Dy[ijk] - Dny[ijk]); 
+      // if (sig > 0) Dy[ijk] = exp(- sig) * Dy[ijk]; 
       // Dz
       sig = sigma(dev_params.a, x, y, z + dz, r1, dd, sig0) * dev_params.dt;
-      // if (sig > 0) Dz[ijk] = exp(- sig) * Dnz[ijk] + (1.0 - exp(- sig)) / sig * (Dz[ijk] - Dnz[ijk]);
-      if (sig > 0) Dz[ijk] = exp(- sig) * Dz[ijk];
+      if (sig > TINY) Dz[ijk] = exp(- sig) * Dnz[ijk] + (1.0 - exp(- sig)) / sig * (Dz[ijk] - Dnz[ijk]);
+      // if (sig > 0) Dz[ijk] = exp(- sig) * Dz[ijk];
       // Bx
       sig = sigma(dev_params.a, x, y + dy, z + dz, r1, dd, sig0) * dev_params.dt;
-      // if (sig > 0) Bx[ijk] = exp(- sig) * Bnx[ijk] + (1.0 - exp(- sig)) / sig * (Bx[ijk] - Bnx[ijk]);
-      if (sig > 0) Bx[ijk] = exp(- sig) * Bx[ijk]; 
+      if (sig > TINY) Bx[ijk] = exp(- sig) * Bnx[ijk] + (1.0 - exp(- sig)) / sig * (Bx[ijk] - Bnx[ijk]);
+      // if (sig > 0) Bx[ijk] = exp(- sig) * Bx[ijk]; 
       // By
       sig = sigma(dev_params.a, x + dx, y, z + dz, r1, dd, sig0) * dev_params.dt;
-      // if (sig > 0) By[ijk] = exp(- sig) * Bny[ijk] + (1.0 - exp(- sig)) / sig * (By[ijk] - Bny[ijk]);
-      if (sig > 0) By[ijk] = exp(- sig) * By[ijk];
+      if (sig > TINY) By[ijk] = exp(- sig) * Bny[ijk] + (1.0 - exp(- sig)) / sig * (By[ijk] - Bny[ijk]);
+      // if (sig > 0) By[ijk] = exp(- sig) * By[ijk];
       // Bz
       sig = sigma(dev_params.a, x + dx, y + dy, z, r1, dd, sig0) * dev_params.dt;
-      // if (sig > 0) Bz[ijk] = exp(- sig) * Bnz[ijk] + (1.0 - exp(- sig)) / sig * (Bz[ijk] - Bnz[ijk]);
-      if (sig > 0) Bz[ijk] = exp(- sig) * Bz[ijk];   
+      if (sig > TINY) Bz[ijk] = exp(- sig) * Bnz[ijk] + (1.0 - exp(- sig)) / sig * (Bz[ijk] - Bnz[ijk]);
+      // if (sig > 0) Bz[ijk] = exp(- sig) * Bz[ijk];   
     }
     else if (r < r2) {
       Dx[ijk] = 0;
