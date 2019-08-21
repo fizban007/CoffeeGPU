@@ -770,7 +770,7 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
   Scalar r1 = 0.8 * rH;
   Scalar r2 = 0.2 * rH;
   Scalar dd = 0.2 * rH;
-  Scalar sig;
+  Scalar sig, sigx, sigy, sigz;
   Scalar sig0 = dev_params.sigpml;
   Scalar dx = dev_grid.delta[0] / 2.0;
   Scalar dy = dev_grid.delta[1] / 2.0;
