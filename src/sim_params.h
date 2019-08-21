@@ -36,6 +36,11 @@ struct sim_params {
   bool calc_current = true; ///< Whether to calculate force-free current or not
   bool clean_ep = true; ///< Whether to clean E_parallel or not
   bool check_egb = true; ///< Whether to clean E>B or not
+
+  // Absorbing layer
+  int pml[3] = {60, 60, 60}; ///< Number of cells in absorbing layer at each boundary 
+  int pmllen = 10; ///< Absorbing layer resistivety variation length scale in terms of cells
+  Scalar sigpml = 0.1; ///< Parameter for the resistivity in the absorbing layer
 };
 
 

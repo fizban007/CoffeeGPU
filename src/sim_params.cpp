@@ -53,6 +53,13 @@ parse_config(const std::string& filename) {
   result.check_egb = config->get_as<bool>("check_egb")
       .value_or(defaults.check_egb);
 
+  auto pml = config->get_array_of<int64_t>("pml");
+  if (pml)
+    for (int i = 0; i < 3; i++) result.pml[i] = (*pml)[i];
+
+  result.pmllen = config->get_as<int>("pmllen").value_or(defaults.pmllen);
+  result.sigpml = config->get_as<double>("sigpml").value_or(defaults.sigpml);
+
   return result;
 }
 

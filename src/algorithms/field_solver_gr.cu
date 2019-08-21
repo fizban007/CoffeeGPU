@@ -751,6 +751,13 @@ HOST_DEVICE Scalar sigma(Scalar a, Scalar x, Scalar y, Scalar z, Scalar r0, Scal
   return sig0 * cube((r0 - r) / d);
 }
 
+HOST_DEVICE Scalar pmlsigma(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Scalar sig0) {
+  if (x > xh) return sig0 * pow((x - xh) / pmlscale, 3.0);
+  else if (x < xl) return sig0 * pow((xl - x) / pmlscale, 3.0);
+  else return 0.0;
+}
+
+
 __global__ void
 kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Scalar *Dnz,
                       const Scalar *Bnx, const Scalar *Bny, const Scalar *Bnz,
@@ -764,7 +771,7 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
   Scalar r2 = 0.2 * rH;
   Scalar dd = 0.2 * rH;
   Scalar sig;
-  Scalar sig0 = 1.0;
+  Scalar sig0 = dev_params.sigpml;
   Scalar dx = dev_grid.delta[0] / 2.0;
   Scalar dy = dev_grid.delta[1] / 2.0;
   Scalar dz = dev_grid.delta[2] / 2.0;
@@ -809,7 +816,7 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
       if (sig > TINY) Bz[ijk] = exp(- sig) * Bnz[ijk] + (1.0 - exp(- sig)) / sig * (Bz[ijk] - Bnz[ijk]);
       // if (sig > 0) Bz[ijk] = exp(- sig) * Bz[ijk];   
     }
-    else if (r < r2) {
+    if (r < r2) {
       Dx[ijk] = 0;
       Dy[ijk] = 0;
       Dz[ijk] = 0;
@@ -819,9 +826,29 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
     }
 
     // Outer boundary
-    if (x < dev_params.lower[0] || x >= dev_params.lower[0]+dev_params.size[0]
-      || y < dev_params.lower[1] || y >= dev_params.lower[1]+dev_params.size[1]
-      || z < dev_params.lower[2] || z >= dev_params.lower[2]+dev_params.size[2]) {
+    Scalar xh = dev_params.lower[0] + dev_params.size[0] - dev_params.pml[0] * dev_grid.delta[0];
+    Scalar xl = dev_params.lower[0] + dev_params.pml[0] * dev_grid.delta[0];
+    Scalar yh = dev_params.lower[1] + dev_params.size[1] - dev_params.pml[1] * dev_grid.delta[1];
+    Scalar yl = dev_params.lower[1] + dev_params.pml[1] * dev_grid.delta[1];
+    Scalar zh = dev_params.lower[2] + dev_params.size[2] - dev_params.pml[2] * dev_grid.delta[2];
+    Scalar zl = dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[2];
+    if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
+      sigx = pmlsigma(x, xl, xh, dev_params.pmllen * dev_grid.delta[0], dev_params.sigpml);
+      sigy = pmlsigma(y, yl, yh, dev_params.pmllen * dev_grid.delta[0], dev_params.sigpml);
+      sigz = pmlsigma(z, zl, zh, dev_params.pmllen * dev_grid.delta[0], dev_params.sigpml);
+      sig = sigx + sigy + sigz;
+      if (sig > TINY) {
+        Dx[ijk] = exp(-sig) * Dnx[ijk] + (1.0 - exp(-sig)) / sig * (Dx[ijk] - Dnx[ijk]);
+        Dy[ijk] = exp(-sig) * Dny[ijk] + (1.0 - exp(-sig)) / sig * (Dy[ijk] - Dny[ijk]);
+        Dz[ijk] = exp(-sig) * Dnz[ijk] + (1.0 - exp(-sig)) / sig * (Dz[ijk] - Dnz[ijk]); 
+        Bx[ijk] = exp(-sig) * Bnx[ijk] + (1.0 - exp(-sig)) / sig * (Bx[ijk] - Bnx[ijk]);
+        By[ijk] = exp(-sig) * Bny[ijk] + (1.0 - exp(-sig)) / sig * (By[ijk] - Bny[ijk]);
+        Bz[ijk] = exp(-sig) * Bnz[ijk] + (1.0 - exp(-sig)) / sig * (Bz[ijk] - Bnz[ijk]); 
+      }
+    }
+    if (x < dev_params.lower[0] || x >= dev_params.lower[0] + dev_params.size[0]
+      || y < dev_params.lower[1] || y >= dev_params.lower[1] + dev_params.size[1]
+      || z < dev_params.lower[2] || z >= dev_params.lower[2] + dev_params.size[2]) {
       Dx[ijk] = Dnx[ijk];
       Dy[ijk] = Dny[ijk];
       Dz[ijk] = Dnz[ijk];
