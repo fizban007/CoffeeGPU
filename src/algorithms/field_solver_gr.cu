@@ -768,7 +768,7 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
   size_t ijk;
   Scalar rH = 1.0 + sqrt(1.0 - square(dev_params.a));
   Scalar r1 = 0.8 * rH;
-  Scalar r2 = 0.2 * rH;
+  Scalar r2 = 0.01 * rH;
   Scalar dd = 0.2 * rH;
   Scalar sig, sigx, sigy, sigz;
   Scalar sig0 = dev_params.sigpml;
@@ -846,9 +846,9 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
         Bz[ijk] = exp(-sig) * Bnz[ijk] + (1.0 - exp(-sig)) / sig * (Bz[ijk] - Bnz[ijk]); 
       }
     }
-    if (x < dev_params.lower[0] || x >= dev_params.lower[0] + dev_params.size[0]
-      || y < dev_params.lower[1] || y >= dev_params.lower[1] + dev_params.size[1]
-      || z < dev_params.lower[2] || z >= dev_params.lower[2] + dev_params.size[2]) {
+    if (x <= dev_params.lower[0] || x >= dev_params.lower[0] + dev_params.size[0]
+      || y <= dev_params.lower[1] || y >= dev_params.lower[1] + dev_params.size[1]
+      || z <= dev_params.lower[2] || z >= dev_params.lower[2] + dev_params.size[2]) {
       Dx[ijk] = Dnx[ijk];
       Dy[ijk] = Dny[ijk];
       Dz[ijk] = Dnz[ijk];
