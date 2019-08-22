@@ -12,7 +12,6 @@
 #define BLOCK_SIZE_Y 2
 #define BLOCK_SIZE_Z 2
 
-#define SHIFT_GHOST 4
 
 #define TINY 1e-7
 
@@ -211,7 +210,7 @@ kernel_compute_E_gr_thread(const Scalar *Dx, const Scalar *Dy, const Scalar *Dz,
     intBz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b101),
                        dev_grid.dims[0], dev_grid.dims[1]);
     Ddy = get_gamma_d12(dev_params.a, x, y, z) * intDx + get_gamma_d22(dev_params.a, x, y, z) * Dy[ijk]
-          +get_gamma_d23(dev_params.a, x, y, z) * intDz;
+          + get_gamma_d23(dev_params.a, x, y, z) * intDz;
     Ey[ijk] = get_alpha(dev_params.a, x, y, z) * Ddy + get_sqrt_gamma(dev_params.a, x, y, z) *
               (get_beta_u3(dev_params.a, x, y, z) * intBx - get_beta_u1(dev_params.a, x, y, z) * intBz);
 
@@ -228,7 +227,7 @@ kernel_compute_E_gr_thread(const Scalar *Dx, const Scalar *Dy, const Scalar *Dz,
     intBy = interpolate(By, ijk, Stagger(0b010), Stagger(0b011),
                        dev_grid.dims[0], dev_grid.dims[1]);
     Ddz = get_gamma_d13(dev_params.a, x, y, z) * intDx + get_gamma_d23(dev_params.a, x, y, z) * intDy
-          +get_gamma_d33(dev_params.a, x, y, z) * Dz[ijk];
+          + get_gamma_d33(dev_params.a, x, y, z) * Dz[ijk];
     Ez[ijk] = get_alpha(dev_params.a, x, y, z) * Ddz + get_sqrt_gamma(dev_params.a, x, y, z) *
               (get_beta_u1(dev_params.a, x, y, z) * intBy - get_beta_u2(dev_params.a, x, y, z) * intBx);
   }
@@ -886,9 +885,9 @@ field_solver_gr::field_solver_gr(sim_data &mydata, sim_environment& env) : m_dat
   rho = multi_array<Scalar>(m_data.env.grid().extent());
   rho.assign_dev(0.0);
 
-  blockGroupSize = dim3((m_data.env.grid().reduced_dim(0) + SHIFT_GHOST * 2 + blockSize.x - 1) / blockSize.x,
-                        (m_data.env.grid().reduced_dim(1) + SHIFT_GHOST * 2 + blockSize.y - 1) / blockSize.y,
-                        (m_data.env.grid().reduced_dim(2) + SHIFT_GHOST * 2 + blockSize.z - 1) / blockSize.z);
+  blockGroupSize = dim3((m_data.env.grid().reduced_dim(0) + m_env.params().shift_ghost * 2 + blockSize.x - 1) / blockSize.x,
+                        (m_data.env.grid().reduced_dim(1) + m_env.params().shift_ghost * 2 + blockSize.y - 1) / blockSize.y,
+                        (m_data.env.grid().reduced_dim(2) + m_env.params().shift_ghost * 2 + blockSize.z - 1) / blockSize.z);
   std::cout << blockSize.x << ", " << blockSize.y << ", " << blockSize.z << std::endl;
   std::cout << blockGroupSize.x << ", " << blockGroupSize.y << ", " << blockGroupSize.z << std::endl;
 }
@@ -963,7 +962,7 @@ field_solver_gr::rk_push_gr() {
   // kernel_compute_rho<<<gridSize, blockSize>>>(
   kernel_compute_rho_gr_thread<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-      rho.dev_ptr(), SHIFT_GHOST);
+      rho.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
   // `dE = curl B - curl B0 - j, dB = -curl E`
   // kernel_rk_push<<<g, blockSize>>>(
@@ -973,7 +972,7 @@ field_solver_gr::rk_push_gr() {
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       m_data.B0.dev_ptr(0), m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2),
       dD.dev_ptr(0), dD.dev_ptr(1), dD.dev_ptr(2), dB.dev_ptr(0),
-      dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr(), SHIFT_GHOST);
+      dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -987,7 +986,7 @@ field_solver_gr::rk_update_gr(Scalar rk_c1, Scalar rk_c2, Scalar rk_c3) {
       Dn.dev_ptr(0), Dn.dev_ptr(1), Dn.dev_ptr(2), Bn.dev_ptr(0),
       Bn.dev_ptr(1), Bn.dev_ptr(2), dD.dev_ptr(0), dD.dev_ptr(1),
       dD.dev_ptr(2), dB.dev_ptr(0), dB.dev_ptr(1), dB.dev_ptr(2), rk_c1,
-      rk_c2, rk_c3, SHIFT_GHOST);
+      rk_c2, rk_c3, m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -996,7 +995,7 @@ field_solver_gr::compute_E_gr() {
   kernel_compute_E_gr_thread<<<blockGroupSize, blockSize>>>(
     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-    Ed.dev_ptr(0), Ed.dev_ptr(1), Ed.dev_ptr(2), SHIFT_GHOST);
+    Ed.dev_ptr(0), Ed.dev_ptr(1), Ed.dev_ptr(2), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -1006,7 +1005,7 @@ field_solver_gr::compute_H_gr() {
     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
     m_data.B0.dev_ptr(0), m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2),
-    Hd.dev_ptr(0), Hd.dev_ptr(1), Hd.dev_ptr(2), SHIFT_GHOST);
+    Hd.dev_ptr(0), Hd.dev_ptr(1), Hd.dev_ptr(2), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -1018,7 +1017,7 @@ field_solver_gr::clean_epar_gr() {
   kernel_clean_epar_gr_thread<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      dD.dev_ptr(0), dD.dev_ptr(1), dD.dev_ptr(2), SHIFT_GHOST);
+      dD.dev_ptr(0), dD.dev_ptr(1), dD.dev_ptr(2), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -1029,7 +1028,7 @@ field_solver_gr::check_eGTb_gr() {
   kernel_check_eGTb_gr_thread<<<blockGroupSize, blockSize>>>(
       dD.dev_ptr(0), dD.dev_ptr(1), dD.dev_ptr(2), m_data.E.dev_ptr(0),
       m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0),
-      m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2), SHIFT_GHOST);
+      m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -1039,7 +1038,7 @@ field_solver_gr::absorbing_boundary() {
       Dn.dev_ptr(0), Dn.dev_ptr(1), Dn.dev_ptr(2), Bn.dev_ptr(0),
       Bn.dev_ptr(1), Bn.dev_ptr(2), m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), 
       m_data.E.dev_ptr(2), m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), 
-      m_data.B.dev_ptr(2), SHIFT_GHOST);
+      m_data.B.dev_ptr(2), m_env.params().shift_ghost);
   CudaCheckError();
 }
 

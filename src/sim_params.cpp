@@ -44,6 +44,8 @@ parse_config(const std::string& filename) {
   if (nodes)
     for (int i = 0; i < 3; i++) result.nodes[i] = (*nodes)[i];
 
+  result.shift_ghost = config->get_as<int>("shift_ghost").value_or(defaults.shift_ghost);
+
   result.a = config->get_as<double>("a").value_or(defaults.a);
 
   result.calc_current = config->get_as<bool>("calc_current")
