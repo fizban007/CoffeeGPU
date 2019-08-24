@@ -25,7 +25,8 @@ int main(int argc, char *argv[]) {
   // #include "user_alfven.hpp"
 
   // Initialization for Wald problem
-   #include "user_wald.hpp" 
+  // #include "user_wald.hpp" 
+  #include "user_wald1.hpp" 
 
   uint32_t step = 0;
   data_exporter exporter(env, step);
