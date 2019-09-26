@@ -406,7 +406,7 @@ field_solver::impose_bc(uint32_t timestep) {
     
     Scalar Bz = rz / (r1 * r1 * r1) - rz / (r2 * r2 * r2);
 
-    Scalar ampl = exp(rr / m_env.params().r0) * (rr / m_env.params().r0);
+    Scalar ampl = exp(-rr / m_env.params().r0) * (rr / m_env.params().r0);
     return ampl * (rx / rr) * Bz * m_env.params().v_twist;
   });
   m_data.E.impose_bc_z1(1, [&](Scalar x, Scalar y, Scalar z) {
@@ -423,7 +423,7 @@ field_solver::impose_bc(uint32_t timestep) {
     
     Scalar Bz = rz / (r1 * r1 * r1) - rz / (r2 * r2 * r2);
 
-    Scalar ampl = exp(rr / m_env.params().r0) * (rr / m_env.params().r0);
+    Scalar ampl = exp(-rr / m_env.params().r0) * (rr / m_env.params().r0);
     return ampl * (ry / rr) * Bz * m_env.params().v_twist;
   });
   m_data.B.impose_bc_z1(2, [&](Scalar x, Scalar y, Scalar z) {
