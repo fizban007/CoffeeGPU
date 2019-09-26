@@ -34,6 +34,9 @@ class vector_field {
   /// parameters x, y, z, and return a single scalar.
   template <typename Func>
   void initialize(int component, const Func &f);
+  
+  template <typename Func>
+  void impose_bc_z1(int component, const Func &f);
 
   /// Initialize all components according to function f. f should accept 4
   /// parameters, n, x, y, z, where n is the component. f should again return a

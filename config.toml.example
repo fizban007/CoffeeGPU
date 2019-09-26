@@ -1,8 +1,8 @@
 # Simulation timestep size in numerical units
-dt = 0.01
+dt = 0.008
 
 # Total number of timesteps to run
-max_steps = 10000
+max_steps = 5000
 
 # How many steps between data outputs
 data_interval = 100
@@ -12,17 +12,78 @@ periodic_boundary = [ false, false, false ]
 
 ## Grid parameters ##################
 # Number of cells in each direction (excluding guard cells)
-N = [ 256, 256, 256 ]
+N = [ 600, 600, 600 ]
 
 # Number of guard cells in each direction (at each boundary)
-guard = [ 1, 1, 1 ]
+guard = [ 12, 12, 12 ]
 
 # Lower limits of the simulation box
-lower = [ 0.0, 0.0, 0.0 ]
+lower = [ -6.0, -6.0, -6.0 ]
 
 # Size of the box in numerical units in each dimension
-size = [ 1.0, 1.0, 1.0 ]
+size = [ 12.0, 12.0, 12.0 ]
+
+# Number of ghost cells to be updated in field_solver
+shift_ghost = 11
 
 # Size of the domain decomposition. You want the product of all the numbers to
 # be equal to the number of ranks you have
-nodes = [ 1, 1, 1 ]
+nodes = [ 1, 2, 2 ]
+
+# How much to downsample from simulation grid to data output grid
+downsample = 2
+
+# Whether the evolution is in vacuum or not
+vacuum = false
+
+# Whether to use resistive formalism or not
+resistive = true
+
+## Parameter for resistive formalism ##################
+# Conductivity squared
+sigsq = 1e5
+
+# Number of substeps in the stiff part
+subsamp = 10
+
+## Disk setup ##################
+# Radius of the central compact object
+r1 = 1.0
+
+# Inner boundary of the accretion disk
+r2 = 1.44
+
+# Resistivity of the membrane
+eta = 0.0
+
+# Angular velocity of the central compact object
+omega0 = 0.48
+
+# Angular velocity of the inner boundary of the accretion disk
+omegad0 = 0.0
+
+## Initial current distribution in the disk ##################
+# Magnitude of the initial current in the disk
+j0 = 1000.0
+
+# Disk current distribution length scale
+wid = 4.0
+
+# How fast current decreases with radius
+alpha = 1.0
+
+## Absorbing layer ##################
+# Number of cells in absorbing layer at each boundary
+pml = [ 30, 30, 30 ]
+
+# Absorbing layer resistivety variation length scale in terms of cells
+pmllen = 10
+
+# Parameter for the resistivity in the absorbing layer
+sigpml = 0.1
+
+# Number of time steps for vacuum evolution
+vacstep = 1500
+
+# Number of steps between light curve calculation
+lc_interval = 10

@@ -49,6 +49,44 @@ parse_config(const std::string& filename) {
   result.h0 = config->get_as<double>("h_L0").value_or(defaults.h0);
   result.L0 = config->get_as<double>("L0").value_or(defaults.L0);
 
+  result.xc = result.size[0] * 0.5;
+  result.yc1 = result.size[1] * 0.5 - result.a0 * result.L0;
+  result.yc2 = result.size[1] * 0.5 + result.a0 * result.L0;
+  result.zc = - result.h0 * result.L0;
+
+  result.r0 = config->get_as<double>("r_L0").value_or(defaults.r0);
+  result.r0 = result.r0 * result.L0;
+  result.v_twist = config->get_as<double>("v_twist").value_or(defaults.v_twist);
+
+  // Resistive stuff
+/*
+  result.shift_ghost = config->get_as<int>("shift_ghost").value_or(defaults.shift_ghost);
+
+  result.vacuum = config->get_as<bool>("vacuum").value_or(defaults.vacuum);
+  result.resistive = config->get_as<bool>("resistive").value_or(defaults.resistive);
+  result.sigsq = config->get_as<double>("sigsq").value_or(defaults.sigsq);
+  result.subsamp = config->get_as<int>("subsamp").value_or(defaults.subsamp);
+
+  result.r1 = config->get_as<double>("r1").value_or(defaults.r1);
+  result.r2 = config->get_as<double>("r2").value_or(defaults.r2);
+  result.j0 = config->get_as<double>("j0").value_or(defaults.j0);  
+  result.wid = config->get_as<double>("wid").value_or(defaults.wid);
+  result.alpha = config->get_as<double>("alpha").value_or(defaults.alpha);
+  result.vacstep = config->get_as<int>("vacstep").value_or(defaults.vacstep);
+
+  result.eta = config->get_as<double>("eta").value_or(defaults.eta);
+  result.omega0 = config->get_as<double>("omega0").value_or(defaults.omega0);
+  result.omegad0 = config->get_as<double>("omegad0").value_or(defaults.omegad0);
+
+  auto pml = config->get_array_of<int64_t>("pml");
+  if (pml)
+    for (int i = 0; i < 3; i++) result.pml[i] = (*pml)[i];
+
+  result.pmllen = config->get_as<int>("pmllen").value_or(defaults.pmllen);
+  result.sigpml = config->get_as<double>("sigpml").value_or(defaults.sigpml);
+
+  result.lc_interval = config->get_as<int>("lc_interval").value_or(defaults.lc_interval);
+*/
   return result;
 }
 

@@ -67,16 +67,20 @@ kernel_rk_push_thread(const Scalar *ex, const Scalar *ey, const Scalar *ez,
     ijkP1 = ijk + dev_grid.dims[0] * dev_grid.dims[1];
     ijkM1 = ijk - dev_grid.dims[0] * dev_grid.dims[1];
     // push B-field
-    dbx[ijk] = CCx * (ey[ijkP1] - ey[ijk] - ez[ijP1k] + ez[ijk]);
-    dby[ijk] = CCy * (ez[iP1jk] - ez[ijk] - ex[ijkP1] + ex[ijk]);
-    dbz[ijk] = CCz * (ex[ijP1k] - ex[ijk] - ey[iP1jk] + ey[ijk]);
+    dbx[ijk] = CCz * (ey[ijkP1] - ey[ijk]) - CCy * (ez[ijP1k] - ez[ijk]);
+    dby[ijk] = CCx * (ez[iP1jk] - ez[ijk]) - CCz * (ex[ijkP1] - ex[ijk]);
+    dbz[ijk] = CCy * (ex[ijP1k] - ex[ijk]) - CCx * (ey[iP1jk] - ey[ijk]);
     // push E-field
-    dex[ijk] = CCx * ((by[ijkM1] - by[ijk] - bz[ijM1k] + bz[ijk]) -
-                      (by0[ijkM1] - bz0[ijk] - bz0[ijM1k] + bz0[ijk]));
-    dey[ijk] = CCy * ((bz[iM1jk] - bz[ijk] - bx[ijkM1] + bx[ijk]) -
-                      (bz0[iM1jk] - bz0[ijk] - bx0[ijkM1] + bx0[ijk]));
-    dez[ijk] = CCz * ((bx[ijM1k] - bx[ijk] - by[iM1jk] + by[ijk]) -
-                      (bx0[ijM1k] - bx0[ijk] - by0[iM1jk] + by0[ijk]));
+    dex[ijk] = (CCz * (by[ijkM1] - by[ijk]) - CCy * (bz[ijM1k] - bz[ijk])) -
+                      (CCz * (by0[ijkM1] - by0[ijk]) - CCy * (bz0[ijM1k] - bz0[ijk]));
+    dey[ijk] = (CCx * (bz[iM1jk] - bz[ijk]) - CCz * (bx[ijkM1] - bx[ijk])) -
+                      (CCx * (bz0[iM1jk] - bz0[ijk]) - CCz * (bx0[ijkM1] - bx0[ijk]));
+    dez[ijk] = (CCy * (bx[ijM1k] - bx[ijk]) - CCx * (by[iM1jk] - by[ijk])) -
+                      (CCy * (bx0[ijM1k] - bx0[ijk]) - CCx * (by0[iM1jk] - by0[ijk]));
+    // if (i == 10 && j == 10 && k == 10)
+      // printf("%d, %d, %d\n", dev_grid.dims[0], dev_grid.dims[1], dev_grid.dims[2]);
+      // printf("%f, %f, %f\n", dex[ijk], dey[ijk], dez[ijk]);
+      // printf("%lu, %lu, %lu\n", ijkM1, ijM1k, iM1jk);
 
     // computing currents
     //   `j_x`:
@@ -352,36 +356,87 @@ field_solver::~field_solver() {}
 
 void
 field_solver::evolve_fields() {
-  RANGE_PUSH("Compute", CLR_GREEN);
-  copy_fields();
+    RANGE_PUSH("Compute", CLR_GREEN);
+    copy_fields();
 
   // substep #1:
   rk_push();
   rk_update(1.0, 0.0, 1.0);
+  clean_epar();
   check_eGTb();
-  CudaSafeCall(cudaDeviceSynchronize());
-  RANGE_POP;
-  m_env.send_guard_cells(m_data);
+    CudaSafeCall(cudaDeviceSynchronize());
+    RANGE_POP;
+    m_env.send_guard_cells(m_data);
 
   // substep #2:
-  RANGE_PUSH("Compute", CLR_GREEN);
+    RANGE_PUSH("Compute", CLR_GREEN);
   rk_push();
   rk_update(0.75, 0.25, 0.25);
+  clean_epar();
   check_eGTb();
-  CudaSafeCall(cudaDeviceSynchronize());
-  RANGE_POP;
-  m_env.send_guard_cells(m_data);
+    CudaSafeCall(cudaDeviceSynchronize());
+    RANGE_POP;
+    m_env.send_guard_cells(m_data);
 
   // substep #3:
-  RANGE_PUSH("Compute", CLR_GREEN);
+    RANGE_PUSH("Compute", CLR_GREEN);
   rk_push();
   rk_update(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
   clean_epar();
   check_eGTb();
-  CudaSafeCall(cudaDeviceSynchronize());
-  RANGE_POP;
+    CudaSafeCall(cudaDeviceSynchronize());
+    RANGE_POP;
+    m_env.send_guard_cells(m_data);
+}
 
-  m_env.send_guard_cells(m_data);
+void 
+field_solver::impose_bc(uint32_t timestep) {
+  Scalar time = timestep * m_env.params().dt;
+  m_data.E.impose_bc_z1(0, [&](Scalar x, Scalar y, Scalar z) {
+    Scalar rx = (x - m_env.params().xc);
+    Scalar ry1 = (y - m_env.params().yc1);
+    Scalar ry2 = (y - m_env.params().yc2);
+    Scalar rz = (z - m_env.params().zc);
+
+    Scalar ry = (y - m_env.params().yc1);
+    Scalar rr = sqrt(rx * rx + ry * ry);
+
+    Scalar r1 = sqrt(rx * rx + ry1 * ry1 + rz * rz);
+    Scalar r2 = sqrt(rx * rx + ry2 * ry2 + rz * rz);
+    
+    Scalar Bz = rz / (r1 * r1 * r1) - rz / (r2 * r2 * r2);
+
+    Scalar ampl = exp(rr / m_env.params().r0) * (rr / m_env.params().r0);
+    return ampl * (rx / rr) * Bz * m_env.params().v_twist;
+  });
+  m_data.E.impose_bc_z1(1, [&](Scalar x, Scalar y, Scalar z) {
+    Scalar rx = (x - m_env.params().xc);
+    Scalar ry1 = (y - m_env.params().yc1);
+    Scalar ry2 = (y - m_env.params().yc2);
+    Scalar rz = (z - m_env.params().zc);
+
+    Scalar ry = (y - m_env.params().yc1);
+    Scalar rr = sqrt(rx * rx + ry * ry);
+
+    Scalar r1 = sqrt(rx * rx + ry1 * ry1 + rz * rz);
+    Scalar r2 = sqrt(rx * rx + ry2 * ry2 + rz * rz);
+    
+    Scalar Bz = rz / (r1 * r1 * r1) - rz / (r2 * r2 * r2);
+
+    Scalar ampl = exp(rr / m_env.params().r0) * (rr / m_env.params().r0);
+    return ampl * (ry / rr) * Bz * m_env.params().v_twist;
+  });
+  m_data.B.impose_bc_z1(2, [&](Scalar x, Scalar y, Scalar z) {
+    Scalar rx = (x - m_env.params().xc);
+    Scalar ry1 = (y - m_env.params().yc1);
+    Scalar ry2 = (y - m_env.params().yc2);
+    Scalar rz = (z - m_env.params().zc);
+
+    Scalar r1 = sqrt(rx * rx + ry1 * ry1 + rz * rz);
+    Scalar r2 = sqrt(rx * rx + ry2 * ry2 + rz * rz);
+    
+    return rz / (r1 * r1 * r1) - rz / (r2 * r2 * r2);
+  });
 }
 
 void
@@ -399,6 +454,7 @@ field_solver::rk_push() {
   kernel_compute_rho_thread<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       rho.dev_ptr(), SHIFT_GHOST);
+  CudaCheckError();
   // `dE = curl B - curl B0 - j, dB = -curl E`
   kernel_rk_push_thread<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
@@ -406,6 +462,7 @@ field_solver::rk_push() {
       m_data.B0.dev_ptr(0), m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
       dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr(), SHIFT_GHOST);
+  CudaCheckError();
 }
 
 void
@@ -418,6 +475,7 @@ field_solver::rk_update(Scalar rk_c1, Scalar rk_c2, Scalar rk_c3) {
       Bn.dev_ptr(1), Bn.dev_ptr(2), dE.dev_ptr(0), dE.dev_ptr(1),
       dE.dev_ptr(2), dB.dev_ptr(0), dB.dev_ptr(1), dB.dev_ptr(2), rk_c1,
       rk_c2, rk_c3, SHIFT_GHOST);
+  CudaCheckError();
 }
 
 void
@@ -427,6 +485,7 @@ field_solver::clean_epar() {
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), SHIFT_GHOST);
+  CudaCheckError();
 }
 
 void
@@ -436,6 +495,7 @@ field_solver::check_eGTb() {
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), m_data.E.dev_ptr(0),
       m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0),
       m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), SHIFT_GHOST);
+  CudaCheckError();
 }
 
 }  // namespace Coffee

@@ -13,6 +13,7 @@ class field_solver {
   ~field_solver();
 
   void evolve_fields();
+  void impose_bc(uint32_t timestep);
 
  private:
   sim_data& m_data;
