@@ -8,7 +8,9 @@
 #include "sim_env.h"
 #include "sim_params.h"
 #include "utils/nvproftool.h"
+//#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
+//#undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <iomanip>
 
 #define H5_USE_BOOST
@@ -125,8 +127,8 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   std::string num = ss.str();
   File datafile(
       outputDirectory + std::string("fld.") + num + std::string(".h5"),
-      File::ReadWrite | File::Create | File::Truncate,
-      MPIOFileDriver(MPI_COMM_WORLD, MPI_INFO_NULL));
+      File::ReadWrite | File::Create | File::Truncate);
+      //MPIOFileDriver(MPI_COMM_WORLD, MPI_INFO_NULL));
   // H5F_ACC_TRUNC);
   // H5F_ACC_RDWR);
   // add_grid_output(
