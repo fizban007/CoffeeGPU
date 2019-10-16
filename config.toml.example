@@ -1,11 +1,11 @@
 # Simulation timestep size in numerical units
-dt = 0.02
+dt = 0.01
 
 # Total number of timesteps to run
-max_steps = 10
+max_steps = 2000
 
 # How many steps between data outputs
-data_interval = 1
+data_interval = 40
 
 # Whether to use periodic boundary condition in the three dimensions
 periodic_boundary = [ false, false, false ]
@@ -15,7 +15,7 @@ periodic_boundary = [ false, false, false ]
 N = [ 200, 200, 200 ]
 
 # Number of guard cells in each direction (at each boundary)
-guard = [ 7, 7, 7 ]
+guard = [ 8, 8, 8 ]
 
 # Lower limits of the simulation box
 lower = [ -5.0, -5.0, -5.0 ]
@@ -27,8 +27,19 @@ size = [ 10.0, 10.0, 10.0 ]
 # be equal to the number of ranks you have
 nodes = [ 1, 2, 2 ]
 
+# Number of ghost cells to be updated in field_solver
+shift_ghost = 5
+
+# How much to downsample from simulation grid to data output grid
+downsample = 1
+
+# black hole spin
 a = 0.9
 
-calc_current = 0
-clean_ep = 0
-check_egb = 0
+calc_current = false
+clean_ep = false
+check_egb = false
+
+pml = [ 0, 0, 15 ]
+pmllen = 5
+sigpml = 100.0
