@@ -9,14 +9,12 @@
 #ifndef H5DATASPACE_MISC_HPP
 #define H5DATASPACE_MISC_HPP
 
-#include <vector>
 #include <array>
 #include <initializer_list>
+#include <vector>
+#include <numeric>
 
 #include <H5Spublic.h>
-
-#include "../H5DataSpace.hpp"
-#include "../H5Exception.hpp"
 
 #include "H5Utils.hpp"
 
@@ -139,7 +137,7 @@ inline DataSpace DataSpace::From(const ScalarValue& scalar) {
          std::is_enum<ScalarValue>::value ||
          std::is_same<std::string, ScalarValue>::value),
         "Only the following types are supported by DataSpace::From: \n"
-        "  signed_arithmetic_types = int |  long | float |  double \n"
+        "  signed_arithmetic_types = int | long | float | double \n"
         "  unsigned_arithmetic_types = unsigned signed_arithmetic_types \n"
         "  string_types = std::string \n"
         "  all_basic_types = string_types | unsigned_arithmetic_types | "

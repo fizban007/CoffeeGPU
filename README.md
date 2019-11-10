@@ -13,6 +13,7 @@ HighFive does not require an additional library and supports both HDF5 thread sa
 
 
 ### Design
+
 - Simple C++-ish minimalist interface
 - No other dependency than libhdf5
 - Zero overhead
@@ -21,7 +22,10 @@ HighFive does not require an additional library and supports both HDF5 thread sa
 
 ### Dependencies
 - libhdf5
-- (optional) boost >= 1.41
+- (optional, opt-in with *HIGHFIVE_PARALLEL_HDF5*) libhdf5-mpi
+- (optional, opt-out with *USE_BOOST*) boost >= 1.41
+- (optional, opt-in with *USE_EIGEN*) eigen3
+- (optional, opt-in with *USE_XTENSOR*) xtensor
 
 
 ### CMake integration
@@ -35,14 +39,9 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(foo)
 set(CMAKE_CXX_STANDARD 11)
 
-find_package(HighFive 2.0 REQUIRED)
+find_package(HighFive 2.1 REQUIRED)
 add_executable(bar bar.cpp)
-target_include_directories(
-  bar
-  PUBLIC $<TARGET_PROPERTY:HighFive,INTERFACE_INCLUDE_DIRECTORIES>)
-target_link_libraries(
-  bar
-  PUBLIC $<TARGET_PROPERTY:HighFive,INTERFACE_LINK_LIBRARIES>)
+target_link_libraries(bar HighFive)
 ```
 
 ### Usage
@@ -103,7 +102,7 @@ c++ -o program -I/path/to/highfive/include source.cpp  -lhdf5
 
 #### H5Easy
 
-For several 'standard' use cases the [HighFive/H5Easy.hpp](include/HighFive/H5Easy.hpp) interface is available. It allows:
+For several 'standard' use cases the [highfive/H5Easy.hpp](include/highfive/H5Easy.hpp) interface is available. It allows:
 
 *   Reading/writing in a single line of:
 
@@ -122,7 +121,7 @@ For several 'standard' use cases the [HighFive/H5Easy.hpp](include/HighFive/H5Ea
 The general idea is to 
 
 ```cpp
-#include <HighFive/H5Easy.hpp>
+#include <highfive/H5Easy.hpp>
 
 int main()
 {
@@ -142,6 +141,7 @@ whereby the `int` type of this example can be replaced by any of the above types
 
 ### Test Compilation
 Remember: Compilation is not required. Used only for unit test and examples
+Unit tests need boost (*USE_BOOST*).
 
 ```bash
 mkdir build; pushd build
@@ -152,7 +152,7 @@ make test
 
 ### Feature support
 
-- create/read/write file,  dataset, group, dataspace.
+- create/read/write file, dataset, group, dataspace.
 - automatic memory management / ref counting
 - automatic conversion of `std::vector` and nested `std::vector` from/to any dataset with basic types
 - automatic conversion of `std::string` to/from variable length string dataset
@@ -162,6 +162,7 @@ make test
 
 
 ### Contributors
+
 - Adrien Devresse <adrien.devresse@epfl.ch> - Blue Brain Project
 - Ali Can Demiralp <demiralpali@gmail.com> -
 - Fernando Pereira <fernando.pereira@epfl.ch> - Blue Brain Project
@@ -169,6 +170,8 @@ make test
 - Tristan Carel <tristan.carel@epfl.ch> - Blue Brain Project
 - Wolf Vollprecht <w.vollprecht@gmail.com> - QuantStack
 - Tom de Geus <tom@geus.me> - EPFL
+- Nicolas Cornu <nicolas.cornu@epfl.ch> - Blue Brain Project
 
 ### License
+
 Boost Software License 1.0

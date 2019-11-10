@@ -9,8 +9,6 @@
 #ifndef H5SLICE_TRAITS_MISC_HPP
 #define H5SLICE_TRAITS_MISC_HPP
 
-#include "H5Slice_traits.hpp"
-
 #include <algorithm>
 #include <cassert>
 #include <functional>
@@ -19,19 +17,14 @@
 #include <string>
 
 #ifdef H5_USE_BOOST
-// In some versions of Boost (starting with 1.64), you have to include the serialization header before ublas
+// starting Boost 1.64, serialization header must come before ublas
 #include <boost/serialization/vector.hpp>
-
 #include <boost/multi_array.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #endif
 
 #include <H5Dpublic.h>
 #include <H5Ppublic.h>
-
-#include "../H5DataSpace.hpp"
-#include "../H5DataType.hpp"
-#include "../H5Selection.hpp"
 
 #include "H5Converter_misc.hpp"
 
@@ -61,15 +54,28 @@ inline hid_t get_memspace_id(const DataSet* ptr) {
 }
 }
 
+inline ElementSet::ElementSet(std::initializer_list<std::size_t> list)
+    : _ids(list) {}
+
+inline ElementSet::ElementSet(std::initializer_list<std::vector<std::size_t>> list)
+    : ElementSet(std::vector<std::vector<std::size_t>>(list)) {}
+
+
 inline ElementSet::ElementSet(const std::vector<std::size_t>& element_ids)
     : _ids(element_ids) {}
+
+inline ElementSet::ElementSet(const std::vector<std::vector<std::size_t>>& element_ids) {
+    for (const auto& vec: element_ids) {
+        std::copy(vec.begin(), vec.end(), std::back_inserter(_ids));
+    }
+}
 
 template <typename Derivate>
 inline Selection
 SliceTraits<Derivate>::select(const std::vector<size_t>& offset,
                               const std::vector<size_t>& count,
                               const std::vector<size_t>& stride) const {
-    // hsize_t type convertion
+    // hsize_t type conversion
     // TODO : normalize hsize_t type in HighFive namespace
     std::vector<hsize_t> offset_local(offset.size());
     std::vector<hsize_t> count_local(count.size());
@@ -123,7 +129,14 @@ template <typename Derivate>
 inline Selection
 SliceTraits<Derivate>::select(const ElementSet& elements) const {
     const hsize_t* data = NULL;
+    DataSpace space = static_cast<const Derivate*>(this)->getSpace().clone();
     const std::size_t length = elements._ids.size();
+    if (length % space.getNumberDimensions() != 0) {
+        throw DataSpaceException("Number of coordinates in elements picking "
+                "should be a multiple of the dimensions.");
+    }
+
+    const std::size_t num_elements = length / space.getNumberDimensions();
     std::vector<hsize_t> raw_elements;
 
     // optimised at compile time
@@ -135,16 +148,15 @@ SliceTraits<Derivate>::select(const ElementSet& elements) const {
         raw_elements.resize(length);
         std::copy(elements._ids.begin(), elements._ids.end(),
                   raw_elements.begin());
-        data = &(raw_elements[0]);
+        data = raw_elements.data();
     }
 
-    DataSpace space = static_cast<const Derivate*>(this)->getSpace().clone();
-    if (H5Sselect_elements(space.getId(), H5S_SELECT_SET, length, data) < 0) {
+    if (H5Sselect_elements(space.getId(), H5S_SELECT_SET, num_elements, data) < 0) {
         HDF5ErrMapper::ToException<DataSpaceException>(
             "Unable to select elements");
     }
 
-    return Selection(DataSpace(length), space,
+    return Selection(DataSpace(num_elements), space,
                      details::get_dataset(static_cast<const Derivate*>(this)));
 }
 
