@@ -8,6 +8,7 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include "hdf5.h"
 
 namespace H5 {
 class H5File;
@@ -35,12 +36,15 @@ class data_exporter {
   void sync();
 
  protected:
-  template <typename Func>
-  void add_grid_output(sim_data& data, const std::string& name, Func f,
-                       HighFive::File& file);
+  // template <typename Func>
+  // void add_grid_output(sim_data& data, const std::string& name, Func f,
+  //                      // HighFive::File& file);
+  //                      hid_t file_id);
 
   void add_grid_output(multi_array<Scalar>& array, const std::string& name,
-                       Stagger stagger, HighFive::File& file);
+                       Stagger stagger,
+                       // HighFive::File& file);
+                       hid_t file_id);
 
   // std::unique_ptr<Grid> grid;
   sim_environment& m_env;

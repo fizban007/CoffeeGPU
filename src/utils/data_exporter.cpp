@@ -13,11 +13,11 @@
 //#undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <iomanip>
 
-#define H5_USE_BOOST
+// #define H5_USE_BOOST
 
-#include <highfive/H5DataSet.hpp>
-#include <highfive/H5DataSpace.hpp>
-#include <highfive/H5File.hpp>
+// #include <highfive/H5DataSet.hpp>
+// #include <highfive/H5DataSpace.hpp>
+// #include <highfive/H5File.hpp>
 
 #define ADD_GRID_OUTPUT(input, name, func, file)              \
   add_grid_output(input, name,                                \
@@ -125,10 +125,16 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   ss << std::setw(5) << std::setfill('0')
      << timestep / m_env.params().data_interval;
   std::string num = ss.str();
-  File datafile(
-      outputDirectory + std::string("fld.") + num + std::string(".h5"),
-      File::ReadWrite | File::Create | File::Truncate,
-      MPIOFileDriver(MPI_COMM_WORLD, MPI_INFO_NULL));
+  std::string filename = outputDirectory + std::string("fld.") + num + std::string(".h5");
+  // File datafile(
+  //     outputDirectory + std::string("fld.") + num + std::string(".h5"),
+  //     File::ReadWrite | File::Create | File::Truncate,
+  //     MPIOFileDriver(MPI_COMM_WORLD, MPI_INFO_NULL));
+  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+
+  hid_t datafile = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+  H5Pclose(plist_id);
   // H5F_ACC_TRUNC);
   // H5F_ACC_RDWR);
   // add_grid_output(
@@ -196,67 +202,101 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   // datafile.close();
 }
 
-template <typename Func>
-void
-data_exporter::add_grid_output(sim_data& data, const std::string& name,
-                               Func f, File& file) {
-  // if (data.env.grid().dim() == 3) {
-  int downsample = m_env.params().downsample;
-  sample_grid_quantity3d(data, m_env.grid(), downsample, tmp_grid_data,
-                         m_output, f);
+// template <typename Func>
+// void
+// data_exporter::add_grid_output(sim_data& data, const std::string& name,
+//                                Func f, hid_t file) {
+//   // if (data.env.grid().dim() == 3) {
+//   int downsample = m_env.params().downsample;
+//   sample_grid_quantity3d(data, m_env.grid(), downsample, tmp_grid_data,
+//                          m_output, f);
 
-  std::vector<size_t> dims(3);
-  for (int i = 0; i < 3; i++) {
-    dims[i] = m_env.params().N[2 - i];
-    if (dims[i] > downsample) dims[i] /= downsample;
-  }
-  // Actually write the temp array to hdf
-  DataSet dataset = file.createDataSet<float>(name, DataSpace(dims));
+//   std::vector<size_t> dims(3);
+//   for (int i = 0; i < 3; i++) {
+//     dims[i] = m_env.params().N[2 - i];
+//     if (dims[i] > downsample) dims[i] /= downsample;
+//   }
+//   // Actually write the temp array to hdf
+//   DataSet dataset = file.createDataSet<float>(name, DataSpace(dims));
 
-  std::vector<size_t> out_dim(3);
-  std::vector<size_t> offsets(3);
-  for (int i = 0; i < 3; i++) {
-    offsets[i] = m_env.grid().offset[2 - i] / downsample;
-    out_dim[i] = tmp_grid_data.extent()[2 - i];
-  }
-  dataset.select(offsets, out_dim).write(m_output);
-  // } else if (data.env.grid().dim() == 2) {
-  //   sample_grid_quantity2d(data, m_env.grid(),
-  //                          m_env.params().downsample, tmp_grid_data,
-  //                          m_output, f);
+//   std::vector<size_t> out_dim(3);
+//   std::vector<size_t> offsets(3);
+//   for (int i = 0; i < 3; i++) {
+//     offsets[i] = m_env.grid().offset[2 - i] / downsample;
+//     out_dim[i] = tmp_grid_data.extent()[2 - i];
+//   }
+//   dataset.select(offsets, out_dim).write(m_output);
+//   // } else if (data.env.grid().dim() == 2) {
+//   //   sample_grid_quantity2d(data, m_env.grid(),
+//   //                          m_env.params().downsample, tmp_grid_data,
+//   //                          m_output, f);
 
-  //   // Actually write the temp array to hdf
-  //   DataSet dataset =
-  //       file.createDataSet<float>(name, DataSpace::From(m_output));
-  //   dataset.write(m_output);
-  // }
-}
+//   //   // Actually write the temp array to hdf
+//   //   DataSet dataset =
+//   //       file.createDataSet<float>(name, DataSpace::From(m_output));
+//   //   dataset.write(m_output);
+//   // }
+// }
 
 void
 data_exporter::add_grid_output(multi_array<Scalar>& array,
                                const std::string& name, Stagger stagger,
-                               HighFive::File& file) {
+                               // HighFive::File& file) {
+                               hid_t file) {
   int downsample = m_env.params().downsample;
   array.downsample(downsample, tmp_grid_data,
                    Index(m_env.grid().guard[0], m_env.grid().guard[1],
                          m_env.grid().guard[2]),
                    stagger, m_output.data());
+  // tmp_grid_data.sync_to_host();
   // std::cout << m_output[10][10][10] << std::endl;
-  std::vector<size_t> dims(3);
+  // std::vector<size_t> dims(3);
+  hsize_t dims[3];
   for (int i = 0; i < 3; i++) {
-    dims[i] = m_env.params().N[2 - i];
+    dims[i] = m_env.params().N[i];
     if (dims[i] > downsample) dims[i] /= downsample;
   }
   // Actually write the temp array to hdf
-  DataSet dataset = file.createDataSet<float>(name, DataSpace(dims));
+  // DataSet dataset = file.createDataSet<float>(name, DataSpace(dims));
+  auto filespace = H5Screate_simple(m_env.grid().dim(), dims, NULL);
 
-  std::vector<size_t> out_dim(3);
-  std::vector<size_t> offsets(3);
+  // std::vector<size_t> out_dim(3);
+  // std::vector<size_t> offsets(3);
+  hsize_t out_dim[3];
+  hsize_t offsets[3];
   for (int i = 0; i < 3; i++) {
-    offsets[i] = m_env.grid().offset[2 - i] / downsample;
-    out_dim[i] = tmp_grid_data.extent()[2 - i];
+    offsets[i] = m_env.grid().offset[i] / downsample;
+    out_dim[i] = tmp_grid_data.extent()[i];
   }
-  dataset.select(offsets, out_dim).write(m_output);
+  auto memspace = H5Screate_simple(m_env.grid().dim(), out_dim, NULL);
+  // dataset.select(offsets, out_dim).write(m_output);
+  auto plist_id = H5Pcreate(H5P_DATASET_CREATE);
+  H5Pset_chunk(plist_id, m_env.grid().dim(), out_dim);
+  auto dset_id = H5Dcreate(file, name.c_str(), H5T_NATIVE_FLOAT, filespace,
+                           H5P_DEFAULT, plist_id, H5P_DEFAULT);
+  H5Pclose(plist_id);
+  H5Sclose(filespace);
+
+  hsize_t count[3];
+  hsize_t stride[3];
+  for (int i = 0; i < 3; i++) {
+    count[i] = 1;
+    stride[i] = 1;
+  }
+  filespace = H5Dget_space(dset_id);
+  auto status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets,
+                                    stride, count, out_dim);
+
+  plist_id = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+
+  status = H5Dwrite(dset_id, H5T_NATIVE_FLOAT, memspace, filespace,
+                    plist_id, tmp_grid_data.host_ptr());
+
+  H5Dclose(dset_id);
+  H5Sclose(filespace);
+  H5Sclose(memspace);
+  H5Pclose(plist_id);
 }
 
 }  // namespace Coffee

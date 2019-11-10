@@ -241,9 +241,10 @@ multi_array<T>::downsample(int d, self_type& array, Index offset,
                                                offset, stagger, d);
   CudaCheckError();
 
-  CudaSafeCall(cudaMemcpy(h_ptr, array.m_data_d,
-                          array.size() * sizeof(T),
-                          cudaMemcpyDeviceToHost));
+  // CudaSafeCall(cudaMemcpy(h_ptr, array.m_data_d,
+  //                         array.size() * sizeof(T),
+  //                         cudaMemcpyDeviceToHost));
+  array.sync_to_host();
 }
 
 /////////////////////////////////////////////////////////////////
