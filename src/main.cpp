@@ -40,7 +40,9 @@ int main(int argc, char *argv[]) {
     std::cout << "step = " << step << std::endl;
     // Do stuff here
     if (step % env.params().data_interval == 0) {
+      timer::stamp("output");
       exporter.write_output(data, step, 0.0);
+      timer::show_duration_since_stamp("output", "ms", "output");
     }
     timer::stamp("step");
     solver.evolve_fields_gr();
