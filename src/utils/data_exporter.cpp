@@ -253,7 +253,7 @@ data_exporter::add_grid_output(multi_array<Scalar>& array,
   // std::vector<size_t> dims(3);
   hsize_t dims[3];
   for (int i = 0; i < 3; i++) {
-    dims[i] = m_env.params().N[i];
+    dims[i] = m_env.params().N[2 - i];
     if (dims[i] > downsample) dims[i] /= downsample;
   }
   // Actually write the temp array to hdf
@@ -265,8 +265,8 @@ data_exporter::add_grid_output(multi_array<Scalar>& array,
   hsize_t out_dim[3];
   hsize_t offsets[3];
   for (int i = 0; i < 3; i++) {
-    offsets[i] = m_env.grid().offset[i] / downsample;
-    out_dim[i] = tmp_grid_data.extent()[i];
+    offsets[i] = m_env.grid().offset[2 - i] / downsample;
+    out_dim[i] = tmp_grid_data.extent()[2 - i];
   }
   auto memspace = H5Screate_simple(m_env.grid().dim(), out_dim, NULL);
   // dataset.select(offsets, out_dim).write(m_output);
