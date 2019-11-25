@@ -62,6 +62,10 @@ parse_config(const std::string& filename) {
   result.pmllen = config->get_as<int>("pmllen").value_or(defaults.pmllen);
   result.sigpml = config->get_as<double>("sigpml").value_or(defaults.sigpml);
 
+  result.ch2 = config->get_as<double>("ch2").value_or(defaults.ch2);
+  result.tau = config->get_as<double>("tau").value_or(defaults.tau);
+  result.KOeps = config->get_as<double>("KOeps").value_or(defaults.KOeps);
+
   return result;
 }
 

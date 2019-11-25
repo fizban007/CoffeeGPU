@@ -42,8 +42,13 @@ struct sim_params {
   int pml[3] = {60, 60, 60}; ///< Number of cells in absorbing layer at each boundary 
   int pmllen = 10; ///< Absorbing layer resistivety variation length scale in terms of cells
   Scalar sigpml = 0.1; ///< Parameter for the resistivity in the absorbing layer
-};
 
+  // EZ scheme
+  Scalar ch2 = 1.0; ///< Dedner wave speed (squared)
+  Scalar tau = 0.02; ///< Dedner damping time
+  Scalar KOeps = 0.50; ///< Small parameter in Kreiss-Oliger dissipation (range [0-1])
+
+};
 
 /// Reads a toml config file, parses the above data structure, and returns it.
 sim_params parse_config(const std::string& filename);
