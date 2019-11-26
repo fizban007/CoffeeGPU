@@ -2,7 +2,7 @@
 #include "data/sim_data.h"
 #include "sim_env.h"
 #include "utils/data_exporter.h"
-#include "algorithms/field_solver_gr.h"
+#include "algorithms/field_solver_EZ.h"
 #include "utils/timer.h"
 
 #include "algorithms/metric.h"
