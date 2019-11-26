@@ -9,8 +9,8 @@ class field_solver_EZ {
   vector_field<Scalar> Etmp, Btmp, dE, dB;
   multi_array<Scalar> P, dP, Ptmp;
 
-  field_solver(sim_data& mydata, sim_environment& env);
-  ~field_solver();
+  field_solver_EZ(sim_data& mydata, sim_environment& env);
+  ~field_solver_EZ();
 
   void evolve_fields();
 

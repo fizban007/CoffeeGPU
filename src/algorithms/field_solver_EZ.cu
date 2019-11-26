@@ -328,7 +328,7 @@ field_solver_EZ::evolve_fields(){
   m_env.send_guard_cells(m_data);
 }
 
-field_solver::field_solver(sim_data &mydata, sim_environment& env) : m_data(mydata), m_env(env) {
+field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment& env) : m_data(mydata), m_env(env) {
   dE = vector_field<Scalar>(m_data.env.grid());
   Etmp = vector_field<Scalar>(m_data.env.grid());
   dE.copy_stagger(m_data.E);
@@ -357,6 +357,6 @@ field_solver::field_solver(sim_data &mydata, sim_environment& env) : m_data(myda
   std::cout << blockGroupSize.x << ", " << blockGroupSize.y << ", " << blockGroupSize.z << std::endl;
 }
 
-field_solver::~field_solver() {}
+field_solver_EZ::~field_solver_EZ() {}
 
 }  // namespace Coffee
