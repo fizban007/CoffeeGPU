@@ -16,47 +16,47 @@ static dim3 blockSize(BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z);
 
 static dim3 blockGroupSize;
 
-__device__ inline Scalar diff1x4(Scalar * f, int ijk){
+__device__ inline Scalar diff1x4(const Scalar * f, int ijk){
 	return (f[ijk - 2] - 8 * f[ijk - 1] + 8 * f[ijk + 1] - f[ijk + 2]) / 12.0;
 } 
 
-__device__ inline Scalar diff1y4(Scalar * f, int ijk){
+__device__ inline Scalar diff1y4(const Scalar * f, int ijk){
 	int s = dev_grid.dims[0];
 	return (f[ijk - 2 * s] - 8 * f[ijk - 1 * s] + 8 * f[ijk + 1 * s] - f[ijk + 2 * s]) / 12.0;
 } 
 
-__device__ inline Scalar diff1z4(Scalar * f, int ijk){
+__device__ inline Scalar diff1z4(const Scalar * f, int ijk){
 	int s = dev_grid.dims[0] * dev_grid.dims[1];
 	return (f[ijk - 2 * s] - 8 * f[ijk - 1 * s] + 8 * f[ijk + 1 * s] - f[ijk + 2 * s]) / 12.0;
 } 
 
-__device__ inline Scalar diff4x2(Scalar * f, int ijk){
+__device__ inline Scalar diff4x2(const Scalar * f, int ijk){
 	return (f[ijk - 2] - 4 * f[ijk - 1] + 6 * f[ijk] - 4 * f[ijk + 1] + f[ijk + 2]);
 }
 
-__device__ inline Scalar diff4y2(Scalar * f, int ijk){
+__device__ inline Scalar diff4y2(const Scalar * f, int ijk){
 	int s = dev_grid.dims[0];
 	return (f[ijk - 2 * s] - 4 * f[ijk - 1 * s] + 6 * f[ijk] - 4 * f[ijk + 1 * s] + f[ijk + 2 * s]);
 }
 
-__device__ inline Scalar diff4z2(Scalar * f, int ijk){
+__device__ inline Scalar diff4z2(const Scalar * f, int ijk){
 	int s = dev_grid.dims[0] * dev_grid.dims[1];
 	return (f[ijk - 2 * s] - 4 * f[ijk - 1 * s] + 6 * f[ijk] - 4 * f[ijk + 1 * s] + f[ijk + 2 * s]);
 }
 
-__device__ inline Scalar dfdx(Scalar * f, int ijk){
+__device__ inline Scalar dfdx(const Scalar * f, int ijk){
 	return diff1x4(f, ijk) / dev_grid.delta[0];
 }
 
-__device__ inline Scalar dfdy(Scalar * f, int ijk){
+__device__ inline Scalar dfdy(const Scalar * f, int ijk){
 	return diff1y4(f, ijk) / dev_grid.delta[1];
 }
 
-__device__ inline Scalar dfdz(Scalar * f, int ijk){
+__device__ inline Scalar dfdz(const Scalar * f, int ijk){
 	return diff1z4(f, ijk) / dev_grid.delta[2];
 }
 
-__device__ inline Scalar KO(Scalar * f, int ijk){
+__device__ inline Scalar KO(const Scalar * f, int ijk){
 	return diff4x2(f, ijk) + diff4y2(f, ijk) + diff4z2(f, ijk);
 }
 
