@@ -16,6 +16,7 @@ set(Coffee_cuda_src
   "cuda/constant_mem.cu"
   "data/multi_array.cu"
   "algorithms/field_solver.cu"
+  "algorithms/field_solver_EZ.cu"
   "algorithms/field_solver_gr.cu")
 
 add_cuda_target(Coffee_cuda ${Coffee_cuda_src})
