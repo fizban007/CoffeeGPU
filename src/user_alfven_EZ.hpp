@@ -51,19 +51,19 @@ data.E.initialize(2, [&](Scalar x, Scalar y, Scalar z) {
 data.B.initialize(0, [&](Scalar x, Scalar y, Scalar z) {
   // Put your initial condition for Ex here
   Scalar phi = kx * x + ky * y + kz * z;
-  return - xi0 * std::sin(phi) * bnx;
+  return bx0 - xi0 * std::sin(phi) * bnx;
 });
 
 data.B.initialize(1, [&](Scalar x, Scalar y, Scalar z) {
   // Put your initial condition for Ex here
   Scalar phi = kx * x + ky * y + kz * z;
-  return - xi0 * std::sin(phi) * bny;
+  return by0 - xi0 * std::sin(phi) * bny;
 });
 
 data.B.initialize(2, [&](Scalar x, Scalar y, Scalar z) {
   // Put your initial condition for Ex here
   Scalar phi = kx * x + ky * y + kz * z;
-  return - xi0 * std::sin(phi) * bnz;
+  return bz0 - xi0 * std::sin(phi) * bnz;
 });
 
 
