@@ -76,10 +76,10 @@ kernel_rk_step1_thread(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
           k * dev_grid.dims[0] * dev_grid.dims[1];
 
 	  Scalar rotBx = dfdy(Bz, ijk) - dfdz(By, ijk);
-	  Scalar rotBy = dfdz(Bx, ijk) - dfdz(Bz, ijk);
+	  Scalar rotBy = dfdz(Bx, ijk) - dfdx(Bz, ijk);
 	  Scalar rotBz = dfdx(By, ijk) - dfdy(Bx, ijk);
 	  Scalar rotEx = dfdy(Ez, ijk) - dfdz(Ey, ijk);
-	  Scalar rotEy = dfdz(Ex, ijk) - dfdz(Ez, ijk);
+	  Scalar rotEy = dfdz(Ex, ijk) - dfdx(Ez, ijk);
 	  Scalar rotEz = dfdx(Ey, ijk) - dfdy(Ex, ijk);
 
 	  Scalar divE = dfdx(Ex, ijk) + dfdy(Ey, ijk) + dfdz(Ez, ijk);
