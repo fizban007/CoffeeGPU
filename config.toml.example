@@ -28,7 +28,7 @@ size = [ 10.0, 10.0, 10.0 ]
 nodes = [ 1, 2, 2 ]
 
 # Number of ghost cells to be updated in field_solver
-shift_ghost = 5
+shift_ghost = 3
 
 # How much to downsample from simulation grid to data output grid
 downsample = 1
@@ -36,10 +36,16 @@ downsample = 1
 # black hole spin
 a = 0.9
 
-calc_current = false
-clean_ep = false
-check_egb = false
+calc_current = true
+clean_ep = true
+check_egb = true
 
+# parameters for the absorbing boundary
 pml = [ 0, 0, 15 ]
 pmllen = 5
 sigpml = 100.0
+
+# Parameters for the Kreiss-Oliger dissipation in the EZ scheme
+ch2 = 1.0
+tau = 0.02
+KOeps = 0.50

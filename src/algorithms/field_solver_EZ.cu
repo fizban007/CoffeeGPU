@@ -155,9 +155,9 @@ kernel_Epar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
 		if (B2 < TINY) B2 = TINY;
 		Scalar EB = Ex[ijk] * Bx[ijk] + Ey[ijk] * By[ijk] + Ez[ijk] * Bz[ijk];
 
-		Ex[ijk] = Ex[ijk] - EB / B2 *Bx[ijk];
-		Ey[ijk] = Ey[ijk] - EB / B2 *By[ijk];
-		Ez[ijk] = Ez[ijk] - EB / B2 *Bz[ijk];
+		Ex[ijk] = Ex[ijk] - EB / B2 * Bx[ijk];
+		Ey[ijk] = Ey[ijk] - EB / B2 * By[ijk];
+		Ez[ijk] = Ez[ijk] - EB / B2 * Bz[ijk];
 
   }
 
