@@ -49,9 +49,10 @@ int main(int argc, char *argv[]) {
       timer::stamp("output");
       exporter.write_output(data, step, 0.0);
       timer::show_duration_since_stamp("output", "ms", "output");
+      
+      Scalar Wb = solver.total_energy(data.B);
+      Scalar We = solver.total_energy(data.E);
       if (env.rank() == 0) {
-        Scalar Wb = solver.total_energy(data.B);
-        Scalar We = solver.total_energy(data.E);
         efile << Wb << " " << We << "\n";
       }
     }
