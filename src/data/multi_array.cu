@@ -236,8 +236,8 @@ multi_array<T>::downsample(int d, multi_array<float>& array, Index offset,
   dim3 gridSize((ext.x + blockSize.x - 1) / blockSize.x,
                 (ext.y + blockSize.y - 1) / blockSize.y,
                 (ext.z + blockSize.z - 1) / blockSize.z);
-  Kernels::downsample<<<gridSize, blockSize>>>(m_data_d, array.m_data_d,
-                                               m_extent, array.m_extent,
+  Kernels::downsample<<<gridSize, blockSize>>>(m_data_d, array.dev_ptr(),
+                                               m_extent, array.extent(),
                                                offset, stagger, d);
   CudaCheckError();
 
