@@ -231,7 +231,7 @@ template <typename T>
 void
 multi_array<T>::downsample(int d, multi_array<float>& array, Index offset,
                            Stagger stagger, float* h_ptr) {
-  auto& ext = array.m_extent;
+  auto& ext = array.extent();
   dim3 blockSize(32, 8, 4);
   dim3 gridSize((ext.x + blockSize.x - 1) / blockSize.x,
                 (ext.y + blockSize.y - 1) / blockSize.y,
