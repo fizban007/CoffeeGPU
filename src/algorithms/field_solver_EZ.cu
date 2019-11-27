@@ -8,7 +8,7 @@
 #define BLOCK_SIZE_Y 2
 #define BLOCK_SIZE_Z 2
 
-#define TINY 1e-12
+#define TINY 1e-7
 
 namespace Coffee {
 
@@ -319,6 +319,7 @@ field_solver_EZ::evolve_fields(){
 
     CudaSafeCall(cudaDeviceSynchronize());
     m_env.send_guard_cells(m_data);
+    m_env.send_guard_cell_array(P);
   }
 
   Kreiss_Oliger();
@@ -326,6 +327,7 @@ field_solver_EZ::evolve_fields(){
 	if (m_env.params().check_egb) check_eGTb();
 	CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
+  m_env.send_guard_cell_array(P);
 }
 
 field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment& env) : m_data(mydata), m_env(env) {

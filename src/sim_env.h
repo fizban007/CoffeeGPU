@@ -30,6 +30,8 @@ class sim_environment {
   void send_guard_cell_z_old(sim_data& data, int dir);
   void send_guard_cell_z(sim_data& data, int dir);
 
+  void send_guard_cell_array(multi_array<Scalar>& array);
+
   const Grid& grid() const { return m_grid; }
   const sim_params& params() const { return m_params; }
 

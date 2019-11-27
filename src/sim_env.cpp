@@ -285,6 +285,16 @@ sim_environment::send_guard_cells(sim_data& data) {
   RANGE_POP;
 }
 
+void
+sim_environment::send_guard_cell_array(multi_array<Scalar>& array) {
+  send_array_x(array, -1);
+  send_array_x(array, 1);
+  send_array_y(array, -1);
+  send_array_y(array, 1);
+  send_array_z(array, -1);
+  send_array_z(array, 1);
+}
+
 sim_environment::sim_environment(int* argc, char*** argv) {
   int is_initialized = 0;
   MPI_Initialized(&is_initialized);
