@@ -230,7 +230,7 @@ multi_array<T>::sync_to_device() {
 template <typename T>
 void
 multi_array<T>::downsample(int d, multi_array<float>& array, Index offset,
-                           Stagger stagger, T* h_ptr) {
+                           Stagger stagger, float* h_ptr) {
   auto& ext = array.m_extent;
   dim3 blockSize(32, 8, 4);
   dim3 gridSize((ext.x + blockSize.x - 1) / blockSize.x,
