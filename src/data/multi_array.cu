@@ -19,7 +19,7 @@ assign_single_value(T* data, size_t size, T value) {
 
 template <typename T>
 __global__ void
-downsample(T* orig_data, T* dst_data, Extent orig_ext, Extent dst_ext,
+downsample(T* orig_data, float* dst_data, Extent orig_ext, Extent dst_ext,
            Index offset, Stagger st, int d) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   int j = threadIdx.y + blockIdx.y * blockDim.y;
@@ -229,7 +229,7 @@ multi_array<T>::sync_to_device() {
 
 template <typename T>
 void
-multi_array<T>::downsample(int d, self_type& array, Index offset,
+multi_array<T>::downsample(int d, multi_array<float>& array, Index offset,
                            Stagger stagger, T* h_ptr) {
   auto& ext = array.m_extent;
   dim3 blockSize(32, 8, 4);
