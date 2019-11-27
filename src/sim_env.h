@@ -42,6 +42,8 @@ class sim_environment {
   bool is_boundary(int n) const { return m_is_boundary[n]; }
   bool is_periodic(int n) const { return m_is_periodic[n]; }
 
+  MPI_Datatype scalar_type() const { return m_scalar_type; }
+
  private:
   void initialize();
   void setup_domain();

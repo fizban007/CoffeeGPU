@@ -4,6 +4,7 @@
 #include "utils/data_exporter.h"
 #include "algorithms/field_solver_EZ.h"
 #include "utils/timer.h"
+#include <fstream>
 
 #include "algorithms/metric.h"
 #include "algorithms/interpolation.h"
@@ -37,6 +38,9 @@ int main(int argc, char *argv[]) {
   // exporter.write_output(data, step, 0.0);
   // exporter.sync();
 
+  ofstream efile;
+  efile.open("Data/energy.txt", ios::out | ios::app);
+
   // Main simulation loop
   for (step = 0; step <= env.params().max_steps; step++) {
     std::cout << "step = " << step << std::endl;
@@ -45,12 +49,19 @@ int main(int argc, char *argv[]) {
       timer::stamp("output");
       exporter.write_output(data, step, 0.0);
       timer::show_duration_since_stamp("output", "ms", "output");
+      if (env.rank() == 0) {
+        Scalar Wb = solver.total_energy(data.B);
+        Scalar We = solver.total_energy(data.E);
+        efile << Wb << " " << We << "\n";
+      }
     }
     timer::stamp("step");
     // solver.evolve_fields_gr();
     solver.evolve_fields();
     timer::show_duration_since_stamp("evolve field", "ms", "step");
   }
+
+  efile.close();
 
   timer::show_duration_since_stamp("the whole program", "s", "begin");
 

@@ -14,6 +14,8 @@ class field_solver_EZ {
 
   void evolve_fields();
 
+  Scalar field_solver_EZ::total_energy(vector_field<Scalar> &f);
+
  private:
   sim_data& m_data;
   sim_environment& m_env;

@@ -387,4 +387,22 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment& env) : m_dat
 
 field_solver_EZ::~field_solver_EZ() {}
 
+Scalar
+field_solver_EZ::total_energy(vector_field<Scalar> &f) {
+  f.sync_to_host();
+  Scalar Wtmp = 0.0, W = 0.0;
+  for (int k = m_env.grid().guard[2]; k < m_env.grid().dims[2] - m_env.grid().guard[2]; ++k) {
+    for (int j = m_env.grid().guard[1]; j < m_env.grid().dims[1] - m_env.grid().guard[1]; ++j) {
+      for (int i = m_env.grid().guard[0]; i < m_env.grid().dims[0] - m_env.grid().guard[0]; ++i) {
+        int ijk = i + j * m_env.grid().dims[0] +
+          k * m_env.grid().dims[0] * m_env.grid().dims[1];
+        Wtmp += f.data(0)[ijk] * f.data(0)[ijk] + f.data(1)[ijk] * f.data(1)[ijk] 
+          + f.data(2)[ijk] * f.data(2)[ijk];
+      }
+    }
+  }
+  MPI_Reduce(&Wtmp, &W, 1, m_env.scalar_type(), MPI_SUM, 0, m_env.world());
+  return W;
+}
+
 }  // namespace Coffee
