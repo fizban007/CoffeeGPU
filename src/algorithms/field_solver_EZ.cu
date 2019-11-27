@@ -10,54 +10,74 @@
 
 #define TINY 1e-7
 
+#define FFE_DISSIPATION_ORDER 6
+
 namespace Coffee {
 
 static dim3 blockSize(BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z);
 
 static dim3 blockGroupSize;
 
-__device__ inline Scalar diff1x4(const Scalar * f, int ijk){
+__device__ inline Scalar diff1x4(const Scalar * f, int ijk) {
 	return (f[ijk - 2] - 8 * f[ijk - 1] + 8 * f[ijk + 1] - f[ijk + 2]) / 12.0;
 } 
 
-__device__ inline Scalar diff1y4(const Scalar * f, int ijk){
+__device__ inline Scalar diff1y4(const Scalar * f, int ijk) {
 	int s = dev_grid.dims[0];
 	return (f[ijk - 2 * s] - 8 * f[ijk - 1 * s] + 8 * f[ijk + 1 * s] - f[ijk + 2 * s]) / 12.0;
 } 
 
-__device__ inline Scalar diff1z4(const Scalar * f, int ijk){
+__device__ inline Scalar diff1z4(const Scalar * f, int ijk) {
 	int s = dev_grid.dims[0] * dev_grid.dims[1];
 	return (f[ijk - 2 * s] - 8 * f[ijk - 1 * s] + 8 * f[ijk + 1 * s] - f[ijk + 2 * s]) / 12.0;
 } 
 
-__device__ inline Scalar diff4x2(const Scalar * f, int ijk){
+__device__ inline Scalar diff4x2(const Scalar * f, int ijk) {
 	return (f[ijk - 2] - 4 * f[ijk - 1] + 6 * f[ijk] - 4 * f[ijk + 1] + f[ijk + 2]);
 }
 
-__device__ inline Scalar diff4y2(const Scalar * f, int ijk){
+__device__ inline Scalar diff4y2(const Scalar * f, int ijk) {
 	int s = dev_grid.dims[0];
 	return (f[ijk - 2 * s] - 4 * f[ijk - 1 * s] + 6 * f[ijk] - 4 * f[ijk + 1 * s] + f[ijk + 2 * s]);
 }
 
-__device__ inline Scalar diff4z2(const Scalar * f, int ijk){
+__device__ inline Scalar diff4z2(const Scalar * f, int ijk) {
 	int s = dev_grid.dims[0] * dev_grid.dims[1];
 	return (f[ijk - 2 * s] - 4 * f[ijk - 1 * s] + 6 * f[ijk] - 4 * f[ijk + 1 * s] + f[ijk + 2 * s]);
 }
 
-__device__ inline Scalar dfdx(const Scalar * f, int ijk){
+__device__ inline Scalar diff6x2(const Scalar * f, int ijk) {
+  return (f[ijk - 3] - 6 * f[ijk - 2] + 15 * f[ijk - 1] - 20 * f[ijk] 
+      + 15 * f[ijk + 1] - 6 * f[ijk + 2] + f[ijk + 3]);
+}
+
+__device__ inline Scalar diff6y2(const Scalar * f, int ijk) {
+  int s = dev_grid.dims[0];
+  return (f[ijk - 3 * s] - 6 * f[ijk - 2 * s] + 15 * f[ijk - 1 * s] - 20 * f[ijk] 
+      + 15 * f[ijk + 1 * s] - 6 * f[ijk + 2 * s] + f[ijk + 3 * s]);
+}
+
+__device__ inline Scalar diff6z2(const Scalar * f, int ijk) {
+  int s = dev_grid.dims[0] * dev_grid.dims[1];
+  return (f[ijk - 3 * s] - 6 * f[ijk - 2 * s] + 15 * f[ijk - 1 * s] - 20 * f[ijk] 
+      + 15 * f[ijk + 1 * s] - 6 * f[ijk + 2 * s] + f[ijk + 3 * s]);
+}
+
+__device__ inline Scalar dfdx(const Scalar * f, int ijk) {
 	return diff1x4(f, ijk) / dev_grid.delta[0];
 }
 
-__device__ inline Scalar dfdy(const Scalar * f, int ijk){
+__device__ inline Scalar dfdy(const Scalar * f, int ijk) {
 	return diff1y4(f, ijk) / dev_grid.delta[1];
 }
 
-__device__ inline Scalar dfdz(const Scalar * f, int ijk){
+__device__ inline Scalar dfdz(const Scalar * f, int ijk) {
 	return diff1z4(f, ijk) / dev_grid.delta[2];
 }
 
-__device__ inline Scalar KO(const Scalar * f, int ijk){
-	return diff4x2(f, ijk) + diff4y2(f, ijk) + diff4z2(f, ijk);
+__device__ inline Scalar KO(const Scalar * f, int ijk) {
+  if(FFE_DISSIPATION_ORDER == 4) return diff4x2(f, ijk) + diff4y2(f, ijk) + diff4z2(f, ijk);
+	if(FFE_DISSIPATION_ORDER == 6) return diff6x2(f, ijk) + diff6y2(f, ijk) + diff6z2(f, ijk);
 }
 
 __global__ void
@@ -225,7 +245,13 @@ kernel_KO_step2_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx, Scalar *B
                  Scalar *Ex_tmp, Scalar *Ey_tmp, Scalar *Ez_tmp, Scalar *Bx_tmp, 
                  Scalar *By_tmp, Scalar *Bz_tmp, Scalar *P, Scalar *P_tmp, int shift) {
 
-  Scalar KO_const = -1.0/16.0;
+  Scalar KO_const = 0.0;
+
+  switch (FFE_DISSIPATION_ORDER) {
+  case 4: KO_const = -1./16; break;
+  case 6: KO_const = -1./64; break;
+  }
+
   size_t ijk;
   int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j = threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
