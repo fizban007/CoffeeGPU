@@ -1,7 +1,7 @@
 #include "cuda/constant_mem.h"
 #include "cuda/constant_mem_func.h"
 #include "cuda/cuda_utility.h"
-#include "field_solver_EZ.h"
+#include "field_solver_EZ_cylindrical.h"
 #include "pulsar.h"
 #include "utils/timer.h"
 
@@ -72,12 +72,12 @@ diff6z2(const Scalar *f, int ijk) {
 
 __device__ inline Scalar
 dfdR(const Scalar *f, int ijk) {
-  return diff1x4(f, ijk) / dev_grid.delta[0];
+  return diff1R4(f, ijk) / dev_grid.delta[0];
 }
 
 __device__ inline Scalar
 dfRdR(const Scalar *f, const Scalar R0, int ijk) {
-  return diff1RR4(f, R, ijk) / dev_grid.delta[0];
+  return diff1RR4(f, R0, ijk) / dev_grid.delta[0];
 }
 
 __device__ inline Scalar
@@ -380,17 +380,17 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
     Scalar rl = 2.0 * r;
     Scalar scale = 0.5 * dev_grid.delta[0];
     if (r < rl) {
-      Scalar bRn = m_env.params().b0 * cube(m_env.params().radius) *
+      Scalar bRn = dev_params.b0 * cube(dev_params.radius) *
                    dipole_x(R, 0, z, 0.0, 0.0);
-      Scalar bzn = m_env.params().b0 * cube(m_env.params().radius) *
+      Scalar bzn = dev_params.b0 * cube(dev_params.radius) *
                    dipole_z(R, 0, z, 0.0, 0.0);
       Scalar bfn = 0.0;
-      Scalar s = shape(r, m_env.params().radius, scale);
+      Scalar s = shape(r, dev_params.radius, scale);
       BR[ijk] = bRn * s + BR[ijk] * (1 - s);
       Bz[ijk] = bzn * s + Bz[ijk] * (1 - s);
       Bf[ijk] = bfn * s + Bf[ijk] * (1 - s);
-      Scalar eRn = -omega * R * Bz[ijk];
-      Scalar ezn = omega * R * BR[ijk];
+      Scalar eRn = - dev_params.omega * R * Bz[ijk];
+      Scalar ezn = dev_params.omega * R * BR[ijk];
       Scalar efn = 0.0;
       ER[ijk] = eRn * s + ER[ijk] * (1 - s);
       Ez[ijk] = ezn * s + Ez[ijk] * (1 - s);
@@ -533,25 +533,28 @@ field_solver_EZ_cylindrical::boundary_axis() {
   kernel_boundary_axis_thread<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      P.dev_ptr(), m_env.params().shift_ghost)
+      P.dev_ptr(), m_env.params().shift_ghost);
+  CudaCheckError();
 }
 
 void
 field_solver_EZ_cylindrical::boundary_pulsar(Scalar t) {
-  kernel_boundary_axis_thread<<<blockGroupSize, blockSize>>>(
+  kernel_boundary_pulsar_thread<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      P.dev_ptr(), t, m_env.params().shift_ghost)
+      P.dev_ptr(), t, m_env.params().shift_ghost);
+  CudaCheckError();
 }
 
 void
 field_solver_EZ_cylindrical::boundary_absorbing() {
-  kernel_boundary_axis_thread<<<blockGroupSize, blockSize>>>(
+  kernel_boundary_absorbing_thread<<<blockGroupSize, blockSize>>>(
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
       Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      m_env.params().shift_ghost)
+      m_env.params().shift_ghost);
+  CudaCheckError();
 }
 
 void
@@ -573,7 +576,7 @@ field_solver_EZ_cylindrical::evolve_fields(Scalar time) {
     if (m_env.params().check_egb) check_eGTb();
 
     boundary_axis();
-    boundary_pulsar(t + c[i] * m_env.params().dt);
+    boundary_pulsar(time + cs[i] * m_env.params().dt);
     if (i == 4) boundary_absorbing();
 
     CudaSafeCall(cudaDeviceSynchronize());

@@ -1,6 +1,5 @@
 #ifndef _USER_INIT_H_
 #define _USER_INIT_H_
-#include "pulsar.h"
 
 // Axisymmetric pulsar, using field_solver_EZ_cylindrical
 
