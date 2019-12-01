@@ -66,6 +66,10 @@ parse_config(const std::string& filename) {
   result.tau = config->get_as<double>("tau").value_or(defaults.tau);
   result.KOeps = config->get_as<double>("KOeps").value_or(defaults.KOeps);
 
+  result.radius = config->get_as<double>("radius").value_or(defaults.radius);
+  result.omega = config->get_as<double>("omega").value_or(defaults.omega);
+  result.b0 = config->get_as<double>("b0").value_or(defaults.b0);
+
   return result;
 }
 

@@ -48,6 +48,11 @@ struct sim_params {
   Scalar tau = 0.02; ///< Dedner damping time
   Scalar KOeps = 0.50; ///< Small parameter in Kreiss-Oliger dissipation (range [0-1])
 
+  // Pulsar problem
+  Scalar radius = 10.0; ///< Radius of the pulsar
+  Scalar omega = 0.001; ///< Angular velocity of the pulsar
+  Scalar b0 = 1e3; ///< Magnetic field at stellar surface
+
 };
 
 /// Reads a toml config file, parses the above data structure, and returns it.
