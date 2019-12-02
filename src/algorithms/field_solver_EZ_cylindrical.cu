@@ -438,7 +438,7 @@ kernel_boundary_absorbing_thread(const Scalar *enx, const Scalar *eny,
     z = dev_grid.pos(2, k, 1);
     Scalar xh = dev_params.lower[0] + dev_params.size[0] -
                 dev_params.pml[0] * dev_grid.delta[0];
-    // Scalar xl =
+    Scalar xl = - xh;
     //     dev_params.lower[0] + dev_params.pml[0] * dev_grid.delta[0];
     Scalar yh = dev_params.lower[1] + dev_params.size[1] -
                 dev_params.pml[1] * dev_grid.delta[1];
@@ -454,9 +454,10 @@ kernel_boundary_absorbing_thread(const Scalar *enx, const Scalar *eny,
                       dev_params.sigpml);
       sigy = pmlsigma(y, yl, yh, dev_params.pmllen * dev_grid.delta[0],
                       dev_params.sigpml);
-      sigz = pmlsigma(z, zl, zh, dev_params.pmllen * dev_grid.delta[0],
-                      dev_params.sigpml);
-      sig = sigx + sigy + sigz;
+      // sigz = pmlsigma(z, zl, zh, dev_params.pmllen * dev_grid.delta[0],
+      //                 dev_params.sigpml);
+      // sig = sigx + sigy + sigz;
+      sig = sigx + sigy;
       if (sig > TINY) {
         ex[ijk] = exp(-sig) * enx[ijk] +
                   (1.0 - exp(-sig)) / sig * (ex[ijk] - enx[ijk]);
