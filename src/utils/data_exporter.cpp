@@ -192,12 +192,12 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   //           0.5 * (data.B(2, idx) + data.B(2, idx.x, idx.y, idx.z - 1));
   //     },
   //     datafile);
-  add_grid_output(data.E.data(0), "Ex", Stagger(0b110), datafile);
-  add_grid_output(data.E.data(1), "Ey", Stagger(0b101), datafile);
-  add_grid_output(data.E.data(2), "Ez", Stagger(0b011), datafile);
-  add_grid_output(data.B.data(0), "Bx", Stagger(0b001), datafile);
-  add_grid_output(data.B.data(1), "By", Stagger(0b010), datafile);
-  add_grid_output(data.B.data(2), "Bz", Stagger(0b100), datafile);
+  add_grid_output(data.E.data(0), "Ex", data.E.stagger(0), datafile);
+  add_grid_output(data.E.data(1), "Ey", data.E.stagger(1), datafile);
+  add_grid_output(data.E.data(2), "Ez", data.E.stagger(2), datafile);
+  add_grid_output(data.B.data(0), "Bx", data.B.stagger(0), datafile);
+  add_grid_output(data.B.data(1), "By", data.B.stagger(1), datafile);
+  add_grid_output(data.B.data(2), "Bz", data.B.stagger(2), datafile);
 
   // datafile.close();
 }
