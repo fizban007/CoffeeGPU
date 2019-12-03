@@ -397,7 +397,7 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
               (BR[ijk] * R + Bz[ijk] * z) * R / (r * r) * (1 - s);
       Bznew = (bRn * R + bzn * z) * z / (r * r) * s +
               (BR[ijk] * R + Bz[ijk] * z) * z / (r * r) * (1 - s);
-      Scalar s = shape(r, dev_params.radius - d1, scaleBpar);
+      s = shape(r, dev_params.radius - d1, scaleBpar);
       BRnew += (bRn - (bRn * R + bzn * z) * R / (r * r)) * s +
                (BR[ijk] - (BR[ijk] * R + Bz[ijk] * z) * R / (r * r)) *
                    (1 - s);
@@ -408,12 +408,12 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
       Scalar eRn = -dev_params.omega * R * Bz[ijk];
       Scalar ezn = dev_params.omega * R * BR[ijk];
       Scalar efn = 0.0;
-      Scalar s = shape(r, dev_params.radius - d0, scaleEperp);
+      s = shape(r, dev_params.radius - d0, scaleEperp);
       ERnew = (eRn * R + ezn * z) * R / (r * r) * s +
               (ER[ijk] * R + Ez[ijk] * z) * R / (r * r) * (1 - s);
       Eznew = (eRn * R + ezn * z) * z / (r * r) * s +
               (ER[ijk] * R + Ez[ijk] * z) * z / (r * r) * (1 - s);
-      Scalar s = shape(r, dev_params.radius - d0, scaleEpar);
+      s = shape(r, dev_params.radius - d0, scaleEpar);
       ERnew += (eRn - (eRn * R + ezn * z) * R / (r * r)) * s +
                (ER[ijk] - (ER[ijk] * R + Ez[ijk] * z) * R / (r * r)) *
                    (1 - s);
