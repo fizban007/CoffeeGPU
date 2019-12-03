@@ -115,15 +115,25 @@ dfdz(const Scalar *f, int ijk) {
   return diff1z4(f, ijk) / dev_grid.delta[1];
 }
 
+// __device__ inline Scalar
+// KO(const Scalar *f, const Scalar R0, int ijk) {
+//   if (FFE_DISSIPATION_ORDER == 4) {
+//     if (R0 - 2 * dev_grid.delta[0] < 0) return diff4aR2(f, ijk) + diff4z2(f, ijk);
+//     else return diff4R2(f, ijk) + diff4z2(f, ijk);
+//   }
+//   if (FFE_DISSIPATION_ORDER == 6) {
+//     if (R0 - 2 * dev_grid.delta[0] < 0) return diff6aR2(f, ijk) + diff6z2(f, ijk);
+//     else return diff6R2(f, ijk) + diff6z2(f, ijk);
+//   }
+// }
+
 __device__ inline Scalar
 KO(const Scalar *f, const Scalar R0, int ijk) {
   if (FFE_DISSIPATION_ORDER == 4) {
-    if (R0 - 2 * dev_grid.delta[0] < 0) return diff4aR2(f, ijk) + diff4z2(f, ijk);
-    else return diff4R2(f, ijk) + diff4z2(f, ijk);
+    return diff4R2(f, ijk) + diff4z2(f, ijk);
   }
   if (FFE_DISSIPATION_ORDER == 6) {
-    if (R0 - 2 * dev_grid.delta[0] < 0) return diff6aR2(f, ijk) + diff6z2(f, ijk);
-    else return diff6R2(f, ijk) + diff6z2(f, ijk);
+    return diff6R2(f, ijk) + diff6z2(f, ijk);
   }
 }
 
