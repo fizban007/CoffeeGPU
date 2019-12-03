@@ -101,8 +101,9 @@ diff6z2(const Scalar *f, int ijk) {
 
 __device__ inline Scalar
 dfdR(const Scalar *f, const Scalar R0, int ijk) {
-  if (R0 - 2 * dev_grid.delta[0] < 0) return diff1aR4(f, ijk) / dev_grid.delta[0];
-  else return diff1R4(f, ijk) / dev_grid.delta[0];
+  // if (R0 - 2 * dev_grid.delta[0] < 0) return diff1aR4(f, ijk) / dev_grid.delta[0];
+  // else return diff1R4(f, ijk) / dev_grid.delta[0];
+  return diff1R4(f, ijk) / dev_grid.delta[0];
 }
 
 __device__ inline Scalar
@@ -384,12 +385,12 @@ kernel_boundary_axis_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
     Scalar R = dev_grid.pos(0, i, 1);
     if (std::abs(R) < dev_grid.delta[0] / 4.0) {
       ER[ijk] = 0.0;
-      // Ez[ijk] = Ez[ijk + 1];
+      Ez[ijk] = Ez[ijk + 1];
       Ef[ijk] = 0.0;
       BR[ijk] = 0.0;
-      // Bz[ijk] = Bz[ijk + 1];
+      Bz[ijk] = Bz[ijk + 1];
       Bf[ijk] = 0.0;
-      // P[ijk] = P[ijk + 1];
+      P[ijk] = P[ijk + 1];
       for (int l = 1; l <= 3; ++l) {
         ER[ijk - l] = -ER[ijk + l];
         Ez[ijk - l] = Ez[ijk + l];
