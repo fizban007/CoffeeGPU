@@ -200,6 +200,7 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   add_grid_output(data.B.data(2), "Bz", data.B.stagger(2), datafile);
 
   // datafile.close();
+  H5Fclose(datafile);
 }
 
 // template <typename Func>
