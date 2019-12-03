@@ -28,11 +28,26 @@ diff1R4(const Scalar *f, int ijk) {
 }
 
 __device__ inline Scalar
+diff1aR4(const Scalar *f, int ijk) {
+  return - 25.0 / 12.0 * f[ijk] + 4.0 * f[ijk + 1] - 3.0 * f[ijk + 2] +
+         4.0 / 3.0 * f[ijk + 3] - 1.0 / 4.0 * f[ijk + 4];
+}
+
+__device__ inline Scalar
 diff1RR4(const Scalar *f, const Scalar R0, int ijk) {
   Scalar dR = dev_grid.delta[0];
   return (f[ijk - 2] * (R0 - 2 * dR) - 8 * f[ijk - 1] * (R0 - dR) +
           8 * f[ijk + 1] * (R0 + dR) - f[ijk + 2] * (R0 + 2 * dR)) /
          12.0;
+}
+
+__device__ inline Scalar
+diff1aRR4(const Scalar *f, const Scalar R0, int ijk) {
+  Scalar dR = dev_grid.delta[0];
+  return -25.0 / 12.0 * f[ijk] * R0 + 4.0 * f[ijk + 1] * (R0 + dR) -
+         3.0 * f[ijk + 2] * (R0 + 2 * dR) +
+         4.0 / 3.0 * f[ijk + 3] * (R0 + 3 * dR) -
+         1.0 / 4.0 * f[ijk + 4] * (R0 + 4 * dR);
 }
 
 __device__ inline Scalar
@@ -50,6 +65,12 @@ diff4R2(const Scalar *f, int ijk) {
 }
 
 __device__ inline Scalar
+diff4aR2(const Scalar *f, int ijk) {
+  return 3.0 * f[ijk] - 14.0 * f[ijk + 1] + 26.0 * f[ijk + 2] -
+         24.0 * f[ijk + 3] + 11.0 * f[ijk + 4] - 2.0 * f[ijk + 5];
+}
+
+__device__ inline Scalar
 diff4z2(const Scalar *f, int ijk) {
   int s = dev_grid.dims[0];
   return (f[ijk - 2 * s] - 4 * f[ijk - 1 * s] + 6 * f[ijk] -
@@ -63,6 +84,14 @@ diff6R2(const Scalar *f, int ijk) {
 }
 
 __device__ inline Scalar
+diff6aR2(const Scalar *f, int ijk) {
+  return 4.0 * f[ijk] - 27.0 * f[ijk + 1] +
+         78.0 * f[ijk + 2] - 125.0 * f[ijk + 3] +
+         120.0 * f[ijk + 4] - 69.0 * f[ijk + 5] +
+         22.0 * f[ijk + 6] - 3.0 * f[ijk + 7];
+}
+
+__device__ inline Scalar
 diff6z2(const Scalar *f, int ijk) {
   int s = dev_grid.dims[0];
   return (f[ijk - 3 * s] - 6 * f[ijk - 2 * s] + 15 * f[ijk - 1 * s] -
@@ -71,8 +100,9 @@ diff6z2(const Scalar *f, int ijk) {
 }
 
 __device__ inline Scalar
-dfdR(const Scalar *f, int ijk) {
-  return diff1R4(f, ijk) / dev_grid.delta[0];
+dfdR(const Scalar *f, const Scalar R0, int ijk) {
+  if (R0 - 2 * dev_grid.delta[0] < 0) return diff1aR4(f, ijk) / dev_grid.delta[0];
+  else return diff1R4(f, ijk) / dev_grid.delta[0];
 }
 
 __device__ inline Scalar
@@ -86,11 +116,15 @@ dfdz(const Scalar *f, int ijk) {
 }
 
 __device__ inline Scalar
-KO(const Scalar *f, int ijk) {
-  if (FFE_DISSIPATION_ORDER == 4)
-    return diff4R2(f, ijk) + diff4z2(f, ijk);
-  if (FFE_DISSIPATION_ORDER == 6)
-    return diff6R2(f, ijk) + diff6z2(f, ijk);
+KO(const Scalar *f, const Scalar R0, int ijk) {
+  if (FFE_DISSIPATION_ORDER == 4) {
+    if (R0 - 2 * dev_grid.delta[0] < 0) return diff4aR2(f, ijk) + diff4z2(f, ijk);
+    else return diff4R2(f, ijk) + diff4z2(f, ijk);
+  }
+  if (FFE_DISSIPATION_ORDER == 6) {
+    if (R0 - 2 * dev_grid.delta[0] < 0) return diff6aR2(f, ijk) + diff6z2(f, ijk);
+    else return diff6R2(f, ijk) + diff6z2(f, ijk);
+  }
 }
 
 __global__ void
@@ -119,10 +153,10 @@ kernel_rk_step1_thread(const Scalar *ER, const Scalar *Ez,
 
     Scalar rotBR = -dfdz(Bf, ijk);
     Scalar rotBz = dfRdR(Bf, R, ijk) / R;
-    Scalar rotBf = dfdz(BR, ijk) - dfdR(Bz, ijk);
+    Scalar rotBf = dfdz(BR, ijk) - dfdR(Bz, R, ijk);
     Scalar rotER = -dfdz(Ef, ijk);
     Scalar rotEz = dfRdR(Ef, R, ijk) / R;
-    Scalar rotEf = dfdz(ER, ijk) - dfdR(Ez, ijk);
+    Scalar rotEf = dfdz(ER, ijk) - dfdR(Ez, R, ijk);
 
     Scalar divE = dfRdR(ER, R, ijk) / R + dfdz(Ez, ijk);
     Scalar divB = dfRdR(BR, R, ijk) / R + dfdz(Bz, ijk);
@@ -143,7 +177,7 @@ kernel_rk_step1_thread(const Scalar *ER, const Scalar *Ez,
                  Jp * Bz[ijk]) /
                 B2;
 
-    dBR[ijk] = As * dBR[ijk] - dev_params.dt * (rotER + dfdR(P, ijk));
+    dBR[ijk] = As * dBR[ijk] - dev_params.dt * (rotER + dfdR(P, R ijk));
     dBf[ijk] = As * dBf[ijk] - dev_params.dt * (rotEf + 0.0);
     dBz[ijk] = As * dBz[ijk] - dev_params.dt * (rotEz + dfdz(P, ijk));
 
@@ -265,16 +299,17 @@ kernel_KO_step1_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
+    Scalar R = dev_grid.pos(0, i, 1);
 
-    Ex_tmp[ijk] = KO(Ex, ijk);
-    Ey_tmp[ijk] = KO(Ey, ijk);
-    Ez_tmp[ijk] = KO(Ez, ijk);
+    Ex_tmp[ijk] = KO(Ex, R, ijk);
+    Ey_tmp[ijk] = KO(Ey, R, ijk);
+    Ez_tmp[ijk] = KO(Ez, R, ijk);
 
-    Bx_tmp[ijk] = KO(Bx, ijk);
-    By_tmp[ijk] = KO(By, ijk);
-    Bz_tmp[ijk] = KO(Bz, ijk);
+    Bx_tmp[ijk] = KO(Bx, R, ijk);
+    By_tmp[ijk] = KO(By, R, ijk);
+    Bz_tmp[ijk] = KO(Bz, R, ijk);
 
-    P_tmp[ijk] = KO(P, ijk);
+    P_tmp[ijk] = KO(P, R, ijk);
   }
 }
 
@@ -339,12 +374,12 @@ kernel_boundary_axis_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
     Scalar R = dev_grid.pos(0, i, 1);
     if (std::abs(R) < dev_grid.delta[0] / 4.0) {
       ER[ijk] = 0.0;
-      Ez[ijk] = Ez[ijk + 1];
+      // Ez[ijk] = Ez[ijk + 1];
       Ef[ijk] = 0.0;
       BR[ijk] = 0.0;
-      Bz[ijk] = Bz[ijk + 1];
+      // Bz[ijk] = Bz[ijk + 1];
       Bf[ijk] = 0.0;
-      P[ijk] = P[ijk + 1];
+      // P[ijk] = P[ijk + 1];
       for (int l = 1; l <= 3; ++l) {
         ER[ijk - l] = -ER[ijk + l];
         Ez[ijk - l] = Ez[ijk + l];
@@ -669,5 +704,29 @@ field_solver_EZ_cylindrical::field_solver_EZ_cylindrical(
 }
 
 field_solver_EZ_cylindrical::~field_solver_EZ_cylindrical() {}
+
+Scalar
+field_solver_EZ_cylindrical::total_energy(vector_field<Scalar> &f) {
+  f.sync_to_host();
+  Scalar Wtmp = 0.0, W = 0.0;
+  for (int k = m_env.grid().guard[2];
+       k < m_env.grid().dims[2] - m_env.grid().guard[2]; ++k) {
+    for (int j = m_env.grid().guard[1];
+         j < m_env.grid().dims[1] - m_env.grid().guard[1]; ++j) {
+      for (int i = m_env.grid().guard[0];
+           i < m_env.grid().dims[0] - m_env.grid().guard[0]; ++i) {
+        int ijk = i + j * m_env.grid().dims[0] +
+                  k * m_env.grid().dims[0] * m_env.grid().dims[1];
+        Scalar R = dev_grid.pos(0, i, 1);
+        Wtmp += (f.data(0)[ijk] * f.data(0)[ijk] +
+                f.data(1)[ijk] * f.data(1)[ijk] +
+                f.data(2)[ijk] * f.data(2)[ijk]) * R;
+      }
+    }
+  }
+  MPI_Reduce(&Wtmp, &W, 1, m_env.scalar_type(), MPI_SUM, 0,
+             m_env.world());
+  return W;
+}
 
 }  // namespace Coffee

@@ -40,8 +40,8 @@ int main(int argc, char *argv[]) {
   // exporter.write_output(data, step, 0.0);
   // exporter.sync();
 
-  // ofstream efile;
-  // efile.open("Data/energy.txt", ios::out | ios::app);
+  ofstream efile;
+  efile.open("Data/energy.txt", ios::out | ios::app);
 
   // Main simulation loop
   Scalar time = 0.0;
@@ -53,11 +53,11 @@ int main(int argc, char *argv[]) {
       exporter.write_output(data, step, 0.0);
       timer::show_duration_since_stamp("output", "ms", "output");
 
-      // Scalar Wb = solver.total_energy(data.B);
-      // Scalar We = solver.total_energy(data.E);
-      // if (env.rank() == 0) {
-      //   efile << Wb << " " << We << std::endl;
-      // }
+      Scalar Wb = solver.total_energy(data.B);
+      Scalar We = solver.total_energy(data.E);
+      if (env.rank() == 0) {
+        efile << Wb << " " << We << std::endl;
+      }
     }
     timer::stamp("step");
     // solver.evolve_fields_gr();
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     time += env.params().dt;
   }
 
-  // efile.close();
+  efile.close();
 
   timer::show_duration_since_stamp("the whole program", "s", "begin");
 
