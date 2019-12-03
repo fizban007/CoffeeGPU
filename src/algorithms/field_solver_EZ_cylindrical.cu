@@ -377,6 +377,7 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
     Scalar R = dev_grid.pos(0, i, 1);
     Scalar z = dev_grid.pos(1, j, 1);
     Scalar r = std::sqrt(R * R + z * z);
+    if (r < TINY) r = TINY;
     Scalar rl = 2.0 * dev_params.radius;
     // Scalar scale = 1.0 * dev_grid.delta[0];
     Scalar scaleEpar = 0.5 * dev_grid.delta[0];
