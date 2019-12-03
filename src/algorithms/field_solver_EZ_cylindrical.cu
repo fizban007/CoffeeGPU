@@ -377,15 +377,16 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
     Scalar R = dev_grid.pos(0, i, 1);
     Scalar z = dev_grid.pos(1, j, 1);
     Scalar r = std::sqrt(R * R + z * z);
-    Scalar rl = 2.0 * r;
-    Scalar scale = 0.5 * dev_grid.delta[0];
+    Scalar rl = 2.0 * dev_params.radius;
+    Scalar scale = 1.0 * dev_grid.delta[0];
+    Scalar d1 = 4 * dev_grid.delta[0];
     if (r < rl) {
       Scalar bRn = dev_params.b0 * cube(dev_params.radius) *
                    dipole_x(R, 0, z, 0.0, 0.0);
       Scalar bzn = dev_params.b0 * cube(dev_params.radius) *
                    dipole_z(R, 0, z, 0.0, 0.0);
       Scalar bfn = 0.0;
-      Scalar s = shape(r, dev_params.radius, scale);
+      Scalar s = shape(r, dev_params.radius - d1, scale);
       BR[ijk] = bRn * s + BR[ijk] * (1 - s);
       Bz[ijk] = bzn * s + Bz[ijk] * (1 - s);
       Bf[ijk] = bfn * s + Bf[ijk] * (1 - s);
