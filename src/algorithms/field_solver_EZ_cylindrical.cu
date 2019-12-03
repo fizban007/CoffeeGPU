@@ -378,24 +378,55 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
     Scalar z = dev_grid.pos(1, j, 1);
     Scalar r = std::sqrt(R * R + z * z);
     Scalar rl = 2.0 * dev_params.radius;
-    Scalar scale = 1.0 * dev_grid.delta[0];
+    // Scalar scale = 1.0 * dev_grid.delta[0];
+    Scalar scaleEpar = 0.5 * dev_grid.delta[0];
+    Scalar scaleEperp = 0.25 * dev_grid.delta[0];
+    Scalar scaleBperp = scaleEpar;
+    Scalar scaleBpar = scaleBperp;
     Scalar d1 = 4 * dev_grid.delta[0];
+    Scalar d0 = 0;
+    Scalar BRnew, Bznew, Bfnew, ERnew, Eznew, Efnew;
     if (r < rl) {
       Scalar bRn = dev_params.b0 * cube(dev_params.radius) *
                    dipole_x(R, 0, z, 0.0, 0.0);
       Scalar bzn = dev_params.b0 * cube(dev_params.radius) *
                    dipole_z(R, 0, z, 0.0, 0.0);
       Scalar bfn = 0.0;
-      Scalar s = shape(r, dev_params.radius - d1, scale);
-      BR[ijk] = bRn * s + BR[ijk] * (1 - s);
-      Bz[ijk] = bzn * s + Bz[ijk] * (1 - s);
-      Bf[ijk] = bfn * s + Bf[ijk] * (1 - s);
-      Scalar eRn = - dev_params.omega * R * Bz[ijk];
+      Scalar s = shape(r, dev_params.radius - d1, scaleBperp);
+      BRnew = (bRn * R + bzn * z) * R / (r * r) * s +
+              (BR[ijk] * R + Bz[ijk] * z) * R / (r * r) * (1 - s);
+      Bznew = (bRn * R + bzn * z) * z / (r * r) * s +
+              (BR[ijk] * R + Bz[ijk] * z) * z / (r * r) * (1 - s);
+      Scalar s = shape(r, dev_params.radius - d1, scaleBpar);
+      BRnew += (bRn - (bRn * R + bzn * z) * R / (r * r)) * s +
+               (BR[ijk] - (BR[ijk] * R + Bz[ijk] * z) * R / (r * r)) *
+                   (1 - s);
+      Bznew += (bzn - (bRn * R + bzn * z) * z / (r * r)) * s +
+               (Bz[ijk] - (BR[ijk] * R + Bz[ijk] * z) * z / (r * r)) *
+                   (1 - s);
+      Bfnew = bfn * s + Bf[ijk] * (1 - s);
+      Scalar eRn = -dev_params.omega * R * Bz[ijk];
       Scalar ezn = dev_params.omega * R * BR[ijk];
       Scalar efn = 0.0;
-      ER[ijk] = eRn * s + ER[ijk] * (1 - s);
-      Ez[ijk] = ezn * s + Ez[ijk] * (1 - s);
-      Ef[ijk] = efn * s + Ef[ijk] * (1 - s);
+      Scalar s = shape(r, dev_params.radius - d0, scaleEperp);
+      ERnew = (eRn * R + ezn * z) * R / (r * r) * s +
+              (ER[ijk] * R + Ez[ijk] * z) * R / (r * r) * (1 - s);
+      Eznew = (eRn * R + ezn * z) * z / (r * r) * s +
+              (ER[ijk] * R + Ez[ijk] * z) * z / (r * r) * (1 - s);
+      Scalar s = shape(r, dev_params.radius - d0, scaleEpar);
+      ERnew += (eRn - (eRn * R + ezn * z) * R / (r * r)) * s +
+               (ER[ijk] - (ER[ijk] * R + Ez[ijk] * z) * R / (r * r)) *
+                   (1 - s);
+      Eznew += (ezn - (eRn * R + ezn * z) * z / (r * r)) * s +
+               (Ez[ijk] - (ER[ijk] * R + Ez[ijk] * z) * z / (r * r)) *
+                   (1 - s);
+      Efnew = efn * s + Ef[ijk] * (1 - s);
+      BR[ijk] = BRnew;
+      Bz[ijk] = Bznew;
+      Bf[ijk] = Bfnew;
+      ER[ijk] = ERnew;
+      Ez[ijk] = Eznew;
+      Ef[ijk] = Efnew;
     }
   }
 }
