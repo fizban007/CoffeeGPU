@@ -53,6 +53,11 @@ struct sim_params {
   Scalar omega = 0.001; ///< Angular velocity of the pulsar
   Scalar b0 = 1e3; ///< Magnetic field at stellar surface
 
+  // Pulsar with Alfven wave perturbation
+  Scalar tp_start = 0.0; ///< Time for the perturbation to start
+  Scalar tp_end = 0.5; ///< Time for the perturbation to end
+  Scalar rpert = 10.0; ///< Perturbation range
+
 };
 
 /// Reads a toml config file, parses the above data structure, and returns it.

@@ -404,6 +404,18 @@ kernel_boundary_axis_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
   }
 }
 
+__device__ Scalar
+wpert(Scalar t, Scalar z) {
+  Scalar z1 = 0.0;
+  Scalar z2 = dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert);
+  if (t >= dev_params.tp_start && t <= dev_params.tp_end && z >= z1 &&
+      z <= z2)
+    return sin((z - z1) * M_PI / (z2 - z1)) *
+           sin((t - dev_params.tp_start) * 2.0 * M_PI /
+               (dev_params.tp_end - dev_params.tp_start));
+  else return 0;
+}
+
 __global__ void
 kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
                               Scalar *BR, Scalar *Bz, Scalar *Bf,
@@ -452,8 +464,11 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
                (Bz[ijk] - (BR[ijk] * R + Bz[ijk] * z) * z / (r * r)) *
                    (1 - s);
       Bfnew = bfn * s + Bf[ijk] * (1 - s);
-      Scalar eRn = -dev_params.omega * R * Bz[ijk];
-      Scalar ezn = dev_params.omega * R * BR[ijk];
+
+      // Scalar w = dev_params.omega;
+      Scalar w = wpert(t, z);
+      Scalar eRn = - w * R * Bz[ijk];
+      Scalar ezn = w * R * BR[ijk];
       Scalar efn = 0.0;
       s = shape(r, dev_params.radius - d0, scaleEperp);
       ERnew = (eRn * R + ezn * z) * R / (r * r) * s +
