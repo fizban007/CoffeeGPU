@@ -27,11 +27,11 @@ diff1R4(const Scalar *f, int ijk) {
          12.0;
 }
 
-__device__ inline Scalar
-diff1aR4(const Scalar *f, int ijk) {
-  return - 25.0 / 12.0 * f[ijk] + 4.0 * f[ijk + 1] - 3.0 * f[ijk + 2] +
-         4.0 / 3.0 * f[ijk + 3] - 1.0 / 4.0 * f[ijk + 4];
-}
+// __device__ inline Scalar
+// diff1aR4(const Scalar *f, int ijk) {
+//   return - 25.0 / 12.0 * f[ijk] + 4.0 * f[ijk + 1] - 3.0 * f[ijk + 2] +
+//          4.0 / 3.0 * f[ijk + 3] - 1.0 / 4.0 * f[ijk + 4];
+// }
 
 __device__ inline Scalar
 diff1RR4(const Scalar *f, const Scalar R0, int ijk) {
@@ -41,14 +41,14 @@ diff1RR4(const Scalar *f, const Scalar R0, int ijk) {
          12.0;
 }
 
-__device__ inline Scalar
-diff1aRR4(const Scalar *f, const Scalar R0, int ijk) {
-  Scalar dR = dev_grid.delta[0];
-  return -25.0 / 12.0 * f[ijk] * R0 + 4.0 * f[ijk + 1] * (R0 + dR) -
-         3.0 * f[ijk + 2] * (R0 + 2 * dR) +
-         4.0 / 3.0 * f[ijk + 3] * (R0 + 3 * dR) -
-         1.0 / 4.0 * f[ijk + 4] * (R0 + 4 * dR);
-}
+// __device__ inline Scalar
+// diff1aRR4(const Scalar *f, const Scalar R0, int ijk) {
+//   Scalar dR = dev_grid.delta[0];
+//   return -25.0 / 12.0 * f[ijk] * R0 + 4.0 * f[ijk + 1] * (R0 + dR) -
+//          3.0 * f[ijk + 2] * (R0 + 2 * dR) +
+//          4.0 / 3.0 * f[ijk + 3] * (R0 + 3 * dR) -
+//          1.0 / 4.0 * f[ijk + 4] * (R0 + 4 * dR);
+// }
 
 __device__ inline Scalar
 diff1z4(const Scalar *f, int ijk) {
@@ -64,11 +64,11 @@ diff4R2(const Scalar *f, int ijk) {
           f[ijk + 2]);
 }
 
-__device__ inline Scalar
-diff4aR2(const Scalar *f, int ijk) {
-  return 3.0 * f[ijk] - 14.0 * f[ijk + 1] + 26.0 * f[ijk + 2] -
-         24.0 * f[ijk + 3] + 11.0 * f[ijk + 4] - 2.0 * f[ijk + 5];
-}
+// __device__ inline Scalar
+// diff4aR2(const Scalar *f, int ijk) {
+//   return 3.0 * f[ijk] - 14.0 * f[ijk + 1] + 26.0 * f[ijk + 2] -
+//          24.0 * f[ijk + 3] + 11.0 * f[ijk + 4] - 2.0 * f[ijk + 5];
+// }
 
 __device__ inline Scalar
 diff4z2(const Scalar *f, int ijk) {
@@ -83,13 +83,13 @@ diff6R2(const Scalar *f, int ijk) {
           15 * f[ijk + 1] - 6 * f[ijk + 2] + f[ijk + 3]);
 }
 
-__device__ inline Scalar
-diff6aR2(const Scalar *f, int ijk) {
-  return 4.0 * f[ijk] - 27.0 * f[ijk + 1] +
-         78.0 * f[ijk + 2] - 125.0 * f[ijk + 3] +
-         120.0 * f[ijk + 4] - 69.0 * f[ijk + 5] +
-         22.0 * f[ijk + 6] - 3.0 * f[ijk + 7];
-}
+// __device__ inline Scalar
+// diff6aR2(const Scalar *f, int ijk) {
+//   return 4.0 * f[ijk] - 27.0 * f[ijk + 1] +
+//          78.0 * f[ijk + 2] - 125.0 * f[ijk + 3] +
+//          120.0 * f[ijk + 4] - 69.0 * f[ijk + 5] +
+//          22.0 * f[ijk + 6] - 3.0 * f[ijk + 7];
+// }
 
 __device__ inline Scalar
 diff6z2(const Scalar *f, int ijk) {
@@ -107,8 +107,9 @@ dfdR(const Scalar *f, const Scalar R0, int ijk) {
 }
 
 __device__ inline Scalar
-dfRdR(const Scalar *f, const Scalar R0, int ijk) {
-  return diff1RR4(f, R0, ijk) / dev_grid.delta[0];
+dfRdRR(const Scalar *f, const Scalar R0, int ijk) {
+  if (std::abs(R0) < dev_grid.delta[0] / 4.0) return 2.0 * dfdR(f, R0, ijk);
+  else return diff1RR4(f, R0, ijk) / dev_grid.delta[0] / R0;
 }
 
 __device__ inline Scalar
@@ -163,14 +164,14 @@ kernel_rk_step1_thread(const Scalar *ER, const Scalar *Ez,
     if (std::abs(R) < TINY) R = TINY;
 
     Scalar rotBR = -dfdz(Bf, ijk);
-    Scalar rotBz = dfRdR(Bf, R, ijk) / R;
+    Scalar rotBz = dfRdRR(Bf, R, ijk);
     Scalar rotBf = dfdz(BR, ijk) - dfdR(Bz, R, ijk);
     Scalar rotER = -dfdz(Ef, ijk);
-    Scalar rotEz = dfRdR(Ef, R, ijk) / R;
+    Scalar rotEz = dfRdRR(Ef, R, ijk);
     Scalar rotEf = dfdz(ER, ijk) - dfdR(Ez, R, ijk);
 
-    Scalar divE = dfRdR(ER, R, ijk) / R + dfdz(Ez, ijk);
-    Scalar divB = dfRdR(BR, R, ijk) / R + dfdz(Bz, ijk);
+    Scalar divE = dfRdRR(ER, R, ijk) + dfdz(Ez, ijk);
+    Scalar divB = dfRdRR(BR, R, ijk) + dfdz(Bz, ijk);
 
     Scalar B2 =
         BR[ijk] * BR[ijk] + Bz[ijk] * Bz[ijk] + Bf[ijk] * Bf[ijk];
@@ -434,8 +435,9 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
           k * dev_grid.dims[0] * dev_grid.dims[1];
     Scalar R = dev_grid.pos(0, i, 1);
     Scalar z = dev_grid.pos(1, j, 1);
-    Scalar r = std::sqrt(R * R + z * z);
-    if (r < TINY) r = TINY;
+    Scalar r2 = R * R + z * z;
+    if (r2 < TINY) r2 = TINY;
+    Scalar r = std::sqrt(r2);
     Scalar rl = 2.0 * dev_params.radius;
     // Scalar scale = 1.0 * dev_grid.delta[0];
     Scalar scaleEpar = 0.5 * dev_grid.delta[0];
@@ -452,35 +454,35 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
                    dipole_z(R, 0, z, 0.0, 0.0);
       Scalar bfn = 0.0;
       Scalar s = shape(r, dev_params.radius - d1, scaleBperp);
-      BRnew = (bRn * R + bzn * z) * R / (r * r) * s +
-              (BR[ijk] * R + Bz[ijk] * z) * R / (r * r) * (1 - s);
-      Bznew = (bRn * R + bzn * z) * z / (r * r) * s +
-              (BR[ijk] * R + Bz[ijk] * z) * z / (r * r) * (1 - s);
+      BRnew = (bRn * R + bzn * z) * R / r2 * s +
+              (BR[ijk] * R + Bz[ijk] * z) * R / r2 * (1 - s);
+      Bznew = (bRn * R + bzn * z) * z / r2 * s +
+              (BR[ijk] * R + Bz[ijk] * z) * z / r2 * (1 - s);
       s = shape(r, dev_params.radius - d1, scaleBpar);
-      BRnew += (bRn - (bRn * R + bzn * z) * R / (r * r)) * s +
-               (BR[ijk] - (BR[ijk] * R + Bz[ijk] * z) * R / (r * r)) *
+      BRnew += (bRn - (bRn * R + bzn * z) * R / r2) * s +
+               (BR[ijk] - (BR[ijk] * R + Bz[ijk] * z) * R / r2) *
                    (1 - s);
-      Bznew += (bzn - (bRn * R + bzn * z) * z / (r * r)) * s +
-               (Bz[ijk] - (BR[ijk] * R + Bz[ijk] * z) * z / (r * r)) *
+      Bznew += (bzn - (bRn * R + bzn * z) * z / r2) * s +
+               (Bz[ijk] - (BR[ijk] * R + Bz[ijk] * z) * z / r2) *
                    (1 - s);
       Bfnew = bfn * s + Bf[ijk] * (1 - s);
 
       // Scalar w = dev_params.omega;
-      Scalar w = wpert(t, z);
+      Scalar w = dev_params.omega + wpert(t, z);
       Scalar eRn = - w * R * Bz[ijk];
       Scalar ezn = w * R * BR[ijk];
       Scalar efn = 0.0;
       s = shape(r, dev_params.radius - d0, scaleEperp);
-      ERnew = (eRn * R + ezn * z) * R / (r * r) * s +
-              (ER[ijk] * R + Ez[ijk] * z) * R / (r * r) * (1 - s);
+      ERnew = (eRn * R + ezn * z) * R / r2 * s +
+              (ER[ijk] * R + Ez[ijk] * z) * R / r2 * (1 - s);
       Eznew = (eRn * R + ezn * z) * z / (r * r) * s +
-              (ER[ijk] * R + Ez[ijk] * z) * z / (r * r) * (1 - s);
+              (ER[ijk] * R + Ez[ijk] * z) * z / r2 * (1 - s);
       s = shape(r, dev_params.radius - d0, scaleEpar);
-      ERnew += (eRn - (eRn * R + ezn * z) * R / (r * r)) * s +
-               (ER[ijk] - (ER[ijk] * R + Ez[ijk] * z) * R / (r * r)) *
+      ERnew += (eRn - (eRn * R + ezn * z) * R / r2) * s +
+               (ER[ijk] - (ER[ijk] * R + Ez[ijk] * z) * R / r2) *
                    (1 - s);
-      Eznew += (ezn - (eRn * R + ezn * z) * z / (r * r)) * s +
-               (Ez[ijk] - (ER[ijk] * R + Ez[ijk] * z) * z / (r * r)) *
+      Eznew += (ezn - (eRn * R + ezn * z) * z / r2) * s +
+               (Ez[ijk] - (ER[ijk] * R + Ez[ijk] * z) * z / r2) *
                    (1 - s);
       Efnew = efn * s + Ef[ijk] * (1 - s);
       BR[ijk] = BRnew;
