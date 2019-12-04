@@ -73,6 +73,7 @@ parse_config(const std::string& filename) {
   result.tp_start = config->get_as<double>("tp_start").value_or(defaults.tp_start);
   result.tp_end = config->get_as<double>("tp_end").value_or(defaults.tp_end);
   result.rpert = config->get_as<double>("rpert").value_or(defaults.rpert);
+  result.dw0 = config->get_as<double>("dw0").value_or(defaults.dw0);
 
   return result;
 }

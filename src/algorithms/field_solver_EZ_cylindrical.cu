@@ -410,7 +410,7 @@ wpert(Scalar t, Scalar z) {
   Scalar z2 = dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert);
   if (t >= dev_params.tp_start && t <= dev_params.tp_end && z >= z1 &&
       z <= z2)
-    return sin((z - z1) * M_PI / (z2 - z1)) *
+    return dev_params.dw0 * sin((z - z1) * M_PI / (z2 - z1)) *
            sin((t - dev_params.tp_start) * 2.0 * M_PI /
                (dev_params.tp_end - dev_params.tp_start));
   else return 0;
