@@ -439,6 +439,7 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
     if (r2 < TINY) r2 = TINY;
     Scalar r = std::sqrt(r2);
     Scalar rl = 2.0 * dev_params.radius;
+    Scalar ri = 0.5 * dev_params.radius;
     // Scalar scale = 1.0 * dev_grid.delta[0];
     Scalar scaleEpar = 0.5 * dev_grid.delta[0];
     Scalar scaleEperp = 0.25 * dev_grid.delta[0];
@@ -491,6 +492,14 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
       ER[ijk] = ERnew;
       Ez[ijk] = Eznew;
       Ef[ijk] = Efnew;
+      if (r < ri) {
+        BR[ijk] = bRn;
+        Bz[ijk] = bzn;
+        Bf[ijk] = bfn;
+        ER[ijk] = eRn;
+        Ez[ijk] = ezn;
+        Ef[ijk] = efn;
+      }
     }
   }
 }
@@ -686,6 +695,7 @@ field_solver_EZ_cylindrical::evolve_fields(Scalar time) {
   if (m_env.params().clean_ep) clean_epar();
   if (m_env.params().check_egb) check_eGTb();
   boundary_axis();
+  boundary_pulsar(time + m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
   m_env.send_guard_cell_array(P);
