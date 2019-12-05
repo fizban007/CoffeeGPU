@@ -8,7 +8,7 @@
 // 2D axisymmetric code. Original x, y, z correspond to R, z, phi.
 
 #define BLOCK_SIZE_R 32
-#define BLOCK_SIZE_Z 2
+#define BLOCK_SIZE_Z 8
 #define BLOCK_SIZE_F 1
 
 #define TINY 1e-7
@@ -667,21 +667,32 @@ field_solver_EZ_cylindrical::evolve_fields(Scalar time) {
   Etmp.copy_from(m_data.E);
   Btmp.copy_from(m_data.B);
 
+  timer::stamp("rk");
   for (int i = 0; i < 5; ++i) {
+    timer::stamp();
     rk_step(As[i], Bs[i]);
 
     if (m_env.params().clean_ep) clean_epar();
     if (m_env.params().check_egb) check_eGTb();
+    CudaSafeCall(cudaDeviceSynchronize());
+    timer::show_duration_since_stamp("rk substep", "ms");
 
+    timer::stamp();
     boundary_axis();
     boundary_pulsar(time + cs[i] * m_env.params().dt);
     if (i == 4) boundary_absorbing();
 
     CudaSafeCall(cudaDeviceSynchronize());
+    timer::show_duration_since_stamp("boundary", "ms");
+
+    timer::stamp();
     m_env.send_guard_cells(m_data);
     m_env.send_guard_cell_array(P);
+    timer::show_duration_since_stamp("communicate", "ms");
   }
+  timer::show_duration_since_stamp("rk steps", "ms", "rk");
 
+  timer::stamp();
   Kreiss_Oliger();
   if (m_env.params().clean_ep) clean_epar();
   if (m_env.params().check_egb) check_eGTb();
@@ -689,6 +700,7 @@ field_solver_EZ_cylindrical::evolve_fields(Scalar time) {
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
   m_env.send_guard_cell_array(P);
+  timer::show_duration_since_stamp("KO plus others", "ms");
 }
 
 field_solver_EZ_cylindrical::field_solver_EZ_cylindrical(
