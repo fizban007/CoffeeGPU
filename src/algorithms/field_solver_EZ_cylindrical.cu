@@ -407,8 +407,8 @@ kernel_boundary_axis_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
 
 __device__ Scalar
 wpert(Scalar t, Scalar z) {
-  Scalar z1 = 0.0;
-  Scalar z2 = dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert);
+  Scalar z1 = dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert1);
+  Scalar z2 = dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert2);
   if (t >= dev_params.tp_start && t <= dev_params.tp_end && z >= z1 &&
       z <= z2)
     return dev_params.dw0 * sin((z - z1) * M_PI / (z2 - z1)) *

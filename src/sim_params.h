@@ -56,7 +56,8 @@ struct sim_params {
   // Pulsar with Alfven wave perturbation
   Scalar tp_start = 0.0; ///< Time for the perturbation to start
   Scalar tp_end = 0.5; ///< Time for the perturbation to end
-  Scalar rpert = 10.0; ///< Perturbation range
+  Scalar rpert1 = 5.0; ///< Perturbation range
+  Scalar rpert2 = 10.0; ///< Perturbation range
   Scalar dw0 = 0.001; ///< Amplitude of the angular velocity perturbation
 
 };
