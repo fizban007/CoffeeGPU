@@ -75,8 +75,11 @@ data_exporter::data_exporter(sim_environment& env, uint32_t& timestep)
   auto& grid = m_env.grid();
   auto ext = grid.extent_less();
   auto d = m_env.params().downsample;
-  tmp_grid_data = multi_array<float>(ext.width() / d, ext.height() / d,
-                                     ext.depth() / d);
+  for (int i = 0; i < 3; i++) {
+    if (ext[i] > d) ext[i] /= d;
+  }
+  tmp_grid_data =
+      multi_array<float>(ext.width(), ext.height(), ext.depth());
   m_output.resize(
       boost::extents[tmp_grid_data.depth()][tmp_grid_data.height()]
                     [tmp_grid_data.width()]);
@@ -125,15 +128,17 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   ss << std::setw(5) << std::setfill('0')
      << timestep / m_env.params().data_interval;
   std::string num = ss.str();
-  std::string filename = outputDirectory + std::string("fld.") + num + std::string(".h5");
+  std::string filename =
+      outputDirectory + std::string("fld.") + num + std::string(".h5");
   // File datafile(
-  //     outputDirectory + std::string("fld.") + num + std::string(".h5"),
-  //     File::ReadWrite | File::Create | File::Truncate,
-  //     MPIOFileDriver(MPI_COMM_WORLD, MPI_INFO_NULL));
+  //     outputDirectory + std::string("fld.") + num +
+  //     std::string(".h5"), File::ReadWrite | File::Create |
+  //     File::Truncate, MPIOFileDriver(MPI_COMM_WORLD, MPI_INFO_NULL));
   hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 
-  hid_t datafile = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+  hid_t datafile =
+      H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
   H5Pclose(plist_id);
   // H5F_ACC_TRUNC);
   // H5F_ACC_RDWR);
@@ -175,21 +180,24 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   //     data, "Bx",
   //     {
   //       p(idx_out) =
-  //           0.5 * (data.B(0, idx) + data.B(0, idx.x - 1, idx.y, idx.z));
+  //           0.5 * (data.B(0, idx) + data.B(0, idx.x - 1, idx.y,
+  //           idx.z));
   //     },
   //     datafile);
   // ADD_GRID_OUTPUT(
   //     data, "By",
   //     {
   //       p(idx_out) =
-  //           0.5 * (data.B(1, idx) + data.B(1, idx.x, idx.y - 1, idx.z));
+  //           0.5 * (data.B(1, idx) + data.B(1, idx.x, idx.y - 1,
+  //           idx.z));
   //     },
   //     datafile);
   // ADD_GRID_OUTPUT(
   //     data, "Bz",
   //     {
   //       p(idx_out) =
-  //           0.5 * (data.B(2, idx) + data.B(2, idx.x, idx.y, idx.z - 1));
+  //           0.5 * (data.B(2, idx) + data.B(2, idx.x, idx.y, idx.z -
+  //           1));
   //     },
   //     datafile);
   add_grid_output(data.E.data(0), "Ex", data.E.stagger(0), datafile);
@@ -205,11 +213,13 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
 
 // template <typename Func>
 // void
-// data_exporter::add_grid_output(sim_data& data, const std::string& name,
+// data_exporter::add_grid_output(sim_data& data, const std::string&
+// name,
 //                                Func f, hid_t file) {
 //   // if (data.env.grid().dim() == 3) {
 //   int downsample = m_env.params().downsample;
-//   sample_grid_quantity3d(data, m_env.grid(), downsample, tmp_grid_data,
+//   sample_grid_quantity3d(data, m_env.grid(), downsample,
+//   tmp_grid_data,
 //                          m_output, f);
 
 //   std::vector<size_t> dims(3);
@@ -229,12 +239,14 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
 //   dataset.select(offsets, out_dim).write(m_output);
 //   // } else if (data.env.grid().dim() == 2) {
 //   //   sample_grid_quantity2d(data, m_env.grid(),
-//   //                          m_env.params().downsample, tmp_grid_data,
+//   //                          m_env.params().downsample,
+//   tmp_grid_data,
 //   //                          m_output, f);
 
 //   //   // Actually write the temp array to hdf
 //   //   DataSet dataset =
-//   //       file.createDataSet<float>(name, DataSpace::From(m_output));
+//   //       file.createDataSet<float>(name,
+//   DataSpace::From(m_output));
 //   //   dataset.write(m_output);
 //   // }
 // }
@@ -273,8 +285,9 @@ data_exporter::add_grid_output(multi_array<Scalar>& array,
   // dataset.select(offsets, out_dim).write(m_output);
   auto plist_id = H5Pcreate(H5P_DATASET_CREATE);
   H5Pset_chunk(plist_id, m_env.grid().dim(), out_dim);
-  auto dset_id = H5Dcreate(file, name.c_str(), H5T_NATIVE_FLOAT, filespace,
-                           H5P_DEFAULT, plist_id, H5P_DEFAULT);
+  auto dset_id =
+      H5Dcreate(file, name.c_str(), H5T_NATIVE_FLOAT, filespace,
+                H5P_DEFAULT, plist_id, H5P_DEFAULT);
   H5Pclose(plist_id);
   H5Sclose(filespace);
 
