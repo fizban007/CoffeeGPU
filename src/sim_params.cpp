@@ -69,6 +69,7 @@ parse_config(const std::string& filename) {
   result.radius = config->get_as<double>("radius").value_or(defaults.radius);
   result.omega = config->get_as<double>("omega").value_or(defaults.omega);
   result.b0 = config->get_as<double>("b0").value_or(defaults.b0);
+  result.alpha = config->get_as<double>("alpha").value_or(defaults.alpha);
 
   result.tp_start = config->get_as<double>("tp_start").value_or(defaults.tp_start);
   result.tp_end = config->get_as<double>("tp_end").value_or(defaults.tp_end);

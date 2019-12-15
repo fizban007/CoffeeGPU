@@ -52,6 +52,7 @@ struct sim_params {
   Scalar radius = 10.0; ///< Radius of the pulsar
   Scalar omega = 0.001; ///< Angular velocity of the pulsar
   Scalar b0 = 1e3; ///< Magnetic field at stellar surface
+  Scalar alpha = 0.0; ///< Inclination of the magnetic dipole moment
 
   // Pulsar with Alfven wave perturbation
   Scalar tp_start = 0.0; ///< Time for the perturbation to start

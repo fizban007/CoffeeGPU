@@ -16,9 +16,9 @@ set(Coffee_cuda_src
   "cuda/constant_mem.cu"
   "data/multi_array.cu"
   "algorithms/field_solver.cu"
-  # "algorithms/field_solver_EZ.cu"
-  "algorithms/field_solver_EZ_cylindrical.cu"
-  #"algorithms/field_solver_gr.cu"
+  "algorithms/field_solver_EZ.cu"
+  # "algorithms/field_solver_EZ_cylindrical.cu"
+  # "algorithms/field_solver_gr.cu"
   "algorithms/pulsar.cu"
   )
 
