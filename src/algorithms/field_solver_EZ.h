@@ -11,7 +11,7 @@ class field_solver_EZ {
   field_solver_EZ(sim_data& mydata, sim_environment& env);
   ~field_solver_EZ();
 
-  void evolve_fields();
+  void evolve_fields(Scalar time);
 
   Scalar total_energy(vector_field<Scalar>& f);
 
