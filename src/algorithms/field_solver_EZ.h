@@ -24,6 +24,9 @@ class field_solver_EZ {
 
   void rk_step(Scalar As, Scalar Bs);
   void Kreiss_Oliger();
+
+  void boundary_pulsar(Scalar t);
+  void boundary_absorbing();
 };
 
 }  // namespace Coffee

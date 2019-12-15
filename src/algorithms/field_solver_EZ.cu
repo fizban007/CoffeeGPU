@@ -3,6 +3,7 @@
 #include "cuda/cuda_utility.h"
 #include "field_solver_EZ.h"
 #include "utils/timer.h"
+#include "pulsar.h"
 
 #define BLOCK_SIZE_X 32
 #define BLOCK_SIZE_Y 2
