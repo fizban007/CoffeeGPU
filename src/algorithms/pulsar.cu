@@ -15,7 +15,7 @@ HOST_DEVICE Scalar dipole_x(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar p
   Scalar yn = y / r;
   Scalar zn = z / r;
   Scalar mun = mux * xn + muy * yn + muz *zn;
-  return (3.0 * xn * mun - mux) / cube(r);
+  return (3.0 * xn * mun - mux) / (cube(r) + DELTA);
 }
 
 HOST_DEVICE Scalar dipole_y(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar phase) {
@@ -28,7 +28,7 @@ HOST_DEVICE Scalar dipole_y(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar p
   Scalar yn = y / r;
   Scalar zn = z / r;
   Scalar mun = mux * xn + muy * yn + muz *zn;
-  return (3.0 * yn * mun - muy) / cube(r);
+  return (3.0 * yn * mun - muy) / (cube(r) + DELTA);
 }
 
 HOST_DEVICE Scalar dipole_z(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar phase) {
@@ -41,7 +41,7 @@ HOST_DEVICE Scalar dipole_z(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar p
   Scalar yn = y / r;
   Scalar zn = z / r;
   Scalar mun = mux * xn + muy * yn + muz *zn;
-  return (3.0 * zn * mun - muz) / cube(r);
+  return (3.0 * zn * mun - muz) / (cube(r) + DELTA);
 }
 
 HOST_DEVICE Scalar shape(Scalar r, Scalar r0, Scalar del) {
