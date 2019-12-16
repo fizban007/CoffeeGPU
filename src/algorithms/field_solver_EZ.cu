@@ -444,9 +444,9 @@ kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
 HOST_DEVICE Scalar
 pmlsigma(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Scalar sig0) {
   if (x > xh)
-    return sig0 * pow((x - xh) / pmlscale, 3.0);
+    return sig0 * cube((x - xh) / pmlscale);
   else if (x < xl)
-    return sig0 * pow((xl - x) / pmlscale, 3.0);
+    return sig0 * cube((xl - x) / pmlscale);
   else
     return 0.0;
 }
@@ -598,6 +598,9 @@ field_solver_EZ::evolve_fields(Scalar time) {
                   0.6994504559488, 0.1530572479681};
   Scalar cs[5] = {0, 0.1496590219993, 0.3704009573644, 0.6222557631345,
                   0.9582821306784};
+
+  Etmp.copy_from(m_data.E);
+  Btmp.copy_from(m_data.B);
 
   for (int i = 0; i < 5; ++i) {
     rk_step(As[i], Bs[i]);
