@@ -395,11 +395,11 @@ kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
 
       Scalar w = dev_params.omega;
       // Scalar w = dev_params.omega + wpert(t, z);
-      Scalar vx = -w * y;
+      Scalar vx = - w * y;
       Scalar vy = w * x;
-      Scalar exn = -vy * Bz[ijk];
+      Scalar exn = - vy * Bz[ijk];
       Scalar eyn = vx * Bz[ijk];
-      Scalar ezn = -vx * By[ijk] + vy * Bx[ijk];
+      Scalar ezn = - vx * By[ijk] + vy * Bx[ijk];
       s = shape(r, dev_params.radius - d0, scaleEperp);
       Exnew =
           (exn * x + eyn * y + ezn * z) * x / r2 * s +
@@ -461,9 +461,6 @@ kernel_boundary_absorbing_thread(const Scalar *enx, const Scalar *eny,
   Scalar x, y, z;
   Scalar sigx = 0.0, sigy = 0.0, sigz = 0.0, sig = 0.0;
   size_t ijk;
-  Scalar dx = dev_grid.delta[0] / 2.0;
-  Scalar dy = dev_grid.delta[1] / 2.0;
-  Scalar dz = dev_grid.delta[2] / 2.0;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
