@@ -668,17 +668,17 @@ field_solver_EZ::total_energy(vector_field<Scalar> &f) {
   f.sync_to_host();
   Scalar Wtmp = 0.0, W = 0.0;
   Scalar xh = m_env.params().lower[0] + m_env.params().size[0] -
-              m_env.params().pml[0] * m_env.params().delta[0];
+              m_env.params().pml[0] * m_env.grid().delta[0];
   Scalar xl = m_env.params().lower[0] +
-              m_env.params().pml[0] * m_env.params().delta[0];
+              m_env.params().pml[0] * m_env.grid().delta[0];
   Scalar yh = m_env.params().lower[1] + m_env.params().size[1] -
-              m_env.params().pml[1] * m_env.params().delta[1];
+              m_env.params().pml[1] * m_env.grid().delta[1];
   Scalar yl = m_env.params().lower[1] +
-              m_env.params().pml[1] * m_env.params().delta[1];
+              m_env.params().pml[1] * m_env.grid().delta[1];
   Scalar zh = m_env.params().lower[2] + m_env.params().size[2] -
-              m_env.params().pml[2] * m_env.params().delta[2];
+              m_env.params().pml[2] * m_env.grid().delta[2];
   Scalar zl = m_env.params().lower[2] +
-              m_env.params().pml[2] * m_env.params().delta[2];
+              m_env.params().pml[2] * m_env.grid().delta[2];
   for (int k = m_env.grid().guard[2];
        k < m_env.grid().dims[2] - m_env.grid().guard[2]; ++k) {
     for (int j = m_env.grid().guard[1];
