@@ -477,7 +477,6 @@ kernel_boundary_absorbing_thread(const Scalar *enx, const Scalar *eny,
     z = dev_grid.pos(2, k, 1);
     Scalar xh = dev_params.lower[0] + dev_params.size[0] -
                 dev_params.pml[0] * dev_grid.delta[0];
-    // Scalar xl = - xh;
     Scalar xl =
         dev_params.lower[0] + dev_params.pml[0] * dev_grid.delta[0];
     Scalar yh = dev_params.lower[1] + dev_params.size[1] -
@@ -668,6 +667,18 @@ Scalar
 field_solver_EZ::total_energy(vector_field<Scalar> &f) {
   f.sync_to_host();
   Scalar Wtmp = 0.0, W = 0.0;
+  Scalar xh = m_env.params().lower[0] + m_env.params().size[0] -
+              m_env.params().pml[0] * m_env.params().delta[0];
+  Scalar xl = m_env.params().lower[0] +
+              m_env.params().pml[0] * m_env.params().delta[0];
+  Scalar yh = m_env.params().lower[1] + m_env.params().size[1] -
+              m_env.params().pml[1] * m_env.params().delta[1];
+  Scalar yl = m_env.params().lower[1] +
+              m_env.params().pml[1] * m_env.params().delta[1];
+  Scalar zh = m_env.params().lower[2] + m_env.params().size[2] -
+              m_env.params().pml[2] * m_env.params().delta[2];
+  Scalar zl = m_env.params().lower[2] +
+              m_env.params().pml[2] * m_env.params().delta[2];
   for (int k = m_env.grid().guard[2];
        k < m_env.grid().dims[2] - m_env.grid().guard[2]; ++k) {
     for (int j = m_env.grid().guard[1];
@@ -676,9 +687,16 @@ field_solver_EZ::total_energy(vector_field<Scalar> &f) {
            i < m_env.grid().dims[0] - m_env.grid().guard[0]; ++i) {
         int ijk = i + j * m_env.grid().dims[0] +
                   k * m_env.grid().dims[0] * m_env.grid().dims[1];
-        Wtmp += f.data(0)[ijk] * f.data(0)[ijk] +
-                f.data(1)[ijk] * f.data(1)[ijk] +
-                f.data(2)[ijk] * f.data(2)[ijk];
+        Scalar x = m_env.grid().pos(0, i, 1);
+        Scalar y = m_env.grid().pos(1, j, 1);
+        Scalar z = m_env.grid().pos(2, k, 1);
+        Scalar r = std::sqrt(x * x + y * y + z * z);
+        if (r >= m_env.params().radius && x < xh && x > xl && y < yh &&
+            y > yl && z < zh && z > zl) {
+          Wtmp += f.data(0)[ijk] * f.data(0)[ijk] +
+                  f.data(1)[ijk] * f.data(1)[ijk] +
+                  f.data(2)[ijk] * f.data(2)[ijk];
+        }
       }
     }
   }
