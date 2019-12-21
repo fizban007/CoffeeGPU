@@ -603,8 +603,13 @@ field_solver_EZ::evolve_fields(Scalar time) {
   Btmp.copy_from(m_data.B);
 
   for (int i = 0; i < 5; ++i) {
+    timer::stamp();
     rk_step(As[i], Bs[i]);
+    CudaSafeCall(cudaDeviceSynchronize());
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("rk_step", "ms");
 
+    timer::stamp();
     if (m_env.params().clean_ep) clean_epar();
     if (m_env.params().check_egb) check_eGTb();
 
@@ -612,10 +617,18 @@ field_solver_EZ::evolve_fields(Scalar time) {
     if (i == 4) boundary_absorbing();
 
     CudaSafeCall(cudaDeviceSynchronize());
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("clean/check/boundary", "ms");
+
+    timer::stamp();
     m_env.send_guard_cells(m_data);
     m_env.send_guard_cell_array(P);
+    CudaSafeCall(cudaDeviceSynchronize());
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("communication", "ms");
   }
 
+  timer::stamp();
   Kreiss_Oliger();
   if (m_env.params().clean_ep) clean_epar();
   if (m_env.params().check_egb) check_eGTb();
@@ -623,6 +636,8 @@ field_solver_EZ::evolve_fields(Scalar time) {
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
   m_env.send_guard_cell_array(P);
+  if (m_env.rank() == 0)
+    timer::show_duration_since_stamp("Kreiss Oliger", "ms");
 }
 
 field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
