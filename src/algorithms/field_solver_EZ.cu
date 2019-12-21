@@ -363,12 +363,36 @@ kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar phase = dev_params.omega * t;
     Scalar Bxnew, Bynew, Bznew, Exnew, Eynew, Eznew;
     if (r < rl) {
-      Scalar bxn = dev_params.b0 * cube(dev_params.radius) *
-                   dipole_x(x, y, z, dev_params.alpha, phase);
-      Scalar byn = dev_params.b0 * cube(dev_params.radius) *
-                   dipole_y(x, y, z, dev_params.alpha, phase);
-      Scalar bzn = dev_params.b0 * cube(dev_params.radius) *
-                   dipole_z(x, y, z, dev_params.alpha, phase);
+      // Scalar bxn = dev_params.b0 * cube(dev_params.radius) *
+      //              dipole_x(x, y, z, dev_params.alpha, phase);
+      // Scalar byn = dev_params.b0 * cube(dev_params.radius) *
+      //              dipole_y(x, y, z, dev_params.alpha, phase);
+      // Scalar bzn = dev_params.b0 * cube(dev_params.radius) *
+      //              dipole_z(x, y, z, dev_params.alpha, phase);
+      Scalar bxn =
+          dev_params.b0 *
+          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                   0, 0) +
+           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                      dev_params.q13, dev_params.q22, dev_params.q23,
+                      dev_params.q_offset_x, dev_params.q_offset_y,
+                      dev_params.q_offset_z, 0, 0));
+      Scalar byn =
+          dev_params.b0 *
+          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                   0, 1) +
+           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                      dev_params.q13, dev_params.q22, dev_params.q23,
+                      dev_params.q_offset_x, dev_params.q_offset_y,
+                      dev_params.q_offset_z, 0, 1));
+      Scalar bzn =
+          dev_params.b0 *
+          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                   0, 2) +
+           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                      dev_params.q13, dev_params.q22, dev_params.q23,
+                      dev_params.q_offset_x, dev_params.q_offset_y,
+                      dev_params.q_offset_z, 0, 2));
       Scalar s = shape(r, dev_params.radius - d1, scaleBperp);
       Bxnew =
           (bxn * x + byn * y + bzn * z) * x / r2 * s +
