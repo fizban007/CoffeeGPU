@@ -51,7 +51,8 @@ int main(int argc, char *argv[]) {
     if (step % env.params().data_interval == 0) {
       timer::stamp("output");
       exporter.write_output(data, step, 0.0);
-      timer::show_duration_since_stamp("output", "ms", "output");
+      if (env.rank() == 0)
+        timer::show_duration_since_stamp("output", "ms", "output");
 
       Scalar Wb = solver.total_energy(data.B);
       Scalar We = solver.total_energy(data.E);
@@ -62,7 +63,8 @@ int main(int argc, char *argv[]) {
     timer::stamp("step");
     // solver.evolve_fields_gr();
     solver.evolve_fields(time);
-    timer::show_duration_since_stamp("evolve field", "ms", "step");
+    if (env.rank() == 0)
+      timer::show_duration_since_stamp("evolve field", "ms", "step");
     time += env.params().dt;
   }
 
