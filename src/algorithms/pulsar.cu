@@ -58,13 +58,13 @@ dipole2(Scalar x, Scalar y, Scalar z, Scalar p1, Scalar p2, Scalar p3,
   Scalar p3t = p3;
   Scalar r2 = x * x + y * y + z * z;
   if (n == 0)
-    return (3.0 * x * (p1t * x + p2t * y + p3t * z) / r2 - p1t) /
+    return (3.0 * x * (p1t * x + p2t * y + p3t * z) / (r2 + DELTA) - p1t) /
            (std::sqrt(cube(r2)) + DELTA);
   else if (n == 1)
-    return (3.0 * y * (p1t * x + p2t * y + p3t * z) / r2 - p2t) /
+    return (3.0 * y * (p1t * x + p2t * y + p3t * z) / (r2 + DELTA) - p2t) /
            (std::sqrt(cube(r2)) + DELTA);
   else if (n == 2)
-    return (3.0 * z * (p1t * x + p2t * y + p3t * z) / r2 - p3t) /
+    return (3.0 * z * (p1t * x + p2t * y + p3t * z) / (r2 + DELTA) - p3t) /
            (std::sqrt(cube(r2)) + DELTA);
   else
     return 0;
@@ -83,7 +83,7 @@ quadrupole(Scalar x, Scalar y, Scalar z, Scalar q11, Scalar q12,
                 2.0 * q12 * cosph * sinph;
   Scalar q13t = q13 * cosph - q23 * sinph;
   Scalar q23t = q23 * cosph + q13 * sinph;
-  Scalar q33t = -q11 - q22;
+  Scalar q33t = - q11 - q22;
   Scalar q_offset_x1 = q_offset_x * cosph - q_offset_y * sinph;
   Scalar q_offset_y1 = q_offset_x * sinph + q_offset_y * cosph;
   Scalar x1 = x - q_offset_x1;
