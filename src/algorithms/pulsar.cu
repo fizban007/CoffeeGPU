@@ -105,6 +105,7 @@ quadrupole(Scalar x, Scalar y, Scalar z, Scalar q11, Scalar q12,
     return (-2.0 * (q13t * x1 + q23t * y1 + q33t * z1) * r2 +
             5.0 * z1 * xqx) /
            (r7 + DELTA);
+  else return 0;
 }
 
 }  // namespace Coffee
