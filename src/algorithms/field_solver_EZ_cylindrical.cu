@@ -407,14 +407,21 @@ kernel_boundary_axis_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
 
 __device__ Scalar
 wpert(Scalar t, Scalar z) {
-  Scalar z1 = dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert1);
-  Scalar z2 = dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert2);
+  Scalar z1 =
+      dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert1);
+  Scalar z2 =
+      dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert2);
   if (t >= dev_params.tp_start && t <= dev_params.tp_end && z >= z1 &&
       z <= z2)
-    return dev_params.dw0 * sin((z - z1) * M_PI / (z2 - z1)) *
+    // return dev_params.dw0 * sin((z - z1) * M_PI / (z2 - z1)) *
+    //        sin((t - dev_params.tp_start) * 2.0 * M_PI /
+    //            (dev_params.tp_end - dev_params.tp_start));
+    return dev_params.dw0 *
+           (1.0 + cos((z - z1) * 2.0 * M_PI / (z2 - z1) + M_PI)) *
            sin((t - dev_params.tp_start) * 2.0 * M_PI /
                (dev_params.tp_end - dev_params.tp_start));
-  else return 0;
+  else
+    return 0;
 }
 
 __global__ void
