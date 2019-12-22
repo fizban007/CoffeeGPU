@@ -59,13 +59,13 @@ dipole2(Scalar x, Scalar y, Scalar z, Scalar p1, Scalar p2, Scalar p3,
   Scalar r2 = x * x + y * y + z * z;
   if (n == 0)
     return (3.0 * x * (p1t * x + p2t * y + p3t * z) / r2 - p1t) /
-           std::sqrt(cube(r2));
+           (std::sqrt(cube(r2)) + DELTA);
   else if (n == 1)
     return (3.0 * y * (p1t * x + p2t * y + p3t * z) / r2 - p2t) /
-           std::sqrt(cube(r2));
+           (std::sqrt(cube(r2)) + DELTA);
   else if (n == 2)
     return (3.0 * z * (p1t * x + p2t * y + p3t * z) / r2 - p3t) /
-           std::sqrt(cube(r2));
+           (std::sqrt(cube(r2)) + DELTA);
   else
     return 0;
 }
@@ -96,15 +96,15 @@ quadrupole(Scalar x, Scalar y, Scalar z, Scalar q11, Scalar q12,
   if (n == 0)
     return (-2.0 * (q11t * x1 + q12t * y1 + q13t * z1) * r2 +
             5.0 * x1 * xqx) /
-           r7;
+           (r7 + DELTA);
   else if (n == 1)
     return (-2.0 * (q12t * x1 + q22t * y1 + q23t * z1) * r2 +
             5.0 * y1 * xqx) /
-           r7;
+           (r7 + DELTA);
   else if (n == 2)
     return (-2.0 * (q13t * x1 + q23t * y1 + q33t * z1) * r2 +
             5.0 * z1 * xqx) /
-           r7;
+           (r7 + DELTA);
 }
 
 }  // namespace Coffee
