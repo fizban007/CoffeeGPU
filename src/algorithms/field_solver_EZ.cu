@@ -363,12 +363,36 @@ kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar phase = dev_params.omega * t;
     Scalar Bxnew, Bynew, Bznew, Exnew, Eynew, Eznew;
     if (r < rl) {
-      Scalar bxn = dev_params.b0 * cube(dev_params.radius) *
-                   dipole_x(x, y, z, dev_params.alpha, phase);
-      Scalar byn = dev_params.b0 * cube(dev_params.radius) *
-                   dipole_y(x, y, z, dev_params.alpha, phase);
-      Scalar bzn = dev_params.b0 * cube(dev_params.radius) *
-                   dipole_z(x, y, z, dev_params.alpha, phase);
+      // Scalar bxn = dev_params.b0 * cube(dev_params.radius) *
+      //              dipole_x(x, y, z, dev_params.alpha, phase);
+      // Scalar byn = dev_params.b0 * cube(dev_params.radius) *
+      //              dipole_y(x, y, z, dev_params.alpha, phase);
+      // Scalar bzn = dev_params.b0 * cube(dev_params.radius) *
+      //              dipole_z(x, y, z, dev_params.alpha, phase);
+      Scalar bxn =
+          dev_params.b0 *
+          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                   phase, 0) +
+           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                      dev_params.q13, dev_params.q22, dev_params.q23,
+                      dev_params.q_offset_x, dev_params.q_offset_y,
+                      dev_params.q_offset_z, phase, 0));
+      Scalar byn =
+          dev_params.b0 *
+          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                   phase, 1) +
+           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                      dev_params.q13, dev_params.q22, dev_params.q23,
+                      dev_params.q_offset_x, dev_params.q_offset_y,
+                      dev_params.q_offset_z, phase, 1));
+      Scalar bzn =
+          dev_params.b0 *
+          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                   phase, 2) +
+           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                      dev_params.q13, dev_params.q22, dev_params.q23,
+                      dev_params.q_offset_x, dev_params.q_offset_y,
+                      dev_params.q_offset_z, phase, 2));
       Scalar s = shape(r, dev_params.radius - d1, scaleBperp);
       Bxnew =
           (bxn * x + byn * y + bzn * z) * x / r2 * s +
@@ -603,8 +627,13 @@ field_solver_EZ::evolve_fields(Scalar time) {
   Btmp.copy_from(m_data.B);
 
   for (int i = 0; i < 5; ++i) {
+    timer::stamp();
     rk_step(As[i], Bs[i]);
+    CudaSafeCall(cudaDeviceSynchronize());
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("rk_step", "ms");
 
+    timer::stamp();
     if (m_env.params().clean_ep) clean_epar();
     if (m_env.params().check_egb) check_eGTb();
 
@@ -612,10 +641,18 @@ field_solver_EZ::evolve_fields(Scalar time) {
     if (i == 4) boundary_absorbing();
 
     CudaSafeCall(cudaDeviceSynchronize());
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("clean/check/boundary", "ms");
+
+    timer::stamp();
     m_env.send_guard_cells(m_data);
     m_env.send_guard_cell_array(P);
+    CudaSafeCall(cudaDeviceSynchronize());
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("communication", "ms");
   }
 
+  timer::stamp();
   Kreiss_Oliger();
   if (m_env.params().clean_ep) clean_epar();
   if (m_env.params().check_egb) check_eGTb();
@@ -623,6 +660,8 @@ field_solver_EZ::evolve_fields(Scalar time) {
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
   m_env.send_guard_cell_array(P);
+  if (m_env.rank() == 0)
+    timer::show_duration_since_stamp("Kreiss Oliger", "ms");
 }
 
 field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
