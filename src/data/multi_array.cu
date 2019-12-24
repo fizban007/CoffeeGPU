@@ -19,8 +19,8 @@ assign_single_value(T* data, size_t size, T value) {
 
 template <typename T>
 __global__ void
-downsample(T* orig_data, float* dst_data, Extent orig_ext, Extent dst_ext,
-           Index offset, Stagger st, int d) {
+downsample(T* orig_data, float* dst_data, Extent orig_ext,
+           Extent dst_ext, Index offset, Stagger st, int d) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   int j = threadIdx.y + blockIdx.y * blockDim.y;
   int k = threadIdx.z + blockIdx.z * blockDim.z;
@@ -30,10 +30,20 @@ downsample(T* orig_data, float* dst_data, Extent orig_ext, Extent dst_ext,
                       (k * d + offset.z) * orig_ext.x * orig_ext.y;
     size_t dst_idx = i + j * dst_ext.x + k * dst_ext.x * dst_ext.y;
 
+    for (int kk = 0; kk < min(d, orig_ext.z); kk++) {
+      for (int jj = 0; jj < min(d, orig_ext.y); jj++) {
+        for (int ii = 0; ii < d; ii++) {
+          dst_data[dst_idx] += interpolate(
+              orig_data,
+              orig_idx + ii + (jj + kk * orig_ext.y) * orig_ext.x, st,
+              Stagger(0b111), orig_ext.x, orig_ext.y);
+        }
+      }
+    }
+    if (orig_ext.z > d) dst_data[dst_idx] /= d;
+    if (orig_ext.y > d) dst_data[dst_idx] /= d;
+    if (orig_ext.x > d) dst_data[dst_idx] /= d;
     // dst_data[dst_idx] = orig_data[orig_idx];
-    dst_data[dst_idx] =
-        interpolate(orig_data, orig_idx, st, Stagger(0b111), orig_ext.x,
-                    orig_ext.y);
   }
 }
 
@@ -229,16 +239,17 @@ multi_array<T>::sync_to_device() {
 
 template <typename T>
 void
-multi_array<T>::downsample(int d, multi_array<float>& array, Index offset,
-                           Stagger stagger, float* h_ptr) {
+multi_array<T>::downsample(int d, multi_array<float>& array,
+                           Index offset, Stagger stagger,
+                           float* h_ptr) {
   auto& ext = array.extent();
   dim3 blockSize(32, 8, 4);
   dim3 gridSize((ext.x + blockSize.x - 1) / blockSize.x,
                 (ext.y + blockSize.y - 1) / blockSize.y,
                 (ext.z + blockSize.z - 1) / blockSize.z);
-  Kernels::downsample<<<gridSize, blockSize>>>(m_data_d, array.dev_ptr(),
-                                               m_extent, array.extent(),
-                                               offset, stagger, d);
+  Kernels::downsample<<<gridSize, blockSize>>>(
+      m_data_d, array.dev_ptr(), m_extent, array.extent(), offset,
+      stagger, d);
   CudaCheckError();
 
   // CudaSafeCall(cudaMemcpy(h_ptr, array.m_data_d,
