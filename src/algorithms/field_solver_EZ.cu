@@ -3,12 +3,13 @@
 #include "cuda/cuda_utility.h"
 #include "field_solver_EZ.h"
 #include "utils/timer.h"
+#include "pulsar.h"
 
 #define BLOCK_SIZE_X 32
 #define BLOCK_SIZE_Y 2
 #define BLOCK_SIZE_Z 2
 
-#define TINY 1e-12
+#define TINY 1e-7
 
 #define FFE_DISSIPATION_ORDER 6
 
@@ -328,6 +329,216 @@ kernel_KO_step2_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
   }
 }
 
+__global__ void
+kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
+                              Scalar *Bx, Scalar *By, Scalar *Bz,
+                              Scalar *P, Scalar t, int shift) {
+  size_t ijk;
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k =
+      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
+    Scalar r2 = x * x + y * y + z * z;
+    if (r2 < TINY) r2 = TINY;
+    Scalar r = std::sqrt(r2);
+    Scalar rl = 2.0 * dev_params.radius;
+    Scalar ri = 0.5 * dev_params.radius;
+    // Scalar scale = 1.0 * dev_grid.delta[0];
+    Scalar scaleEpar = 0.5 * dev_grid.delta[0];
+    Scalar scaleEperp = 0.25 * dev_grid.delta[0];
+    Scalar scaleBperp = scaleEpar;
+    Scalar scaleBpar = scaleBperp;
+    Scalar d1 = 4 * dev_grid.delta[0];
+    Scalar d0 = 0;
+    Scalar phase = dev_params.omega * t;
+    Scalar Bxnew, Bynew, Bznew, Exnew, Eynew, Eznew;
+    if (r < rl) {
+      // Scalar bxn = dev_params.b0 * cube(dev_params.radius) *
+      //              dipole_x(x, y, z, dev_params.alpha, phase);
+      // Scalar byn = dev_params.b0 * cube(dev_params.radius) *
+      //              dipole_y(x, y, z, dev_params.alpha, phase);
+      // Scalar bzn = dev_params.b0 * cube(dev_params.radius) *
+      //              dipole_z(x, y, z, dev_params.alpha, phase);
+      Scalar bxn =
+          dev_params.b0 *
+          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                   phase, 0) +
+           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                      dev_params.q13, dev_params.q22, dev_params.q23,
+                      dev_params.q_offset_x, dev_params.q_offset_y,
+                      dev_params.q_offset_z, phase, 0));
+      Scalar byn =
+          dev_params.b0 *
+          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                   phase, 1) +
+           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                      dev_params.q13, dev_params.q22, dev_params.q23,
+                      dev_params.q_offset_x, dev_params.q_offset_y,
+                      dev_params.q_offset_z, phase, 1));
+      Scalar bzn =
+          dev_params.b0 *
+          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                   phase, 2) +
+           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                      dev_params.q13, dev_params.q22, dev_params.q23,
+                      dev_params.q_offset_x, dev_params.q_offset_y,
+                      dev_params.q_offset_z, phase, 2));
+      Scalar s = shape(r, dev_params.radius - d1, scaleBperp);
+      Bxnew =
+          (bxn * x + byn * y + bzn * z) * x / r2 * s +
+          (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * x / r2 * (1 - s);
+      Bynew =
+          (bxn * x + byn * y + bzn * z) * y / r2 * s +
+          (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * y / r2 * (1 - s);
+      Bznew =
+          (bxn * x + byn * y + bzn * z) * z / r2 * s +
+          (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * z / r2 * (1 - s);
+      s = shape(r, dev_params.radius - d1, scaleBpar);
+      Bxnew += (bxn - (bxn * x + byn * y + bzn * z) * x / r2) * s +
+               (Bx[ijk] -
+                (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * x / r2) *
+                   (1 - s);
+      Bynew += (byn - (bxn * x + byn * y + bzn * z) * y / r2) * s +
+               (By[ijk] -
+                (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * y / r2) *
+                   (1 - s);
+      Bznew += (bzn - (bxn * x + byn * y + bzn * z) * z / r2) * s +
+               (Bz[ijk] -
+                (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * z / r2) *
+                   (1 - s);
+
+      Scalar w = dev_params.omega;
+      // Scalar w = dev_params.omega + wpert(t, z);
+      Scalar vx = - w * y;
+      Scalar vy = w * x;
+      Scalar exn = - vy * Bz[ijk];
+      Scalar eyn = vx * Bz[ijk];
+      Scalar ezn = - vx * By[ijk] + vy * Bx[ijk];
+      s = shape(r, dev_params.radius - d0, scaleEperp);
+      Exnew =
+          (exn * x + eyn * y + ezn * z) * x / r2 * s +
+          (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * x / r2 * (1 - s);
+      Eynew =
+          (exn * x + eyn * y + ezn * z) * y / r2 * s +
+          (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * y / r2 * (1 - s);
+      Eznew =
+          (exn * x + eyn * y + ezn * z) * z / r2 * s +
+          (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * z / r2 * (1 - s);
+      s = shape(r, dev_params.radius - d0, scaleEpar);
+      Exnew += (exn - (exn * x + eyn * y + ezn * z) * x / r2) * s +
+               (Ex[ijk] -
+                (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * x / r2) *
+                   (1 - s);
+      Eynew += (eyn - (exn * x + eyn * y + ezn * z) * y / r2) * s +
+               (Ey[ijk] -
+                (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * y / r2) *
+                   (1 - s);
+      Eznew += (ezn - (exn * x + eyn * y + ezn * z) * z / r2) * s +
+               (Ez[ijk] -
+                (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * z / r2) *
+                   (1 - s);
+      Bx[ijk] = Bxnew;
+      By[ijk] = Bynew;
+      Bz[ijk] = Bznew;
+      Ex[ijk] = Exnew;
+      Ey[ijk] = Eynew;
+      Ez[ijk] = Eznew;
+      if (r < ri) {
+        Bx[ijk] = bxn;
+        By[ijk] = byn;
+        Bz[ijk] = bzn;
+        Ex[ijk] = exn;
+        Ey[ijk] = eyn;
+        Ez[ijk] = ezn;
+      }
+    }
+  }
+}
+
+HOST_DEVICE Scalar
+pmlsigma(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Scalar sig0) {
+  if (x > xh)
+    return sig0 * cube((x - xh) / pmlscale);
+  else if (x < xl)
+    return sig0 * cube((xl - x) / pmlscale);
+  else
+    return 0.0;
+}
+
+__global__ void
+kernel_boundary_absorbing_thread(const Scalar *enx, const Scalar *eny,
+                                 const Scalar *enz, const Scalar *bnx,
+                                 const Scalar *bny, const Scalar *bnz,
+                                 Scalar *ex, Scalar *ey, Scalar *ez,
+                                 Scalar *bx, Scalar *by, Scalar *bz,
+                                 int shift) {
+  Scalar x, y, z;
+  Scalar sigx = 0.0, sigy = 0.0, sigz = 0.0, sig = 0.0;
+  size_t ijk;
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k =
+      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+    x = dev_grid.pos(0, i, 1);
+    y = dev_grid.pos(1, j, 1);
+    z = dev_grid.pos(2, k, 1);
+    Scalar xh = dev_params.lower[0] + dev_params.size[0] -
+                dev_params.pml[0] * dev_grid.delta[0];
+    Scalar xl =
+        dev_params.lower[0] + dev_params.pml[0] * dev_grid.delta[0];
+    Scalar yh = dev_params.lower[1] + dev_params.size[1] -
+                dev_params.pml[1] * dev_grid.delta[1];
+    Scalar yl =
+        dev_params.lower[1] + dev_params.pml[1] * dev_grid.delta[1];
+    Scalar zh = dev_params.lower[2] + dev_params.size[2] -
+                dev_params.pml[2] * dev_grid.delta[2];
+    Scalar zl =
+        dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[2];
+    if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
+    // if (x > xh || y < yl || y > yh) {
+      sigx = pmlsigma(x, xl, xh, dev_params.pmllen * dev_grid.delta[0],
+                      dev_params.sigpml);
+      sigy = pmlsigma(y, yl, yh, dev_params.pmllen * dev_grid.delta[0],
+                      dev_params.sigpml);
+      sigz = pmlsigma(z, zl, zh, dev_params.pmllen * dev_grid.delta[0],
+                      dev_params.sigpml);
+      sig = sigx + sigy + sigz;
+      // sig = sigx + sigy;
+      if (sig > TINY) {
+        ex[ijk] = exp(-sig) * enx[ijk] +
+                  (1.0 - exp(-sig)) / sig * (ex[ijk] - enx[ijk]);
+        ey[ijk] = exp(-sig) * eny[ijk] +
+                  (1.0 - exp(-sig)) / sig * (ey[ijk] - eny[ijk]);
+        ez[ijk] = exp(-sig) * enz[ijk] +
+                  (1.0 - exp(-sig)) / sig * (ez[ijk] - enz[ijk]);
+        bx[ijk] = exp(-sig) * bnx[ijk] +
+                  (1.0 - exp(-sig)) / sig * (bx[ijk] - bnx[ijk]);
+        by[ijk] = exp(-sig) * bny[ijk] +
+                  (1.0 - exp(-sig)) / sig * (by[ijk] - bny[ijk]);
+        bz[ijk] = exp(-sig) * bnz[ijk] +
+                  (1.0 - exp(-sig)) / sig * (bz[ijk] - bnz[ijk]);
+      }
+    }
+  }
+}
+
 void
 field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
   kernel_rk_step1_thread<<<blockGroupSize, blockSize>>>(
@@ -383,7 +594,28 @@ field_solver_EZ::check_eGTb() {
 }
 
 void
-field_solver_EZ::evolve_fields() {
+field_solver_EZ::boundary_pulsar(Scalar t) {
+  kernel_boundary_pulsar_thread<<<blockGroupSize, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      P.dev_ptr(), t, m_env.params().shift_ghost);
+  CudaCheckError();
+}
+
+void
+field_solver_EZ::boundary_absorbing() {
+  kernel_boundary_absorbing_thread<<<blockGroupSize, blockSize>>>(
+      Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
+      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      m_env.params().shift_ghost);
+  CudaCheckError();
+}
+
+
+void
+field_solver_EZ::evolve_fields(Scalar time) {
   Scalar As[5] = {0, -0.4178904745, -1.192151694643, -1.697784692471,
                   -1.514183444257};
   Scalar Bs[5] = {0.1496590219993, 0.3792103129999, 0.8229550293869,
@@ -391,23 +623,45 @@ field_solver_EZ::evolve_fields() {
   Scalar cs[5] = {0, 0.1496590219993, 0.3704009573644, 0.6222557631345,
                   0.9582821306784};
 
-  for (int i = 0; i < 5; ++i) {
-    rk_step(As[i], Bs[i]);
+  Etmp.copy_from(m_data.E);
+  Btmp.copy_from(m_data.B);
 
+  for (int i = 0; i < 5; ++i) {
+    timer::stamp();
+    rk_step(As[i], Bs[i]);
+    CudaSafeCall(cudaDeviceSynchronize());
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("rk_step", "ms");
+
+    timer::stamp();
     if (m_env.params().clean_ep) clean_epar();
     if (m_env.params().check_egb) check_eGTb();
 
+    boundary_pulsar(time + cs[i] * m_env.params().dt);
+    if (i == 4) boundary_absorbing();
+
     CudaSafeCall(cudaDeviceSynchronize());
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("clean/check/boundary", "ms");
+
+    timer::stamp();
     m_env.send_guard_cells(m_data);
     m_env.send_guard_cell_array(P);
+    CudaSafeCall(cudaDeviceSynchronize());
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("communication", "ms");
   }
 
+  timer::stamp();
   Kreiss_Oliger();
   if (m_env.params().clean_ep) clean_epar();
   if (m_env.params().check_egb) check_eGTb();
+  boundary_pulsar(time + m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
   m_env.send_guard_cell_array(P);
+  if (m_env.rank() == 0)
+    timer::show_duration_since_stamp("Kreiss Oliger", "ms");
 }
 
 field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
@@ -417,14 +671,14 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
   dE.copy_stagger(m_data.E);
   Etmp.copy_stagger(m_data.E);
   dE.initialize();
-  Etmp.initialize();
+  Etmp.copy_from(m_data.E);
 
   dB = vector_field<Scalar>(m_data.env.grid());
   Btmp = vector_field<Scalar>(m_data.env.grid());
   dB.copy_stagger(m_data.B);
   Btmp.copy_stagger(m_data.B);
   dB.initialize();
-  Btmp.initialize();
+  Btmp.copy_from(m_data.B);
 
   P = multi_array<Scalar>(m_data.env.grid().extent());
   P.assign_dev(0.0);
@@ -455,6 +709,18 @@ Scalar
 field_solver_EZ::total_energy(vector_field<Scalar> &f) {
   f.sync_to_host();
   Scalar Wtmp = 0.0, W = 0.0;
+  Scalar xh = m_env.params().lower[0] + m_env.params().size[0] -
+              m_env.params().pml[0] * m_env.grid().delta[0];
+  Scalar xl = m_env.params().lower[0] +
+              m_env.params().pml[0] * m_env.grid().delta[0];
+  Scalar yh = m_env.params().lower[1] + m_env.params().size[1] -
+              m_env.params().pml[1] * m_env.grid().delta[1];
+  Scalar yl = m_env.params().lower[1] +
+              m_env.params().pml[1] * m_env.grid().delta[1];
+  Scalar zh = m_env.params().lower[2] + m_env.params().size[2] -
+              m_env.params().pml[2] * m_env.grid().delta[2];
+  Scalar zl = m_env.params().lower[2] +
+              m_env.params().pml[2] * m_env.grid().delta[2];
   for (int k = m_env.grid().guard[2];
        k < m_env.grid().dims[2] - m_env.grid().guard[2]; ++k) {
     for (int j = m_env.grid().guard[1];
@@ -463,9 +729,16 @@ field_solver_EZ::total_energy(vector_field<Scalar> &f) {
            i < m_env.grid().dims[0] - m_env.grid().guard[0]; ++i) {
         int ijk = i + j * m_env.grid().dims[0] +
                   k * m_env.grid().dims[0] * m_env.grid().dims[1];
-        Wtmp += f.data(0)[ijk] * f.data(0)[ijk] +
-                f.data(1)[ijk] * f.data(1)[ijk] +
-                f.data(2)[ijk] * f.data(2)[ijk];
+        Scalar x = m_env.grid().pos(0, i, 1);
+        Scalar y = m_env.grid().pos(1, j, 1);
+        Scalar z = m_env.grid().pos(2, k, 1);
+        Scalar r = std::sqrt(x * x + y * y + z * z);
+        if (r >= m_env.params().radius && x < xh && x > xl && y < yh &&
+            y > yl && z < zh && z > zl) {
+          Wtmp += f.data(0)[ijk] * f.data(0)[ijk] +
+                  f.data(1)[ijk] * f.data(1)[ijk] +
+                  f.data(2)[ijk] * f.data(2)[ijk];
+        }
       }
     }
   }

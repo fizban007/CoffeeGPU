@@ -69,6 +69,19 @@ parse_config(const std::string& filename) {
   result.radius = config->get_as<double>("radius").value_or(defaults.radius);
   result.omega = config->get_as<double>("omega").value_or(defaults.omega);
   result.b0 = config->get_as<double>("b0").value_or(defaults.b0);
+  // result.alpha = config->get_as<double>("alpha").value_or(defaults.alpha);
+  result.p1 = config->get_as<double>("p1").value_or(defaults.p1);
+  result.p2 = config->get_as<double>("p2").value_or(defaults.p2);
+  result.p3 = config->get_as<double>("p3").value_or(defaults.p3);
+  result.q11 = config->get_as<double>("q11").value_or(defaults.q11);
+  result.q12 = config->get_as<double>("q12").value_or(defaults.q12);
+  result.q13 = config->get_as<double>("q13").value_or(defaults.q13);
+  result.q22 = config->get_as<double>("q22").value_or(defaults.q22);
+  result.q23 = config->get_as<double>("q23").value_or(defaults.q23);
+  result.q_offset_x = config->get_as<double>("q_offset_x").value_or(defaults.q_offset_x);
+  result.q_offset_y = config->get_as<double>("q_offset_y").value_or(defaults.q_offset_y);
+  result.q_offset_z = config->get_as<double>("q_offset_z").value_or(defaults.q_offset_z);
+
 
   result.tp_start = config->get_as<double>("tp_start").value_or(defaults.tp_start);
   result.tp_end = config->get_as<double>("tp_end").value_or(defaults.tp_end);

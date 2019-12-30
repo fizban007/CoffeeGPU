@@ -2,7 +2,7 @@
 #include "data/sim_data.h"
 #include "sim_env.h"
 #include "utils/data_exporter.h"
-#include "algorithms/field_solver_EZ_cylindrical.h"
+#include "algorithms/field_solver_EZ.h"
 #include "utils/timer.h"
 #include <fstream>
 
@@ -21,13 +21,13 @@ int main(int argc, char *argv[]) {
   // Initialize all the simulation data structures
   sim_data data(env);
   // field_solver_gr solver(data, env);
-  field_solver_EZ_cylindrical solver(data, env);
+  field_solver_EZ solver(data, env);
 
   // #include "user_init.hpp"
   // #include "user_emwave.hpp"
   // #include "user_alfven.hpp"
   // #include "user_alfven_EZ.hpp"
-  #include "user_pulsar.hpp"
+  #include "user_pulsar3d.hpp"
 
   // Initialization for Wald problem
   // #include "user_wald.hpp" 
@@ -51,7 +51,8 @@ int main(int argc, char *argv[]) {
     if (step % env.params().data_interval == 0) {
       timer::stamp("output");
       exporter.write_output(data, step, 0.0);
-      timer::show_duration_since_stamp("output", "ms", "output");
+      if (env.rank() == 0)
+        timer::show_duration_since_stamp("output", "ms", "output");
 
       Scalar Wb = solver.total_energy(data.B);
       Scalar We = solver.total_energy(data.E);
@@ -62,7 +63,8 @@ int main(int argc, char *argv[]) {
     timer::stamp("step");
     // solver.evolve_fields_gr();
     solver.evolve_fields(time);
-    timer::show_duration_since_stamp("evolve field", "ms", "step");
+    if (env.rank() == 0)
+      timer::show_duration_since_stamp("evolve field", "ms", "step");
     time += env.params().dt;
   }
 

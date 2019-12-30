@@ -531,9 +531,9 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
 HOST_DEVICE Scalar
 pmlsigma(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Scalar sig0) {
   if (x > xh)
-    return sig0 * pow((x - xh) / pmlscale, 3.0);
+    return sig0 * cube((x - xh) / pmlscale);
   else if (x < xl)
-    return sig0 * pow((xl - x) / pmlscale, 3.0);
+    return sig0 * cube((xl - x) / pmlscale);
   else
     return 0.0;
 }
