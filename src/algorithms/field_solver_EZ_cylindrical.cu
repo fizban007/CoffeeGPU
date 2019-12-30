@@ -406,20 +406,38 @@ kernel_boundary_axis_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
 }
 
 __device__ Scalar
-wpert(Scalar t, Scalar z) {
-  Scalar z1 =
-      dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert1);
-  Scalar z2 =
-      dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert2);
-  if (t >= dev_params.tp_start && t <= dev_params.tp_end && z >= z1 &&
-      z <= z2)
+wpert(Scalar t, Scalar z, Scalar R) {
+  // Scalar z1 =
+  //     dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert1);
+  // Scalar z2 =
+  //     dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert2);
+  Scalar th1 = acos(std::sqrt(1.0 - 1.0 / dev_params.rpert1));
+  Scalar th2 = acos(std::sqrt(1.0 - 1.0 / dev_params.rpert2));
+  if (th1 > th2) {
+    Scalar tmp = th1;
+    th1 = th2;
+    th2 = tmp;
+  } 
+  Scalar r = std::sqrt(R * R + z * z);
+  Scalar th = acos(z / r);
+  Scalar mu = (th1 + th2) / 2.0;
+  Scalar s = (mu - th1) / 3.0;
+  if (t >= dev_params.tp_start && t <= dev_params.tp_end && th >= th1 &&
+      th <= th2)
     // return dev_params.dw0 * sin((z - z1) * M_PI / (z2 - z1)) *
     //        sin((t - dev_params.tp_start) * 2.0 * M_PI /
     //            (dev_params.tp_end - dev_params.tp_start));
-    return dev_params.dw0 *
-           (1.0 + cos((z - z1) * 2.0 * M_PI / (z2 - z1) + M_PI)) *
+    // return dev_params.dw0 *
+    //        (1.0 + cos((z - z1) * 2.0 * M_PI / (z2 - z1) + M_PI)) *
+    //        sin((t - dev_params.tp_start) * 2.0 * M_PI /
+    //            (dev_params.tp_end - dev_params.tp_start));
+    return dev_params.dw0 * exp(- 0.5 * square((th - mu) / s)) /
+           (s * std::sqrt(2.0 * M_PI)) *
            sin((t - dev_params.tp_start) * 2.0 * M_PI /
-               (dev_params.tp_end - dev_params.tp_start));
+               (dev_params.tp_end - dev_params.tp_start)) *
+           0.5 *
+           (1.0 + tanh((r - 0.5 * dev_params.radius) /
+                       (0.05 * dev_params.radius)));
   else
     return 0;
 }
