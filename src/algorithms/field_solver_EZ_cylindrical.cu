@@ -406,7 +406,7 @@ kernel_boundary_axis_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
 }
 
 __device__ Scalar
-wpert(Scalar t, Scalar z, Scalar R) {
+wpert(Scalar t, Scalar R, Scalar z) {
   // Scalar z1 =
   //     dev_params.radius * std::sqrt(1.0 - 1.0 / dev_params.rpert1);
   // Scalar z2 =
@@ -494,7 +494,7 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
       Bfnew = bfn * s + Bf[ijk] * (1 - s);
 
       // Scalar w = dev_params.omega;
-      Scalar w = dev_params.omega + wpert(t, z);
+      Scalar w = dev_params.omega + wpert(t, R, z);
       Scalar eRn = - w * R * Bz[ijk];
       Scalar ezn = w * R * BR[ijk];
       Scalar efn = 0.0;
