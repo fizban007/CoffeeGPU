@@ -431,8 +431,7 @@ wpert(Scalar t, Scalar R, Scalar z) {
     //        (1.0 + cos((z - z1) * 2.0 * M_PI / (z2 - z1) + M_PI)) *
     //        sin((t - dev_params.tp_start) * 2.0 * M_PI /
     //            (dev_params.tp_end - dev_params.tp_start));
-    return dev_params.dw0 * exp(- 0.5 * square((th - mu) / s)) /
-           (s * std::sqrt(2.0 * M_PI)) *
+    return dev_params.dw0 * exp(- 0.5 * square((th - mu) / s)) *
            sin((t - dev_params.tp_start) * 2.0 * M_PI /
                (dev_params.tp_end - dev_params.tp_start)) *
            0.5 *
