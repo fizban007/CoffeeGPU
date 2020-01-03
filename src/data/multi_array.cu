@@ -19,7 +19,7 @@ assign_single_value(T* data, size_t size, T value) {
 
 template <typename T>
 __global__ void
-downsample(T* orig_data, float* dst_data, Extent orig_ext,
+downsample_average(T* orig_data, float* dst_data, Extent orig_ext,
            Extent dst_ext, Index offset, Stagger st, int d) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   int j = threadIdx.y + blockIdx.y * blockDim.y;
@@ -43,6 +43,27 @@ downsample(T* orig_data, float* dst_data, Extent orig_ext,
     if (orig_ext.z > d) dst_data[dst_idx] /= d;
     if (orig_ext.y > d) dst_data[dst_idx] /= d;
     if (orig_ext.x > d) dst_data[dst_idx] /= d;
+    // dst_data[dst_idx] = orig_data[orig_idx];
+  }
+}
+
+template <typename T>
+__global__ void
+downsample(T* orig_data, float* dst_data, Extent orig_ext,
+           Extent dst_ext, Index offset, Stagger st, int d) {
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  int j = threadIdx.y + blockIdx.y * blockDim.y;
+  int k = threadIdx.z + blockIdx.z * blockDim.z;
+  if (i < dst_ext.x && j < dst_ext.y && k < dst_ext.z) {
+    size_t orig_idx = i * d + offset.x +
+                      (j * d + offset.y) * orig_ext.x +
+                      (k * d + offset.z) * orig_ext.x * orig_ext.y;
+    size_t dst_idx = i + j * dst_ext.x + k * dst_ext.x * dst_ext.y;
+
+    dst_data[dst_idx] =
+        interpolate(orig_data, orig_idx, st, Stagger(0b111), orig_ext.x,
+                    orig_ext.y);
+
     // dst_data[dst_idx] = orig_data[orig_idx];
   }
 }
