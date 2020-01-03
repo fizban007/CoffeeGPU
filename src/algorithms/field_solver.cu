@@ -350,11 +350,8 @@ kernel_check_eGTb_thread(const Scalar *dex, const Scalar *dey,
 }
 
 __global__ void
-kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
-                              Scalar *Bx, Scalar *By, Scalar *Bz,
-                              Scalar *Exnew, Scalar *Eynew,
-                              Scalar *Eznew, Scalar *Bxnew,
-                              Scalar *Bynew, Scalar *Bznew, Scalar t,
+kernel_boundary_pulsar_B_thread(Scalar *Bx, Scalar *By, Scalar *Bz,
+                              Scalar *Bxnew, Scalar *Bynew, Scalar *Bznew, Scalar t,
                               int shift) {
   size_t ijk;
   Scalar x, y, z, r2, r, s;
@@ -511,6 +508,48 @@ kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
           (bzn - (bxn * x + byn * y + bzn * z) * z / r2) * s +
           (Bz[ijk] - (intbx * x + intby * y + intbz * z) * z / r2) *
               (1 - s);
+      } else {
+      Bxnew[ijk] = Bx[ijk];
+      Bynew[ijk] = By[ijk];
+      Bznew[ijk] = Bz[ijk];
+    }
+  }
+}
+
+__global__ void
+kernel_boundary_pulsar_E_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
+                                Scalar *Bx, Scalar *By, Scalar *Bz,
+                              Scalar *Exnew, Scalar *Eynew, Scalar *Eznew, Scalar t,
+                              int shift) {
+  size_t ijk;
+  Scalar x, y, z, r2, r, s;
+  Scalar exn, eyn, ezn, vx, vy;
+  Scalar intex, intey, intez, intbx, intby, intbz;
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k =
+      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+    Scalar x0 = dev_grid.pos(0, i, 1);
+    Scalar y0 = dev_grid.pos(1, j, 1);
+    Scalar z0 = dev_grid.pos(2, k, 1);
+    Scalar rl = 2.0 * dev_params.radius;
+    // Smoothing scale
+    Scalar scaleEpar = 0.5 * dev_grid.delta[0];
+    Scalar scaleEperp = 0.25 * dev_grid.delta[0];
+    Scalar scaleBperp = scaleEpar;
+    Scalar scaleBpar = scaleBperp;
+    Scalar d1 = 4 * dev_grid.delta[0];
+    Scalar d0 = 0;
+    Scalar phase = dev_params.omega * t;
+
+    if (x0 * x0 + y0 * y0 + z0 * z0 < rl * rl) {
 
       Scalar w = dev_params.omega;
 
@@ -588,17 +627,17 @@ kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
       r = std::sqrt(r2);
       vx = -w * y;
       vy = w * x;
-      intex = interpolate(Ex, ijk, Stagger(0b110), Stagger(0b110),
+      intex = interpolate(Ex, ijk, Stagger(0b110), Stagger(0b011),
                           dev_grid.dims[0], dev_grid.dims[1]);
-      intey = interpolate(Ey, ijk, Stagger(0b101), Stagger(0b110),
+      intey = interpolate(Ey, ijk, Stagger(0b101), Stagger(0b011),
                           dev_grid.dims[0], dev_grid.dims[1]);
-      intez = interpolate(Ez, ijk, Stagger(0b011), Stagger(0b110),
+      intez = interpolate(Ez, ijk, Stagger(0b011), Stagger(0b011),
                           dev_grid.dims[0], dev_grid.dims[1]);
-      intbx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b110),
+      intbx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b011),
                           dev_grid.dims[0], dev_grid.dims[1]);
-      intby = interpolate(By, ijk, Stagger(0b010), Stagger(0b110),
+      intby = interpolate(By, ijk, Stagger(0b010), Stagger(0b011),
                           dev_grid.dims[0], dev_grid.dims[1]);
-      intbz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b110),
+      intbz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b011),
                           dev_grid.dims[0], dev_grid.dims[1]);
       exn = -vy * intbz;
       eyn = vx * intbz;
@@ -841,14 +880,17 @@ field_solver::check_eGTb() {
 
 void
 field_solver::boundary_pulsar(Scalar t) {
-  kernel_boundary_pulsar_thread<<<blockGroupSize, blockSize>>>(
-      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+  kernel_boundary_pulsar_B_thread<<<blockGroupSize, blockSize>>>(
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
       dB.dev_ptr(1), dB.dev_ptr(2), t, m_env.params().shift_ghost);
   CudaCheckError();
-  m_data.E.copy_from(dE);
   m_data.B.copy_from(dB);
+  kernel_boundary_pulsar_E_thread<<<blockGroupSize, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), t, m_env.params().shift_ghost);
+  CudaCheckError();
+  m_data.E.copy_from(dE);
 }
 
 void
