@@ -14,7 +14,7 @@
 using namespace std;
 using namespace Coffee;
 
-#define ENG 0
+// #define ENG
 
 int main(int argc, char *argv[]) {
   timer::stamp("begin");
@@ -45,10 +45,10 @@ int main(int argc, char *argv[]) {
   // exporter.write_output(data, step, 0.0);
   // exporter.sync();
 
-  if (ENG) {
-    ofstream efile;
-    efile.open("Data/energy.txt", ios::out | ios::app);
-  }
+#ifdef ENG
+  ofstream efile;
+  efile.open("Data/energy.txt", ios::out | ios::app);
+#endif
   
   // Main simulation loop
   Scalar time = 0.0;
@@ -61,13 +61,13 @@ int main(int argc, char *argv[]) {
       if (env.rank() == 0)
         timer::show_duration_since_stamp("output", "ms", "output");
 
-      if (ENG) {
+#ifdef ENG
         Scalar Wb = solver.total_energy(data.B);
         Scalar We = solver.total_energy(data.E);
         if (env.rank() == 0) {
           efile << Wb << " " << We << std::endl;
         }
-      }
+#endif
     }
     timer::stamp("step");
     // solver.evolve_fields_gr();
@@ -77,7 +77,9 @@ int main(int argc, char *argv[]) {
     time += env.params().dt;
   }
 
-  if (ENG) efile.close();
+#ifdef ENG
+  efile.close();
+#endif
 
   timer::show_duration_since_stamp("the whole program", "s", "begin");
 
