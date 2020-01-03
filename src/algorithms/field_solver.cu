@@ -352,11 +352,12 @@ kernel_check_eGTb_thread(const Scalar *dex, const Scalar *dey,
 __global__ void
 kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
                               Scalar *Bx, Scalar *By, Scalar *Bz,
-                              Scalar *Exnew, Scalar *Eynew, Scalar *Eznew,
-                              Scalar *Bxnew, Scalar *Bynew, Scalar *Bznew,
-                              Scalar t, int shift) {
+                              Scalar *Exnew, Scalar *Eynew,
+                              Scalar *Eznew, Scalar *Bxnew,
+                              Scalar *Bynew, Scalar *Bznew, Scalar t,
+                              int shift) {
   size_t ijk;
-  Scalar x, y, z, r2, s;
+  Scalar x, y, z, r2, r, s;
   Scalar bxn, byn, bzn, exn, eyn, ezn, vx, vy;
   Scalar intex, intey, intez, intbx, intby, intbz;
   int i =
@@ -382,140 +383,134 @@ kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar d1 = 4 * dev_grid.delta[0];
     Scalar d0 = 0;
     Scalar phase = dev_params.omega * t;
- 
+
     if (x0 * x0 + y0 * y0 + z0 * z0 < rl * rl) {
       // Set bx
       x = dev_grid.pos(0, i, 1);
       y = dev_grid.pos(1, j, 0);
       z = dev_grid.pos(2, k, 0);
-      r2 = x * x + y * y + z * z; 
-      bxn =
-          dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 0) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 0));
-      byn =
-          dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 1) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 1));
-      bzn =
-          dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 2) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 2));
+      r2 = x * x + y * y + z * z;
+      r = std::sqrt(r2);
+      bxn = dev_params.b0 *
+            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
+                     dev_params.p3, phase, 0) +
+             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 0));
+      byn = dev_params.b0 *
+            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
+                     dev_params.p3, phase, 1) +
+             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 1));
+      bzn = dev_params.b0 *
+            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
+                     dev_params.p3, phase, 2) +
+             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 2));
       s = shape(r, dev_params.radius - d1, scaleBperp);
       intbx = Bx[ijk];
       intby = interpolate(By, ijk, Stagger(0b010), Stagger(0b001),
-                        dev_grid.dims[0], dev_grid.dims[1]);
+                          dev_grid.dims[0], dev_grid.dims[1]);
       intbz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b001),
-                        dev_grid.dims[0], dev_grid.dims[1]); 
+                          dev_grid.dims[0], dev_grid.dims[1]);
       Bxnew[ijk] =
           (bxn * x + byn * y + bzn * z) * x / r2 * s +
           (intbx * x + intby * y + intbz * z) * x / r2 * (1 - s);
-      
+
       s = shape(r, dev_params.radius - d1, scaleBpar);
-      Bxnew[ijk] += (bxn - (bxn * x + byn * y + bzn * z) * x / r2) * s +
-               (intbx -
-                (intbx * x + intby * y + intbz * z) * x / r2) *
-                   (1 - s);
+      Bxnew[ijk] +=
+          (bxn - (bxn * x + byn * y + bzn * z) * x / r2) * s +
+          (intbx - (intbx * x + intby * y + intbz * z) * x / r2) *
+              (1 - s);
       // Set by
       x = dev_grid.pos(0, i, 0);
       y = dev_grid.pos(1, j, 1);
       z = dev_grid.pos(2, k, 0);
-      r2 = x * x + y * y + z * z; 
-      bxn =
-          dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 0) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 0));
-      byn =
-          dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 1) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 1));
-      bzn =
-          dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 2) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 2));
+      r2 = x * x + y * y + z * z;
+      r = std::sqrt(r2);
+      bxn = dev_params.b0 *
+            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
+                     dev_params.p3, phase, 0) +
+             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 0));
+      byn = dev_params.b0 *
+            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
+                     dev_params.p3, phase, 1) +
+             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 1));
+      bzn = dev_params.b0 *
+            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
+                     dev_params.p3, phase, 2) +
+             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 2));
       s = shape(r, dev_params.radius - d1, scaleBperp);
       intbx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b010),
-                        dev_grid.dims[0], dev_grid.dims[1]);
+                          dev_grid.dims[0], dev_grid.dims[1]);
       intby = By[ijk];
       intbz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b010),
-                        dev_grid.dims[0], dev_grid.dims[1]); 
+                          dev_grid.dims[0], dev_grid.dims[1]);
       Bynew[ijk] =
           (bxn * x + byn * y + bzn * z) * y / r2 * s +
           (intbx * x + intby * y + intbz * z) * y / r2 * (1 - s);
-      
+
       s = shape(r, dev_params.radius - d1, scaleBpar);
-      Bynew[ijk] += (byn - (bxn * x + byn * y + bzn * z) * y / r2) * s +
-               (By[ijk] -
-                (intbx * x + intby * y + intbz * z) * y / r2) *
-                   (1 - s);      
+      Bynew[ijk] +=
+          (byn - (bxn * x + byn * y + bzn * z) * y / r2) * s +
+          (By[ijk] - (intbx * x + intby * y + intbz * z) * y / r2) *
+              (1 - s);
       // Set bz
       x = dev_grid.pos(0, i, 0);
       y = dev_grid.pos(1, j, 0);
       z = dev_grid.pos(2, k, 1);
-      r2 = x * x + y * y + z * z; 
-      bxn =
-          dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 0) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 0));
-      byn =
-          dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 1) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 1));
-      bzn =
-          dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 2) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 2));
+      r2 = x * x + y * y + z * z;
+      r = std::sqrt(r2);
+      bxn = dev_params.b0 *
+            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
+                     dev_params.p3, phase, 0) +
+             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 0));
+      byn = dev_params.b0 *
+            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
+                     dev_params.p3, phase, 1) +
+             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 1));
+      bzn = dev_params.b0 *
+            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
+                     dev_params.p3, phase, 2) +
+             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 2));
       s = shape(r, dev_params.radius - d1, scaleBperp);
       intbx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b100),
-                        dev_grid.dims[0], dev_grid.dims[1]);
+                          dev_grid.dims[0], dev_grid.dims[1]);
       intby = interpolate(By, ijk, Stagger(0b010), Stagger(0b100),
-                        dev_grid.dims[0], dev_grid.dims[1]);
+                          dev_grid.dims[0], dev_grid.dims[1]);
       intbz = Bz[ijk];
       Bznew[ijk] =
           (bxn * x + byn * y + bzn * z) * z / r2 * s +
           (intbx * x + intby * y + intbz * z) * z / r2 * (1 - s);
-      
+
       s = shape(r, dev_params.radius - d1, scaleBpar);
-      Bznew[ijk] += (bzn - (bxn * x + byn * y + bzn * z) * z / r2) * s +
-               (Bz[ijk] -
-                (intbx * x + intby * y + intbz * z) * z / r2) *
-                   (1 - s);      
+      Bznew[ijk] +=
+          (bzn - (bxn * x + byn * y + bzn * z) * z / r2) * s +
+          (Bz[ijk] - (intbx * x + intby * y + intbz * z) * z / r2) *
+              (1 - s);
 
       Scalar w = dev_params.omega;
 
@@ -523,99 +518,101 @@ kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
       x = dev_grid.pos(0, i, 0);
       y = dev_grid.pos(1, j, 1);
       z = dev_grid.pos(2, k, 1);
-      r2 = x * x + y * y + z * z; 
-      vx = - w * y;
+      r2 = x * x + y * y + z * z;
+      r = std::sqrt(r2);
+      vx = -w * y;
       vy = w * x;
-      intex = interpolate(ex, ijk, Stagger(0b110), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intey = interpolate(ey, ijk, Stagger(0b101), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intez = interpolate(ez, ijk, Stagger(0b011), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intbz = interpolate(bz, ijk, Stagger(0b100), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      exn = - vy * intbz;
+      intex = interpolate(Ex, ijk, Stagger(0b110), Stagger(0b110),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intey = interpolate(Ey, ijk, Stagger(0b101), Stagger(0b110),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intez = interpolate(Ez, ijk, Stagger(0b011), Stagger(0b110),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intbx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b110),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intby = interpolate(By, ijk, Stagger(0b010), Stagger(0b110),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intbz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b110),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      exn = -vy * intbz;
       eyn = vx * intbz;
-      ezn = - vx * intby + vy * intbx;
+      ezn = -vx * intby + vy * intbx;
       s = shape(r, dev_params.radius - d0, scaleEperp);
       Exnew[ijk] =
           (exn * x + eyn * y + ezn * z) * x / r2 * s +
           (intex * x + intey * y + intez * z) * x / r2 * (1 - s);
       s = shape(r, dev_params.radius - d0, scaleEpar);
-      Exnew[ijk] += (exn - (exn * x + eyn * y + ezn * z) * x / r2) * s +
-               (intex -
-                (intex * x + intey * y + intez * z) * x / r2) *
-                   (1 - s);
+      Exnew[ijk] +=
+          (exn - (exn * x + eyn * y + ezn * z) * x / r2) * s +
+          (intex - (intex * x + intey * y + intez * z) * x / r2) *
+              (1 - s);
 
       // set Ey
       x = dev_grid.pos(0, i, 1);
       y = dev_grid.pos(1, j, 0);
       z = dev_grid.pos(2, k, 1);
-      r2 = x * x + y * y + z * z; 
-      vx = - w * y;
+      r2 = x * x + y * y + z * z;
+      r = std::sqrt(r2);
+      vx = -w * y;
       vy = w * x;
-      intex = interpolate(ex, ijk, Stagger(0b110), Stagger(0b101),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intey = interpolate(ey, ijk, Stagger(0b101), Stagger(0b101),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intez = interpolate(ez, ijk, Stagger(0b011), Stagger(0b101),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b101),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b101),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intbz = interpolate(bz, ijk, Stagger(0b100), Stagger(0b101),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      exn = - vy * intbz;
+      intex = interpolate(Ex, ijk, Stagger(0b110), Stagger(0b101),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intey = interpolate(Ey, ijk, Stagger(0b101), Stagger(0b101),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intez = interpolate(Ez, ijk, Stagger(0b011), Stagger(0b101),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intbx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b101),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intby = interpolate(By, ijk, Stagger(0b010), Stagger(0b101),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intbz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b101),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      exn = -vy * intbz;
       eyn = vx * intbz;
-      ezn = - vx * intby + vy * intbx;
+      ezn = -vx * intby + vy * intbx;
       s = shape(r, dev_params.radius - d0, scaleEperp);
       Eynew[ijk] =
           (exn * x + eyn * y + ezn * z) * y / r2 * s +
           (intex * x + intey * y + intez * z) * y / r2 * (1 - s);
       s = shape(r, dev_params.radius - d0, scaleEpar);
-      Eynew[ijk] += (eyn - (exn * x + eyn * y + ezn * z) * y / r2) * s +
-               (intey -
-                (intex * x + intey * y + intez * z) * y / r2) *
-                   (1 - s);             
+      Eynew[ijk] +=
+          (eyn - (exn * x + eyn * y + ezn * z) * y / r2) * s +
+          (intey - (intex * x + intey * y + intez * z) * y / r2) *
+              (1 - s);
 
       // set Ez
       x = dev_grid.pos(0, i, 1);
       y = dev_grid.pos(1, j, 1);
       z = dev_grid.pos(2, k, 0);
-      r2 = x * x + y * y + z * z; 
-      vx = - w * y;
+      r2 = x * x + y * y + z * z;
+      r = std::sqrt(r2);
+      vx = -w * y;
       vy = w * x;
-      intex = interpolate(ex, ijk, Stagger(0b110), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intey = interpolate(ey, ijk, Stagger(0b101), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intez = interpolate(ez, ijk, Stagger(0b011), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intbx = interpolate(bx, ijk, Stagger(0b001), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intby = interpolate(by, ijk, Stagger(0b010), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      intbz = interpolate(bz, ijk, Stagger(0b100), Stagger(0b110),
-                        dev_grid.dims[0], dev_grid.dims[1]);
-      exn = - vy * intbz;
+      intex = interpolate(Ex, ijk, Stagger(0b110), Stagger(0b110),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intey = interpolate(Ey, ijk, Stagger(0b101), Stagger(0b110),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intez = interpolate(Ez, ijk, Stagger(0b011), Stagger(0b110),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intbx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b110),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intby = interpolate(By, ijk, Stagger(0b010), Stagger(0b110),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      intbz = interpolate(Bz, ijk, Stagger(0b100), Stagger(0b110),
+                          dev_grid.dims[0], dev_grid.dims[1]);
+      exn = -vy * intbz;
       eyn = vx * intbz;
-      ezn = - vx * intby + vy * intbx;
+      ezn = -vx * intby + vy * intbx;
       s = shape(r, dev_params.radius - d0, scaleEperp);
       Eznew[ijk] =
           (exn * x + eyn * y + ezn * z) * z / r2 * s +
           (intex * x + intey * y + intez * z) * z / r2 * (1 - s);
       s = shape(r, dev_params.radius - d0, scaleEpar);
-      Eznew[ijk] += (ezn - (exn * x + eyn * y + ezn * z) * z / r2) * s +
-               (intez -
-                (intex * x + intey * y + intez * z) * z / r2) *
-                   (1 - s);                  
-    }
-    else {
+      Eznew[ijk] +=
+          (ezn - (exn * x + eyn * y + ezn * z) * z / r2) * s +
+          (intez - (intex * x + intey * y + intez * z) * z / r2) *
+              (1 - s);
+    } else {
       Bxnew[ijk] = Bx[ijk];
       Bynew[ijk] = By[ijk];
       Bznew[ijk] = Bz[ijk];
@@ -673,7 +670,7 @@ kernel_boundary_absorbing_thread(const Scalar *enx, const Scalar *eny,
     Scalar zl =
         dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[2];
     if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
-    // if (x > xh || y < yl || y > yh) {
+      // if (x > xh || y < yl || y > yh) {
       sigx = pmlsigma(x, xl, xh, dev_params.pmllen * dev_grid.delta[0],
                       dev_params.sigpml);
       sigy = pmlsigma(y, yl, yh, dev_params.pmllen * dev_grid.delta[0],
@@ -858,8 +855,10 @@ void
 field_solver::boundary_absorbing() {
   kernel_boundary_absorbing_thread<<<blockGroupSize, blockSize>>>(
       En.dev_ptr(0), En.dev_ptr(1), En.dev_ptr(2), Bn.dev_ptr(0),
-      Bn.dev_ptr(1), Bn.dev_ptr(2),m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), m_env.params().shift_ghost)
+      Bn.dev_ptr(1), Bn.dev_ptr(2), m_data.E.dev_ptr(0),
+      m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0),
+      m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      m_env.params().shift_ghost)
 }
 
 }  // namespace Coffee

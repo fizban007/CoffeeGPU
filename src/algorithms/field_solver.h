@@ -17,7 +17,7 @@ class field_solver {
  private:
   sim_data& m_data;
   sim_environment& m_env;
-  
+
   void copy_fields();
 
   void rk_push();
@@ -26,8 +26,8 @@ class field_solver {
   void clean_epar();
   void check_eGTb();
 
-  void field_solver::boundary_pulsar(Scalar t);
-  void field_solver::boundary_absorbing();
+  void boundary_pulsar(Scalar t);
+  void boundary_absorbing();
 };
 
 }  // namespace Coffee
