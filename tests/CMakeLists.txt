@@ -4,7 +4,7 @@ add_executable(tests "test.cpp"
   "test_stagger.cpp"
   "test_multi_array.cpp"
   "test_interp.cpp"
-  "test_algorithm.cpp"
+  # "test_algorithm.cpp"
   )
 target_link_libraries(tests
   Coffee Coffee_cuda)
