@@ -1,8 +1,12 @@
 #ifndef _USER_INIT_H_
 #define _USER_INIT_H_
 
-// 3d pulsar, using field_solver
+// 3D pulsar, using field_solver_EZ_cylindrical
 
+Stagger st_e[3] = {Stagger(0b111), Stagger(0b111), Stagger(0b111)};
+Stagger st_b[3] = {Stagger(0b111), Stagger(0b111), Stagger(0b111)};
+data.E.set_stagger(st_e);
+data.B.set_stagger(st_b);
 
 for (int i = 0; i < 3; ++i) {
   data.B.initialize(i, [&](Scalar x, Scalar y, Scalar z) {

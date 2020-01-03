@@ -12,18 +12,22 @@ class field_solver {
   field_solver(sim_data& mydata, sim_environment& env);
   ~field_solver();
 
-  void evolve_fields();
+  void evolve_fields(Scalar t);
 
  private:
   sim_data& m_data;
   sim_environment& m_env;
+  
   void copy_fields();
-  void check_eGTb();
 
   void rk_push();
   void rk_update(Scalar rk_c1, Scalar rk_c2, Scalar rk_c3);
 
   void clean_epar();
+  void check_eGTb();
+
+  void field_solver::boundary_pulsar(Scalar t);
+  void field_solver::boundary_absorbing();
 };
 
 }  // namespace Coffee

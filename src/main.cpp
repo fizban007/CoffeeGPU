@@ -2,7 +2,8 @@
 #include "data/sim_data.h"
 #include "sim_env.h"
 #include "utils/data_exporter.h"
-#include "algorithms/field_solver_EZ.h"
+// #include "algorithms/field_solver_EZ.h"
+#include "algorithms/field_solver.h"
 #include "utils/timer.h"
 #include <fstream>
 
@@ -13,6 +14,8 @@
 using namespace std;
 using namespace Coffee;
 
+#define ENG 0
+
 int main(int argc, char *argv[]) {
   timer::stamp("begin");
   // Initialize the simulation environment
@@ -21,12 +24,14 @@ int main(int argc, char *argv[]) {
   // Initialize all the simulation data structures
   sim_data data(env);
   // field_solver_gr solver(data, env);
-  field_solver_EZ solver(data, env);
+  // field_solver_EZ solver(data, env);
+  field_solver solver(data, env);
 
   // #include "user_init.hpp"
   // #include "user_emwave.hpp"
   // #include "user_alfven.hpp"
   // #include "user_alfven_EZ.hpp"
+  // #include "user_pulsar3d_EZ.hpp"
   #include "user_pulsar3d.hpp"
 
   // Initialization for Wald problem
@@ -40,9 +45,11 @@ int main(int argc, char *argv[]) {
   // exporter.write_output(data, step, 0.0);
   // exporter.sync();
 
-  ofstream efile;
-  efile.open("Data/energy.txt", ios::out | ios::app);
-
+  if (ENG) {
+    ofstream efile;
+    efile.open("Data/energy.txt", ios::out | ios::app);
+  }
+  
   // Main simulation loop
   Scalar time = 0.0;
   for (step = 0; step <= env.params().max_steps; step++) {
@@ -54,10 +61,12 @@ int main(int argc, char *argv[]) {
       if (env.rank() == 0)
         timer::show_duration_since_stamp("output", "ms", "output");
 
-      Scalar Wb = solver.total_energy(data.B);
-      Scalar We = solver.total_energy(data.E);
-      if (env.rank() == 0) {
-        efile << Wb << " " << We << std::endl;
+      if (ENG) {
+        Scalar Wb = solver.total_energy(data.B);
+        Scalar We = solver.total_energy(data.E);
+        if (env.rank() == 0) {
+          efile << Wb << " " << We << std::endl;
+        }
       }
     }
     timer::stamp("step");
@@ -68,7 +77,7 @@ int main(int argc, char *argv[]) {
     time += env.params().dt;
   }
 
-  efile.close();
+  if (ENG) efile.close();
 
   timer::show_duration_since_stamp("the whole program", "s", "begin");
 
