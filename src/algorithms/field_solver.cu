@@ -858,7 +858,8 @@ field_solver::boundary_absorbing() {
       Bn.dev_ptr(1), Bn.dev_ptr(2), m_data.E.dev_ptr(0),
       m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0),
       m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      m_env.params().shift_ghost)
+      m_env.params().shift_ghost);
+  CudaCheckError();
 }
 
 }  // namespace Coffee
