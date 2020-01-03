@@ -351,12 +351,12 @@ kernel_check_eGTb_thread(const Scalar *dex, const Scalar *dey,
 
 __global__ void
 kernel_boundary_pulsar_B_thread(Scalar *Bx, Scalar *By, Scalar *Bz,
-                              Scalar *Bxnew, Scalar *Bynew, Scalar *Bznew, Scalar t,
-                              int shift) {
+                                Scalar *Bxnew, Scalar *Bynew,
+                                Scalar *Bznew, Scalar t, int shift) {
   size_t ijk;
   Scalar x, y, z, r2, r, s;
-  Scalar bxn, byn, bzn, exn, eyn, ezn, vx, vy;
-  Scalar intex, intey, intez, intbx, intby, intbz;
+  Scalar bxn, byn, bzn;
+  Scalar intbx, intby, intbz;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
@@ -508,7 +508,7 @@ kernel_boundary_pulsar_B_thread(Scalar *Bx, Scalar *By, Scalar *Bz,
           (bzn - (bxn * x + byn * y + bzn * z) * z / r2) * s +
           (Bz[ijk] - (intbx * x + intby * y + intbz * z) * z / r2) *
               (1 - s);
-      } else {
+    } else {
       Bxnew[ijk] = Bx[ijk];
       Bynew[ijk] = By[ijk];
       Bznew[ijk] = Bz[ijk];
@@ -519,8 +519,8 @@ kernel_boundary_pulsar_B_thread(Scalar *Bx, Scalar *By, Scalar *Bz,
 __global__ void
 kernel_boundary_pulsar_E_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
                                 Scalar *Bx, Scalar *By, Scalar *Bz,
-                              Scalar *Exnew, Scalar *Eynew, Scalar *Eznew, Scalar t,
-                              int shift) {
+                                Scalar *Exnew, Scalar *Eynew,
+                                Scalar *Eznew, Scalar t, int shift) {
   size_t ijk;
   Scalar x, y, z, r2, r, s;
   Scalar exn, eyn, ezn, vx, vy;
@@ -550,7 +550,6 @@ kernel_boundary_pulsar_E_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar phase = dev_params.omega * t;
 
     if (x0 * x0 + y0 * y0 + z0 * z0 < rl * rl) {
-
       Scalar w = dev_params.omega;
 
       // set Ex
@@ -652,9 +651,6 @@ kernel_boundary_pulsar_E_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
           (intez - (intex * x + intey * y + intez * z) * z / r2) *
               (1 - s);
     } else {
-      Bxnew[ijk] = Bx[ijk];
-      Bynew[ijk] = By[ijk];
-      Bznew[ijk] = Bz[ijk];
       Exnew[ijk] = Ex[ijk];
       Eynew[ijk] = Ey[ijk];
       Eznew[ijk] = Ez[ijk];
@@ -882,13 +878,15 @@ void
 field_solver::boundary_pulsar(Scalar t) {
   kernel_boundary_pulsar_B_thread<<<blockGroupSize, blockSize>>>(
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      dB.dev_ptr(1), dB.dev_ptr(2), t, m_env.params().shift_ghost);
+      dB.dev_ptr(0), dB.dev_ptr(1), dB.dev_ptr(2), t,
+      m_env.params().shift_ghost);
   CudaCheckError();
   m_data.B.copy_from(dB);
   kernel_boundary_pulsar_E_thread<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), t, m_env.params().shift_ghost);
+      dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), t,
+      m_env.params().shift_ghost);
   CudaCheckError();
   m_data.E.copy_from(dE);
 }
