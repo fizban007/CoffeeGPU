@@ -1,8 +1,6 @@
 #include "data/typedefs.h"
 #include "cuda/cuda_control.h"
 
-#define DELTA 1e-7
-
 namespace Coffee {
 
 template <typename T>

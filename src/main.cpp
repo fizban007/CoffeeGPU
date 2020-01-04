@@ -2,7 +2,7 @@
 #include "data/sim_data.h"
 #include "sim_env.h"
 #include "utils/data_exporter.h"
-// #include "algorithms/field_solver_EZ.h"
+#include "algorithms/field_solver_EZ.h"
 #include "algorithms/field_solver.h"
 #include "utils/timer.h"
 #include <fstream>
@@ -24,15 +24,15 @@ int main(int argc, char *argv[]) {
   // Initialize all the simulation data structures
   sim_data data(env);
   // field_solver_gr solver(data, env);
-  // field_solver_EZ solver(data, env);
-  field_solver solver(data, env);
+  field_solver_EZ solver(data, env);
+  // field_solver solver(data, env);
 
   // #include "user_init.hpp"
   // #include "user_emwave.hpp"
   // #include "user_alfven.hpp"
   // #include "user_alfven_EZ.hpp"
-  // #include "user_pulsar3d_EZ.hpp"
-  #include "user_pulsar3d.hpp"
+  #include "user_pulsar3d_EZ.hpp"
+  // #include "user_pulsar3d.hpp"
 
   // Initialization for Wald problem
   // #include "user_wald.hpp" 
