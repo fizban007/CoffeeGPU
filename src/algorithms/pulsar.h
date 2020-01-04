@@ -25,4 +25,11 @@ HOST_DEVICE Scalar
 quadrupole(Scalar x, Scalar y, Scalar z, Scalar q11, Scalar q12,
            Scalar q13, Scalar q22, Scalar q23, Scalar q_offset_x,
            Scalar q_offset_y, Scalar q_offset_z, Scalar phase, int n);
+
+HOST_DEVICE Scalar
+quadru_dipole(Scalar x, Scalar y, Scalar z, Scalar p1, Scalar p2,
+              Scalar p3, Scalar q11, Scalar q12, Scalar q13, Scalar q22,
+              Scalar q23, Scalar q_offset_x, Scalar q_offset_y,
+              Scalar q_offset_z, Scalar phase, int n);
+
 }

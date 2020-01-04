@@ -370,28 +370,25 @@ kernel_boundary_pulsar(Scalar *Ex, Scalar *Ey, Scalar *Ez,
       //              dipole_z(x, y, z, dev_params.alpha, phase);
       Scalar bxn =
           dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 0) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 0));
+          quadru_dipole(x, y, z, dev_params.p1, dev_params.p2,
+                        dev_params.p3, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 0);
       Scalar byn =
           dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 1) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 1));
+          quadru_dipole(x, y, z, dev_params.p1, dev_params.p2,
+                        dev_params.p3, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 1);
       Scalar bzn =
           dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 2) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 2));
+          quadru_dipole(x, y, z, dev_params.p1, dev_params.p2,
+                        dev_params.p3, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 2);
       Scalar s = shape(r, dev_params.radius - d1, scaleBperp);
       Bxnew =
           (bxn * x + byn * y + bzn * z) * x / r2 * s +

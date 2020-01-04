@@ -388,26 +388,23 @@ kernel_boundary_pulsar_B_thread(Scalar *Bx, Scalar *By, Scalar *Bz,
       r2 = x * x + y * y + z * z;
       r = std::sqrt(r2);
       bxn = dev_params.b0 *
-            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
-                     dev_params.p3, phase, 0) +
-             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                        dev_params.q13, dev_params.q22, dev_params.q23,
-                        dev_params.q_offset_x, dev_params.q_offset_y,
-                        dev_params.q_offset_z, phase, 0));
+            quadru_dipole(
+                x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                dev_params.q11, dev_params.q12, dev_params.q13,
+                dev_params.q22, dev_params.q23, dev_params.q_offset_x,
+                dev_params.q_offset_y, dev_params.q_offset_z, phase, 0);
       byn = dev_params.b0 *
-            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
-                     dev_params.p3, phase, 1) +
-             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                        dev_params.q13, dev_params.q22, dev_params.q23,
-                        dev_params.q_offset_x, dev_params.q_offset_y,
-                        dev_params.q_offset_z, phase, 1));
+            quadru_dipole(
+                x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                dev_params.q11, dev_params.q12, dev_params.q13,
+                dev_params.q22, dev_params.q23, dev_params.q_offset_x,
+                dev_params.q_offset_y, dev_params.q_offset_z, phase, 1);
       bzn = dev_params.b0 *
-            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
-                     dev_params.p3, phase, 2) +
-             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                        dev_params.q13, dev_params.q22, dev_params.q23,
-                        dev_params.q_offset_x, dev_params.q_offset_y,
-                        dev_params.q_offset_z, phase, 2));
+            quadru_dipole(
+                x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                dev_params.q11, dev_params.q12, dev_params.q13,
+                dev_params.q22, dev_params.q23, dev_params.q_offset_x,
+                dev_params.q_offset_y, dev_params.q_offset_z, phase, 2);
       s = shape(r, dev_params.radius - d1, scaleBperp);
       intbx = Bx[ijk];
       intby = interpolate(By, ijk, Stagger(0b010), Stagger(0b001),
@@ -430,26 +427,23 @@ kernel_boundary_pulsar_B_thread(Scalar *Bx, Scalar *By, Scalar *Bz,
       r2 = x * x + y * y + z * z;
       r = std::sqrt(r2);
       bxn = dev_params.b0 *
-            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
-                     dev_params.p3, phase, 0) +
-             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                        dev_params.q13, dev_params.q22, dev_params.q23,
-                        dev_params.q_offset_x, dev_params.q_offset_y,
-                        dev_params.q_offset_z, phase, 0));
+            quadru_dipole(
+                x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                dev_params.q11, dev_params.q12, dev_params.q13,
+                dev_params.q22, dev_params.q23, dev_params.q_offset_x,
+                dev_params.q_offset_y, dev_params.q_offset_z, phase, 0);
       byn = dev_params.b0 *
-            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
-                     dev_params.p3, phase, 1) +
-             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                        dev_params.q13, dev_params.q22, dev_params.q23,
-                        dev_params.q_offset_x, dev_params.q_offset_y,
-                        dev_params.q_offset_z, phase, 1));
+            quadru_dipole(
+                x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                dev_params.q11, dev_params.q12, dev_params.q13,
+                dev_params.q22, dev_params.q23, dev_params.q_offset_x,
+                dev_params.q_offset_y, dev_params.q_offset_z, phase, 1);
       bzn = dev_params.b0 *
-            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
-                     dev_params.p3, phase, 2) +
-             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                        dev_params.q13, dev_params.q22, dev_params.q23,
-                        dev_params.q_offset_x, dev_params.q_offset_y,
-                        dev_params.q_offset_z, phase, 2));
+            quadru_dipole(
+                x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                dev_params.q11, dev_params.q12, dev_params.q13,
+                dev_params.q22, dev_params.q23, dev_params.q_offset_x,
+                dev_params.q_offset_y, dev_params.q_offset_z, phase, 2);
       s = shape(r, dev_params.radius - d1, scaleBperp);
       intbx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b010),
                           dev_grid.dims[0], dev_grid.dims[1]);
@@ -472,26 +466,23 @@ kernel_boundary_pulsar_B_thread(Scalar *Bx, Scalar *By, Scalar *Bz,
       r2 = x * x + y * y + z * z;
       r = std::sqrt(r2);
       bxn = dev_params.b0 *
-            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
-                     dev_params.p3, phase, 0) +
-             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                        dev_params.q13, dev_params.q22, dev_params.q23,
-                        dev_params.q_offset_x, dev_params.q_offset_y,
-                        dev_params.q_offset_z, phase, 0));
+            quadru_dipole(
+                x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                dev_params.q11, dev_params.q12, dev_params.q13,
+                dev_params.q22, dev_params.q23, dev_params.q_offset_x,
+                dev_params.q_offset_y, dev_params.q_offset_z, phase, 0);
       byn = dev_params.b0 *
-            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
-                     dev_params.p3, phase, 1) +
-             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                        dev_params.q13, dev_params.q22, dev_params.q23,
-                        dev_params.q_offset_x, dev_params.q_offset_y,
-                        dev_params.q_offset_z, phase, 1));
+            quadru_dipole(
+                x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                dev_params.q11, dev_params.q12, dev_params.q13,
+                dev_params.q22, dev_params.q23, dev_params.q_offset_x,
+                dev_params.q_offset_y, dev_params.q_offset_z, phase, 1);
       bzn = dev_params.b0 *
-            (dipole2(x, y, z, dev_params.p1, dev_params.p2,
-                     dev_params.p3, phase, 2) +
-             quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                        dev_params.q13, dev_params.q22, dev_params.q23,
-                        dev_params.q_offset_x, dev_params.q_offset_y,
-                        dev_params.q_offset_z, phase, 2));
+            quadru_dipole(
+                x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
+                dev_params.q11, dev_params.q12, dev_params.q13,
+                dev_params.q22, dev_params.q23, dev_params.q_offset_x,
+                dev_params.q_offset_y, dev_params.q_offset_z, phase, 2);
       s = shape(r, dev_params.radius - d1, scaleBperp);
       intbx = interpolate(Bx, ijk, Stagger(0b001), Stagger(0b100),
                           dev_grid.dims[0], dev_grid.dims[1]);
@@ -658,7 +649,8 @@ kernel_boundary_pulsar_E_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
 }
 
 // HOST_DEVICE Scalar
-// pmlsigma(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Scalar sig0) {
+// pmlsigma(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Scalar
+// sig0) {
 //   if (x > xh)
 //     return sig0 * cube((x - xh) / pmlscale);
 //   else if (x < xl)
@@ -668,21 +660,25 @@ kernel_boundary_pulsar_E_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
 // }
 
 // __global__ void
-// kernel_boundary_absorbing_thread(const Scalar *enx, const Scalar *eny,
-//                                  const Scalar *enz, const Scalar *bnx,
-//                                  const Scalar *bny, const Scalar *bnz,
-//                                  Scalar *ex, Scalar *ey, Scalar *ez,
-//                                  Scalar *bx, Scalar *by, Scalar *bz,
-//                                  int shift) {
+// kernel_boundary_absorbing_thread(const Scalar *enx, const Scalar
+// *eny,
+//                                  const Scalar *enz, const Scalar
+//                                  *bnx, const Scalar *bny, const
+//                                  Scalar *bnz, Scalar *ex, Scalar *ey,
+//                                  Scalar *ez, Scalar *bx, Scalar *by,
+//                                  Scalar *bz, int shift) {
 //   Scalar x, y, z;
 //   Scalar sigx = 0.0, sigy = 0.0, sigz = 0.0, sig = 0.0;
 //   size_t ijk;
 //   int i =
-//       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+//       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] -
+//       shift;
 //   int j =
-//       threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+//       threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] -
+//       shift;
 //   int k =
-//       threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+//       threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] -
+//       shift;
 //   if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
 //       j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
 //       k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
@@ -705,11 +701,14 @@ kernel_boundary_pulsar_E_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
 //         dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[2];
 //     if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
 //       // if (x > xh || y < yl || y > yh) {
-//       sigx = pmlsigma(x, xl, xh, dev_params.pmllen * dev_grid.delta[0],
+//       sigx = pmlsigma(x, xl, xh, dev_params.pmllen *
+//       dev_grid.delta[0],
 //                       dev_params.sigpml);
-//       sigy = pmlsigma(y, yl, yh, dev_params.pmllen * dev_grid.delta[0],
+//       sigy = pmlsigma(y, yl, yh, dev_params.pmllen *
+//       dev_grid.delta[0],
 //                       dev_params.sigpml);
-//       sigz = pmlsigma(z, zl, zh, dev_params.pmllen * dev_grid.delta[0],
+//       sigz = pmlsigma(z, zl, zh, dev_params.pmllen *
+//       dev_grid.delta[0],
 //                       dev_params.sigpml);
 //       sig = sigx + sigy + sigz;
 //       // sig = sigx + sigy;
