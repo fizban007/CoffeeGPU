@@ -1,13 +1,12 @@
-#include "data/typedefs.h"
 #include "algorithms/pulsar.h"
-
+#include "data/typedefs.h"
 
 namespace Coffee {
 
-
-HOST_DEVICE Scalar dipole_x(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar phase) {
+HOST_DEVICE Scalar
+dipole_x(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar phase) {
   Scalar r = std::sqrt(x * x + y * y + z * z);
-  if (std::abs(r) < DELTA) r = DELTA;
+  if (std::abs(r) < TINY) r = TINY;
   Scalar mux = sin(alpha) * cos(phase);
   Scalar muy = sin(alpha) * sin(phase);
   Scalar muz = cos(alpha);
@@ -15,12 +14,13 @@ HOST_DEVICE Scalar dipole_x(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar p
   Scalar yn = y / r;
   Scalar zn = z / r;
   Scalar mun = mux * xn + muy * yn + muz * zn;
-  return (3.0 * xn * mun - mux) / (cube(r) + DELTA);
+  return (3.0 * xn * mun - mux) / (cube(r) + TINY);
 }
 
-HOST_DEVICE Scalar dipole_y(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar phase) {
+HOST_DEVICE Scalar
+dipole_y(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar phase) {
   Scalar r = std::sqrt(x * x + y * y + z * z);
-  if (std::abs(r) < DELTA) r = DELTA;
+  if (std::abs(r) < TINY) r = TINY;
   Scalar mux = sin(alpha) * cos(phase);
   Scalar muy = sin(alpha) * sin(phase);
   Scalar muz = cos(alpha);
@@ -28,12 +28,13 @@ HOST_DEVICE Scalar dipole_y(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar p
   Scalar yn = y / r;
   Scalar zn = z / r;
   Scalar mun = mux * xn + muy * yn + muz * zn;
-  return (3.0 * yn * mun - muy) / (cube(r) + DELTA);
+  return (3.0 * yn * mun - muy) / (cube(r) + TINY);
 }
 
-HOST_DEVICE Scalar dipole_z(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar phase) {
+HOST_DEVICE Scalar
+dipole_z(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar phase) {
   Scalar r = std::sqrt(x * x + y * y + z * z);
-  if (std::abs(r) < DELTA) r = DELTA;
+  if (std::abs(r) < TINY) r = TINY;
   Scalar mux = sin(alpha) * cos(phase);
   Scalar muy = sin(alpha) * sin(phase);
   Scalar muz = cos(alpha);
@@ -41,10 +42,11 @@ HOST_DEVICE Scalar dipole_z(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar p
   Scalar yn = y / r;
   Scalar zn = z / r;
   Scalar mun = mux * xn + muy * yn + muz * zn;
-  return (3.0 * zn * mun - muz) / (cube(r) + DELTA);
+  return (3.0 * zn * mun - muz) / (cube(r) + TINY);
 }
 
-HOST_DEVICE Scalar shape(Scalar r, Scalar r0, Scalar del) {
+HOST_DEVICE Scalar
+shape(Scalar r, Scalar r0, Scalar del) {
   return 0.5 * (1.0 - tanh((r - r0) / del));
 }
 
@@ -58,14 +60,17 @@ dipole2(Scalar x, Scalar y, Scalar z, Scalar p1, Scalar p2, Scalar p3,
   Scalar p3t = p3;
   Scalar r2 = x * x + y * y + z * z;
   if (n == 0)
-    return (3.0 * x * (p1t * x + p2t * y + p3t * z) / (r2 + DELTA) - p1t) /
-           (std::sqrt(cube(r2)) + DELTA);
+    return (3.0 * x * (p1t * x + p2t * y + p3t * z) / (r2 + TINY) -
+            p1t) /
+           (std::sqrt(cube(r2)) + TINY);
   else if (n == 1)
-    return (3.0 * y * (p1t * x + p2t * y + p3t * z) / (r2 + DELTA) - p2t) /
-           (std::sqrt(cube(r2)) + DELTA);
+    return (3.0 * y * (p1t * x + p2t * y + p3t * z) / (r2 + TINY) -
+            p2t) /
+           (std::sqrt(cube(r2)) + TINY);
   else if (n == 2)
-    return (3.0 * z * (p1t * x + p2t * y + p3t * z) / (r2 + DELTA) - p3t) /
-           (std::sqrt(cube(r2)) + DELTA);
+    return (3.0 * z * (p1t * x + p2t * y + p3t * z) / (r2 + TINY) -
+            p3t) /
+           (std::sqrt(cube(r2)) + TINY);
   else
     return 0;
 }
@@ -83,7 +88,7 @@ quadrupole(Scalar x, Scalar y, Scalar z, Scalar q11, Scalar q12,
                 2.0 * q12 * cosph * sinph;
   Scalar q13t = q13 * cosph - q23 * sinph;
   Scalar q23t = q23 * cosph + q13 * sinph;
-  Scalar q33t = - q11 - q22;
+  Scalar q33t = -q11 - q22;
   Scalar q_offset_x1 = q_offset_x * cosph - q_offset_y * sinph;
   Scalar q_offset_y1 = q_offset_x * sinph + q_offset_y * cosph;
   Scalar x1 = x - q_offset_x1;
@@ -96,16 +101,27 @@ quadrupole(Scalar x, Scalar y, Scalar z, Scalar q11, Scalar q12,
   if (n == 0)
     return (-2.0 * (q11t * x1 + q12t * y1 + q13t * z1) * r2 +
             5.0 * x1 * xqx) /
-           (r7 + DELTA);
+           (r7 + TINY);
   else if (n == 1)
     return (-2.0 * (q12t * x1 + q22t * y1 + q23t * z1) * r2 +
             5.0 * y1 * xqx) /
-           (r7 + DELTA);
+           (r7 + TINY);
   else if (n == 2)
     return (-2.0 * (q13t * x1 + q23t * y1 + q33t * z1) * r2 +
             5.0 * z1 * xqx) /
-           (r7 + DELTA);
-  else return 0;
+           (r7 + TINY);
+  else
+    return 0;
+}
+
+HOST_DEVICE Scalar
+quadru_dipole(Scalar x, Scalar y, Scalar z, Scalar p1, Scalar p2,
+              Scalar p3, Scalar q11, Scalar q12, Scalar q13, Scalar q22,
+              Scalar q23, Scalar q_offset_x, Scalar q_offset_y,
+              Scalar q_offset_z, Scalar phase, int n) {
+  return dipole2(x, y, z, p1, p2, p3, phase, n) +
+         quadrupole(x, y, z, q11, q12, q13, q22, q23, q_offset_x,
+                    q_offset_y, q_offset_z, phase, n);
 }
 
 }  // namespace Coffee

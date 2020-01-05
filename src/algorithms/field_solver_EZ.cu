@@ -1,6 +1,7 @@
 #include "cuda/constant_mem.h"
 #include "cuda/constant_mem_func.h"
 #include "cuda/cuda_utility.h"
+#include "boundary.h"
 #include "field_solver_EZ.h"
 #include "utils/timer.h"
 #include "pulsar.h"
@@ -8,8 +9,6 @@
 #define BLOCK_SIZE_X 32
 #define BLOCK_SIZE_Y 2
 #define BLOCK_SIZE_Z 2
-
-#define TINY 1e-7
 
 #define FFE_DISSIPATION_ORDER 6
 
@@ -107,7 +106,7 @@ KO(const Scalar *f, int ijk) {
 }
 
 __global__ void
-kernel_rk_step1_thread(const Scalar *Ex, const Scalar *Ey,
+kernel_rk_step1(const Scalar *Ex, const Scalar *Ey,
                        const Scalar *Ez, const Scalar *Bx,
                        const Scalar *By, const Scalar *Bz, Scalar *dEx,
                        Scalar *dEy, Scalar *dEz, Scalar *dBx,
@@ -166,7 +165,7 @@ kernel_rk_step1_thread(const Scalar *Ex, const Scalar *Ey,
 }
 
 __global__ void
-kernel_rk_step2_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
+kernel_rk_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                        Scalar *By, Scalar *Bz, const Scalar *dEx,
                        const Scalar *dEy, const Scalar *dEz,
                        const Scalar *dBx, const Scalar *dBy,
@@ -198,7 +197,7 @@ kernel_rk_step2_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 }
 
 __global__ void
-kernel_Epar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
+kernel_Epar(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
                    const Scalar *By, const Scalar *Bz, int shift) {
   size_t ijk;
   int i =
@@ -226,7 +225,7 @@ kernel_Epar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
 }
 
 __global__ void
-kernel_EgtB_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
+kernel_EgtB(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
                    const Scalar *By, const Scalar *Bz, int shift) {
   size_t ijk;
   int i =
@@ -257,7 +256,7 @@ kernel_EgtB_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
 }
 
 __global__ void
-kernel_KO_step1_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
+kernel_KO_step1(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                        Scalar *By, Scalar *Bz, Scalar *Ex_tmp,
                        Scalar *Ey_tmp, Scalar *Ez_tmp, Scalar *Bx_tmp,
                        Scalar *By_tmp, Scalar *Bz_tmp, Scalar *P,
@@ -288,7 +287,7 @@ kernel_KO_step1_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 }
 
 __global__ void
-kernel_KO_step2_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
+kernel_KO_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                        Scalar *By, Scalar *Bz, Scalar *Ex_tmp,
                        Scalar *Ey_tmp, Scalar *Ez_tmp, Scalar *Bx_tmp,
                        Scalar *By_tmp, Scalar *Bz_tmp, Scalar *P,
@@ -330,7 +329,7 @@ kernel_KO_step2_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 }
 
 __global__ void
-kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
+kernel_boundary_pulsar(Scalar *Ex, Scalar *Ey, Scalar *Ez,
                               Scalar *Bx, Scalar *By, Scalar *Bz,
                               Scalar *P, Scalar t, int shift) {
   size_t ijk;
@@ -371,28 +370,25 @@ kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
       //              dipole_z(x, y, z, dev_params.alpha, phase);
       Scalar bxn =
           dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 0) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 0));
+          quadru_dipole(x, y, z, dev_params.p1, dev_params.p2,
+                        dev_params.p3, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 0);
       Scalar byn =
           dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 1) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 1));
+          quadru_dipole(x, y, z, dev_params.p1, dev_params.p2,
+                        dev_params.p3, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 1);
       Scalar bzn =
           dev_params.b0 *
-          (dipole2(x, y, z, dev_params.p1, dev_params.p2, dev_params.p3,
-                   phase, 2) +
-           quadrupole(x, y, z, dev_params.q11, dev_params.q12,
-                      dev_params.q13, dev_params.q22, dev_params.q23,
-                      dev_params.q_offset_x, dev_params.q_offset_y,
-                      dev_params.q_offset_z, phase, 2));
+          quadru_dipole(x, y, z, dev_params.p1, dev_params.p2,
+                        dev_params.p3, dev_params.q11, dev_params.q12,
+                        dev_params.q13, dev_params.q22, dev_params.q23,
+                        dev_params.q_offset_x, dev_params.q_offset_y,
+                        dev_params.q_offset_z, phase, 2);
       Scalar s = shape(r, dev_params.radius - d1, scaleBperp);
       Bxnew =
           (bxn * x + byn * y + bzn * z) * x / r2 * s +
@@ -465,90 +461,16 @@ kernel_boundary_pulsar_thread(Scalar *Ex, Scalar *Ey, Scalar *Ez,
   }
 }
 
-HOST_DEVICE Scalar
-pmlsigma(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Scalar sig0) {
-  if (x > xh)
-    return sig0 * cube((x - xh) / pmlscale);
-  else if (x < xl)
-    return sig0 * cube((xl - x) / pmlscale);
-  else
-    return 0.0;
-}
-
-__global__ void
-kernel_boundary_absorbing_thread(const Scalar *enx, const Scalar *eny,
-                                 const Scalar *enz, const Scalar *bnx,
-                                 const Scalar *bny, const Scalar *bnz,
-                                 Scalar *ex, Scalar *ey, Scalar *ez,
-                                 Scalar *bx, Scalar *by, Scalar *bz,
-                                 int shift) {
-  Scalar x, y, z;
-  Scalar sigx = 0.0, sigy = 0.0, sigz = 0.0, sig = 0.0;
-  size_t ijk;
-  int i =
-      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
-  int j =
-      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  int k =
-      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
-  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
-      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
-      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
-    ijk = i + j * dev_grid.dims[0] +
-          k * dev_grid.dims[0] * dev_grid.dims[1];
-    x = dev_grid.pos(0, i, 1);
-    y = dev_grid.pos(1, j, 1);
-    z = dev_grid.pos(2, k, 1);
-    Scalar xh = dev_params.lower[0] + dev_params.size[0] -
-                dev_params.pml[0] * dev_grid.delta[0];
-    Scalar xl =
-        dev_params.lower[0] + dev_params.pml[0] * dev_grid.delta[0];
-    Scalar yh = dev_params.lower[1] + dev_params.size[1] -
-                dev_params.pml[1] * dev_grid.delta[1];
-    Scalar yl =
-        dev_params.lower[1] + dev_params.pml[1] * dev_grid.delta[1];
-    Scalar zh = dev_params.lower[2] + dev_params.size[2] -
-                dev_params.pml[2] * dev_grid.delta[2];
-    Scalar zl =
-        dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[2];
-    if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
-    // if (x > xh || y < yl || y > yh) {
-      sigx = pmlsigma(x, xl, xh, dev_params.pmllen * dev_grid.delta[0],
-                      dev_params.sigpml);
-      sigy = pmlsigma(y, yl, yh, dev_params.pmllen * dev_grid.delta[0],
-                      dev_params.sigpml);
-      sigz = pmlsigma(z, zl, zh, dev_params.pmllen * dev_grid.delta[0],
-                      dev_params.sigpml);
-      sig = sigx + sigy + sigz;
-      // sig = sigx + sigy;
-      if (sig > TINY) {
-        ex[ijk] = exp(-sig) * enx[ijk] +
-                  (1.0 - exp(-sig)) / sig * (ex[ijk] - enx[ijk]);
-        ey[ijk] = exp(-sig) * eny[ijk] +
-                  (1.0 - exp(-sig)) / sig * (ey[ijk] - eny[ijk]);
-        ez[ijk] = exp(-sig) * enz[ijk] +
-                  (1.0 - exp(-sig)) / sig * (ez[ijk] - enz[ijk]);
-        bx[ijk] = exp(-sig) * bnx[ijk] +
-                  (1.0 - exp(-sig)) / sig * (bx[ijk] - bnx[ijk]);
-        by[ijk] = exp(-sig) * bny[ijk] +
-                  (1.0 - exp(-sig)) / sig * (by[ijk] - bny[ijk]);
-        bz[ijk] = exp(-sig) * bnz[ijk] +
-                  (1.0 - exp(-sig)) / sig * (bz[ijk] - bnz[ijk]);
-      }
-    }
-  }
-}
-
 void
 field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
-  kernel_rk_step1_thread<<<blockGroupSize, blockSize>>>(
+  kernel_rk_step1<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
       dB.dev_ptr(1), dB.dev_ptr(2), P.dev_ptr(), dP.dev_ptr(),
       m_env.params().shift_ghost, As);
   CudaCheckError();
-  kernel_rk_step2_thread<<<blockGroupSize, blockSize>>>(
+  kernel_rk_step2<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
@@ -559,14 +481,14 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
 
 void
 field_solver_EZ::Kreiss_Oliger() {
-  kernel_KO_step1_thread<<<blockGroupSize, blockSize>>>(
+  kernel_KO_step1<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
       Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2), P.dev_ptr(),
       Ptmp.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
-  kernel_KO_step2_thread<<<blockGroupSize, blockSize>>>(
+  kernel_KO_step2<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
@@ -577,7 +499,7 @@ field_solver_EZ::Kreiss_Oliger() {
 
 void
 field_solver_EZ::clean_epar() {
-  kernel_Epar_thread<<<blockGroupSize, blockSize>>>(
+  kernel_Epar<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       m_env.params().shift_ghost);
@@ -586,7 +508,7 @@ field_solver_EZ::clean_epar() {
 
 void
 field_solver_EZ::check_eGTb() {
-  kernel_EgtB_thread<<<blockGroupSize, blockSize>>>(
+  kernel_EgtB<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       m_env.params().shift_ghost);
@@ -595,7 +517,7 @@ field_solver_EZ::check_eGTb() {
 
 void
 field_solver_EZ::boundary_pulsar(Scalar t) {
-  kernel_boundary_pulsar_thread<<<blockGroupSize, blockSize>>>(
+  kernel_boundary_pulsar<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       P.dev_ptr(), t, m_env.params().shift_ghost);

@@ -15,6 +15,7 @@ target_link_libraries(Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIE
 set(Coffee_cuda_src
   "cuda/constant_mem.cu"
   "data/multi_array.cu"
+  "algorithms/boundary.cu"
   "algorithms/field_solver.cu"
   "algorithms/field_solver_EZ.cu"
   # "algorithms/field_solver_EZ_cylindrical.cu"
