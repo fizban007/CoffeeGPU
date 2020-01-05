@@ -15,6 +15,7 @@ using namespace std;
 using namespace Coffee;
 
 // #define ENG
+#define EZ
 
 int main(int argc, char *argv[]) {
   timer::stamp("begin");
@@ -24,15 +25,21 @@ int main(int argc, char *argv[]) {
   // Initialize all the simulation data structures
   sim_data data(env);
   // field_solver_gr solver(data, env);
+#ifdef EZ
   field_solver_EZ solver(data, env);
-  // field_solver solver(data, env);
+#else
+  field_solver solver(data, env);
+#endif
 
   // #include "user_init.hpp"
   // #include "user_emwave.hpp"
   // #include "user_alfven.hpp"
   // #include "user_alfven_EZ.hpp"
+#ifdef EZ
   #include "user_pulsar3d_EZ.hpp"
-  // #include "user_pulsar3d.hpp"
+#else
+  #include "user_pulsar3d.hpp"
+#endif
 
   // Initialization for Wald problem
   // #include "user_wald.hpp" 
