@@ -487,20 +487,28 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     Scalar Ddz = get_gamma_d13(dev_params.a, x, y, z) * Dx[ijk] +
                  get_gamma_d23(dev_params.a, x, y, z) * Dy[ijk] +
                  get_gamma_d33(dev_params.a, x, y, z) * Dz[ijk];
-    Scalar B2 = Bx[ijk] * Bdx + By[ijk] * Bdy + Bz[ijk] * Bdz;
-    if (B2 < TINY) B2 = TINY;
+    
+    if (dev_params.calc_current) {
+      Scalar B2 = Bx[ijk] * Bdx + By[ijk] * Bdy + Bz[ijk] * Bdz;
+      if (B2 < TINY) B2 = TINY;
 
-    Scalar Jp = (Bdx * rotHx + Bdy * rotHy + Bdz * rotHz) -
-                (Ddx * rotEx + dDy * rotEy + Ddz * rotEz);
-    Scalar Jx = (divD * (Ey[ijk] * Bdz - Ez[ijk] * Bdy) / gmsqrt +
-                 Jp * Bx[ijk]) /
-                B2;
-    Scalar Jy = (divD * (Ez[ijk] * Bdx - Ex[ijk] * Bdz) / gmsqrt +
-                 Jp * By[ijk]) /
-                B2;
-    Scalar Jz = (divD * (Ex[ijk] * Bdy - Ey[ijk] * Bdx) / gmsqrt +
-                 Jp * Bz[ijk]) /
-                B2;
+      Scalar Jp = (Bdx * rotHx + Bdy * rotHy + Bdz * rotHz) -
+                  (Ddx * rotEx + dDy * rotEy + Ddz * rotEz);
+      Scalar Jx = (divD * (Ey[ijk] * Bdz - Ez[ijk] * Bdy) / gmsqrt +
+                   Jp * Bx[ijk]) /
+                  B2;
+      Scalar Jy = (divD * (Ez[ijk] * Bdx - Ex[ijk] * Bdz) / gmsqrt +
+                   Jp * By[ijk]) /
+                  B2;
+      Scalar Jz = (divD * (Ex[ijk] * Bdy - Ey[ijk] * Bdx) / gmsqrt +
+                   Jp * Bz[ijk]) /
+                  B2;
+    }
+    else {
+      Jx = 0.0;
+      Jy = 0.0;
+      Jz = 0.0;
+    }
 
     Scalar Pxd = dfdx(P, ijk);
     Scalar Pyd = dfdy(P, ijk);
