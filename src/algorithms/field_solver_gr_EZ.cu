@@ -15,6 +15,8 @@
 
 #define TINY 1e-7
 
+#define FFE_DISSIPATION_ORDER 6
+
 namespace Coffee {
 
 // static dim3 gridSize(8, 16, 16);
@@ -435,12 +437,13 @@ kernel_compute_H_gr(const Scalar *Dx, const Scalar *Dy,
 __global__ void
 kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
                    const Scalar *Hx, const Scalar *Hy, const Scalar *Hz,
-                   const Scalar Dx, const Scalar Dy, const Scalar Dz,
-                   const const Scalar *Bx, const Scalar *By,
+                   const Scalar *Dx, const Scalar *Dy, const Scalar *Dz,
+                   const Scalar *Bx, const Scalar *By,
                    const Scalar *Bz, Scalar *dDx, Scalar *dDy,
                    Scalar *dDz, Scalar *dBx, Scalar *dBy, Scalar *dBz,
                    const Scalar *P, Scalar *dP, int shift, Scalar As) {
   size_t ijk;
+  Scalar Jx, Jy, Jz, Jp;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
@@ -492,15 +495,15 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
       Scalar B2 = Bx[ijk] * Bdx + By[ijk] * Bdy + Bz[ijk] * Bdz;
       if (B2 < TINY) B2 = TINY;
 
-      Scalar Jp = (Bdx * rotHx + Bdy * rotHy + Bdz * rotHz) -
-                  (Ddx * rotEx + dDy * rotEy + Ddz * rotEz);
-      Scalar Jx = (divD * (Ey[ijk] * Bdz - Ez[ijk] * Bdy) / gmsqrt +
+      Jp = (Bdx * rotHx + Bdy * rotHy + Bdz * rotHz) -
+                  (Ddx * rotEx + Ddy * rotEy + Ddz * rotEz);
+      Jx = (divD * (Ey[ijk] * Bdz - Ez[ijk] * Bdy) / gmsqrt +
                    Jp * Bx[ijk]) /
                   B2;
-      Scalar Jy = (divD * (Ez[ijk] * Bdx - Ex[ijk] * Bdz) / gmsqrt +
+      Jy = (divD * (Ez[ijk] * Bdx - Ex[ijk] * Bdz) / gmsqrt +
                    Jp * By[ijk]) /
                   B2;
-      Scalar Jz = (divD * (Ex[ijk] * Bdy - Ey[ijk] * Bdx) / gmsqrt +
+      Jz = (divD * (Ex[ijk] * Bdy - Ey[ijk] * Bdx) / gmsqrt +
                    Jp * Bz[ijk]) /
                   B2;
     }
@@ -536,9 +539,9 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
         dev_params.dt * (-rotEz - alpha * Pzu +
                          get_beta_u3(dev_params.a, x, y, z) * divB);
 
-    dDx[ijk] = As * dDx[ijk] + dev_params.dt * (rotBx - Jx);
-    dDy[ijk] = As * dDy[ijk] + dev_params.dt * (rotBy - Jy);
-    dDz[ijk] = As * dDz[ijk] + dev_params.dt * (rotBz - Jz);
+    dDx[ijk] = As * dDx[ijk] + dev_params.dt * (rotHx - Jx);
+    dDy[ijk] = As * dDy[ijk] + dev_params.dt * (rotHy - Jy);
+    dDz[ijk] = As * dDz[ijk] + dev_params.dt * (rotHz - Jz);
 
     dP[ijk] =
         As * dP[ijk] +
@@ -586,7 +589,7 @@ __global__ void
 kernel_clean_epar_gr(Scalar *Dx, Scalar *Dy, Scalar *Dz,
                      const Scalar *Bx, const Scalar *By,
                      const Scalar *Bz, int shift) {
-  Scalar Bdx, Bdy, Bdz, B2.DB;
+  Scalar Bdx, Bdy, Bdz, B2, DB;
   Scalar x, y, z;
   size_t ijk;
   int i =
@@ -629,6 +632,7 @@ kernel_check_eGTb_gr(Scalar *Dx, Scalar *Dy, Scalar *Dz,
                      const Scalar *Bx, const Scalar *By,
                      const Scalar *Bz, int shift) {
   size_t ijk;
+  Scalar temp;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
@@ -668,7 +672,7 @@ kernel_check_eGTb_gr(Scalar *Dx, Scalar *Dy, Scalar *Dz,
                  get_gamma_d33(dev_params.a, x, y, z) * Bz[ijk];
     Scalar B2 = Bx[ijk] * Bdx + By[ijk] * Bdy + Bz[ijk] * Bdz;
     if (D2 > B2) {
-      temp = std::sqrt(B2 / E2);
+      temp = std::sqrt(B2 / D2);
     } else {
       temp = 1.0;
     }
@@ -754,6 +758,8 @@ kernel_KO_step2_gr(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 void
 field_solver_gr_EZ::rk_step(Scalar As, Scalar Bs) {
   kernel_rk_step1_gr<<<blockGroupSize, blockSize>>>(
+      Ed.dev_ptr(0), Ed.dev_ptr(1), Ed.dev_ptr(2),
+      Hd.dev_ptr(0), Hd.dev_ptr(1), Hd.dev_ptr(2),
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dD.dev_ptr(0), dD.dev_ptr(1), dD.dev_ptr(2), dB.dev_ptr(0),
