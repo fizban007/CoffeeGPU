@@ -162,6 +162,9 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey,
     dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
                                               P[ijk] / dev_params.tau);
     // Inside the damping layer
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
     Scalar xh = dev_params.lower[0] + dev_params.size[0] -
                 dev_params.pml[0] * dev_grid.delta[0];
     Scalar xl =
@@ -211,6 +214,9 @@ kernel_rk_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     P[ijk] = P[ijk] + Bs * dP[ijk];
 
     // Inside the damping layer
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
     Scalar xh = dev_params.lower[0] + dev_params.size[0] -
                 dev_params.pml[0] * dev_grid.delta[0];
     Scalar xl =
