@@ -169,7 +169,7 @@ kernel_rk_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                        Scalar *By, Scalar *Bz, const Scalar *dEx,
                        const Scalar *dEy, const Scalar *dEz,
                        const Scalar *dBx, const Scalar *dBy,
-                       const Scalar *dBz, const Scalar *dP, Scalar *P,
+                       const Scalar *dBz, Scalar *P, const Scalar *dP,
                        int shift, Scalar Bs) {
   size_t ijk;
   int i =
