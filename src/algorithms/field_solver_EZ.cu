@@ -356,6 +356,7 @@ kernel_KO_step1(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 
       P_tmp[ijk] = 0;
     }
+  }
 }
 
 __global__ void
