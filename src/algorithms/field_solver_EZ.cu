@@ -344,6 +344,7 @@ kernel_KO_step1(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       Bz_tmp[ijk] = KO(Bz, ijk);
 
       P_tmp[ijk] = KO(P, ijk);
+    }
     else {
       Ex_tmp[ijk] = 0;
       Ey_tmp[ijk] = 0;
@@ -354,7 +355,6 @@ kernel_KO_step1(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       Bz_tmp[ijk] = 0;
 
       P_tmp[ijk] = 0;
-    }
     }
 }
 
