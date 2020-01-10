@@ -312,17 +312,50 @@ kernel_KO_step1(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
+    // Exclude the damping layer
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
+    Scalar xh =
+        dev_params.lower[0] + dev_params.size[0] -
+        (dev_params.pml[0] + dev_params.guard[0]) * dev_grid.delta[0];
+    Scalar xl =
+        dev_params.lower[0] +
+        (dev_params.pml[0] + dev_params.guard[0]) * dev_grid.delta[0];
+    Scalar yh =
+        dev_params.lower[1] + dev_params.size[1] -
+        (dev_params.pml[1] + dev_params.guard[1]) * dev_grid.delta[1];
+    Scalar yl =
+        dev_params.lower[1] +
+        (dev_params.pml[1] + dev_params.guard[1]) * dev_grid.delta[1];
+    Scalar zh =
+        dev_params.lower[2] + dev_params.size[2] -
+        (dev_params.pml[2] + dev_params.guard[2]) * dev_grid.delta[2];
+    Scalar zl =
+        dev_params.lower[2] +
+        (dev_params.pml[2] + dev_params.guard[2]) * dev_grid.delta[2];
+    if (x < xh && x > xl && y < yh && y > yl && z < zh && z > zl) {
+      Ex_tmp[ijk] = KO(Ex, ijk);
+      Ey_tmp[ijk] = KO(Ey, ijk);
+      Ez_tmp[ijk] = KO(Ez, ijk);
 
-    Ex_tmp[ijk] = KO(Ex, ijk);
-    Ey_tmp[ijk] = KO(Ey, ijk);
-    Ez_tmp[ijk] = KO(Ez, ijk);
+      Bx_tmp[ijk] = KO(Bx, ijk);
+      By_tmp[ijk] = KO(By, ijk);
+      Bz_tmp[ijk] = KO(Bz, ijk);
 
-    Bx_tmp[ijk] = KO(Bx, ijk);
-    By_tmp[ijk] = KO(By, ijk);
-    Bz_tmp[ijk] = KO(Bz, ijk);
+      P_tmp[ijk] = KO(P, ijk);
+    else {
+      Ex_tmp[ijk] = 0;
+      Ey_tmp[ijk] = 0;
+      Ez_tmp[ijk] = 0;
 
-    P_tmp[ijk] = KO(P, ijk);
-  }
+      Bx_tmp[ijk] = 0;
+      By_tmp[ijk] = 0;
+      Bz_tmp[ijk] = 0;
+
+      P_tmp[ijk] = 0;
+    }
+    }
 }
 
 __global__ void
