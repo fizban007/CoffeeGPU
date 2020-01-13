@@ -207,7 +207,7 @@ kernel_rk_step2_thread(Scalar *ER, Scalar *Ez, Scalar *Ef, Scalar *BR,
                        Scalar *Bz, Scalar *Bf, const Scalar *dER,
                        const Scalar *dEz, const Scalar *dEf,
                        const Scalar *dBR, const Scalar *dBz,
-                       const Scalar *dBf, const Scalar *dP, Scalar *P,
+                       const Scalar *dBf, Scalar *P, const Scalar *dP,
                        int shift, Scalar Bs) {
   size_t ijk;
   int i =
