@@ -526,6 +526,24 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
                  get_gamma_u23(dev_params.a, x, y, z) * Pyd +
                  get_gamma_u33(dev_params.a, x, y, z) * Pzd;
 
+
+    dBx[ijk] =
+        As * dBx[ijk] +
+        dev_params.dt * (-rotEx - alpha * Pxu +
+                         get_beta_u1(dev_params.a, x, y, z) * divB);
+    dBy[ijk] =
+        As * dBy[ijk] +
+        dev_params.dt * (-rotEy - alpha * Pyu +
+                         get_beta_u2(dev_params.a, x, y, z) * divB);
+    dBz[ijk] =
+        As * dBz[ijk] +
+        dev_params.dt * (-rotEz - alpha * Pzu +
+                         get_beta_u3(dev_params.a, x, y, z) * divB);
+
+    dDx[ijk] = As * dDx[ijk] + dev_params.dt * (rotHx - Jx);
+    dDy[ijk] = As * dDy[ijk] + dev_params.dt * (rotHy - Jy);
+    dDz[ijk] = As * dDz[ijk] + dev_params.dt * (rotHz - Jz);
+
     dP[ijk] =
         As * dP[ijk] +
         dev_params.dt *
@@ -548,28 +566,11 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     Scalar zl =
         dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[2];
     if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
-      Pxu = 0.0;
-      Pyu = 0.0;
-      Pzu = 0.0;
+      dBx[ijk] = As * dBx[ijk] - dev_params.dt * rotEx;
+      dBy[ijk] = As * dBy[ijk] - dev_params.dt * rotEy;
+      dBz[ijk] = As * dBz[ijk] - dev_params.dt * rotEz;
       dP[ijk] = 0.0;
     }
-
-    dBx[ijk] =
-        As * dBx[ijk] +
-        dev_params.dt * (-rotEx - alpha * Pxu +
-                         get_beta_u1(dev_params.a, x, y, z) * divB);
-    dBy[ijk] =
-        As * dBy[ijk] +
-        dev_params.dt * (-rotEy - alpha * Pyu +
-                         get_beta_u2(dev_params.a, x, y, z) * divB);
-    dBz[ijk] =
-        As * dBz[ijk] +
-        dev_params.dt * (-rotEz - alpha * Pzu +
-                         get_beta_u3(dev_params.a, x, y, z) * divB);
-
-    dDx[ijk] = As * dDx[ijk] + dev_params.dt * (rotHx - Jx);
-    dDy[ijk] = As * dDy[ijk] + dev_params.dt * (rotHy - Jy);
-    dDz[ijk] = As * dDz[ijk] + dev_params.dt * (rotHz - Jz);
   }
 }
 
