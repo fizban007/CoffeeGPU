@@ -558,7 +558,7 @@ kernel_rk_step2_gr(Scalar *Dx, Scalar *Dy, Scalar *Dz, Scalar *Bx,
                    Scalar *By, Scalar *Bz, const Scalar *dDx,
                    const Scalar *dDy, const Scalar *dDz,
                    const Scalar *dBx, const Scalar *dBy,
-                   const Scalar *dBz, const Scalar *dP, Scalar *P,
+                   const Scalar *dBz, Scalar *P, const Scalar *dP,
                    int shift, Scalar Bs) {
   size_t ijk;
   int i =
