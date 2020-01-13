@@ -150,17 +150,44 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey,
     Scalar Jz = (divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) +
                  Jp * Bz[ijk]) /
                 B2;
+    Scalar Px = dfdx(P, ijk);
+    Scalar Py = dfdy(P, ijk);
+    Scalar Pz = dfdz(P, ijk);
 
-    dBx[ijk] = As * dBx[ijk] - dev_params.dt * (rotEx + dfdx(P, ijk));
-    dBy[ijk] = As * dBy[ijk] - dev_params.dt * (rotEy + dfdy(P, ijk));
-    dBz[ijk] = As * dBz[ijk] - dev_params.dt * (rotEz + dfdz(P, ijk));
+    dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
+                                              P[ijk] / dev_params.tau);
+
+    // Inside the damping layer
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
+    Scalar xh = dev_params.lower[0] + dev_params.size[0] -
+                dev_params.pml[0] * dev_grid.delta[0];
+    Scalar xl =
+        dev_params.lower[0] + dev_params.pml[0] * dev_grid.delta[0];
+    Scalar yh = dev_params.lower[1] + dev_params.size[1] -
+                dev_params.pml[1] * dev_grid.delta[1];
+    Scalar yl =
+        dev_params.lower[1] + dev_params.pml[1] * dev_grid.delta[1];
+    Scalar zh = dev_params.lower[2] + dev_params.size[2] -
+                dev_params.pml[2] * dev_grid.delta[2];
+    Scalar zl =
+        dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[2];
+    if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
+      Px = 0.0;
+      Py = 0.0;
+      Pz = 0.0;
+      dP[ijk] = 0.0;
+    }
+
+    dBx[ijk] = As * dBx[ijk] - dev_params.dt * (rotEx + Px);
+    dBy[ijk] = As * dBy[ijk] - dev_params.dt * (rotEy + Py);
+    dBz[ijk] = As * dBz[ijk] - dev_params.dt * (rotEz + Pz);
 
     dEx[ijk] = As * dEx[ijk] + dev_params.dt * (rotBx - Jx);
     dEy[ijk] = As * dEy[ijk] + dev_params.dt * (rotBy - Jy);
     dEz[ijk] = As * dEz[ijk] + dev_params.dt * (rotBz - Jz);
 
-    dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
-                                              P[ijk] / dev_params.tau);
   }
 }
 
@@ -193,6 +220,27 @@ kernel_rk_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Bz[ijk] = Bz[ijk] + Bs * dBz[ijk];
 
     P[ijk] = P[ijk] + Bs * dP[ijk];
+
+    // Inside the damping layer
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
+    Scalar xh = dev_params.lower[0] + dev_params.size[0] -
+                dev_params.pml[0] * dev_grid.delta[0];
+    Scalar xl =
+        dev_params.lower[0] + dev_params.pml[0] * dev_grid.delta[0];
+    Scalar yh = dev_params.lower[1] + dev_params.size[1] -
+                dev_params.pml[1] * dev_grid.delta[1];
+    Scalar yl =
+        dev_params.lower[1] + dev_params.pml[1] * dev_grid.delta[1];
+    Scalar zh = dev_params.lower[2] + dev_params.size[2] -
+                dev_params.pml[2] * dev_grid.delta[2];
+    Scalar zl =
+        dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[2];
+    if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
+      P[ijk] = 0.0;
+    }
+
   }
 }
 
@@ -273,16 +321,50 @@ kernel_KO_step1(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
+    // Exclude the damping layer
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
+    Scalar xh =
+        dev_params.lower[0] + dev_params.size[0] -
+        (dev_params.pml[0] + dev_params.guard[0]) * dev_grid.delta[0];
+    Scalar xl =
+        dev_params.lower[0] +
+        (dev_params.pml[0] + dev_params.guard[0]) * dev_grid.delta[0];
+    Scalar yh =
+        dev_params.lower[1] + dev_params.size[1] -
+        (dev_params.pml[1] + dev_params.guard[1]) * dev_grid.delta[1];
+    Scalar yl =
+        dev_params.lower[1] +
+        (dev_params.pml[1] + dev_params.guard[1]) * dev_grid.delta[1];
+    Scalar zh =
+        dev_params.lower[2] + dev_params.size[2] -
+        (dev_params.pml[2] + dev_params.guard[2]) * dev_grid.delta[2];
+    Scalar zl =
+        dev_params.lower[2] +
+        (dev_params.pml[2] + dev_params.guard[2]) * dev_grid.delta[2];
+    if (x < xh && x > xl && y < yh && y > yl && z < zh && z > zl) {
+      Ex_tmp[ijk] = KO(Ex, ijk);
+      Ey_tmp[ijk] = KO(Ey, ijk);
+      Ez_tmp[ijk] = KO(Ez, ijk);
 
-    Ex_tmp[ijk] = KO(Ex, ijk);
-    Ey_tmp[ijk] = KO(Ey, ijk);
-    Ez_tmp[ijk] = KO(Ez, ijk);
+      Bx_tmp[ijk] = KO(Bx, ijk);
+      By_tmp[ijk] = KO(By, ijk);
+      Bz_tmp[ijk] = KO(Bz, ijk);
 
-    Bx_tmp[ijk] = KO(Bx, ijk);
-    By_tmp[ijk] = KO(By, ijk);
-    Bz_tmp[ijk] = KO(Bz, ijk);
+      P_tmp[ijk] = KO(P, ijk);
+    }
+    else {
+      Ex_tmp[ijk] = 0;
+      Ey_tmp[ijk] = 0;
+      Ez_tmp[ijk] = 0;
 
-    P_tmp[ijk] = KO(P, ijk);
+      Bx_tmp[ijk] = 0;
+      By_tmp[ijk] = 0;
+      Bz_tmp[ijk] = 0;
+
+      P_tmp[ijk] = 0;
+    }
   }
 }
 
