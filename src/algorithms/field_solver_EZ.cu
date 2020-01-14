@@ -1,10 +1,10 @@
+#include "boundary.h"
 #include "cuda/constant_mem.h"
 #include "cuda/constant_mem_func.h"
 #include "cuda/cuda_utility.h"
-#include "boundary.h"
 #include "field_solver_EZ.h"
-#include "utils/timer.h"
 #include "pulsar.h"
+#include "utils/timer.h"
 
 #define BLOCK_SIZE_X 32
 #define BLOCK_SIZE_Y 2
@@ -106,12 +106,12 @@ KO(const Scalar *f, int ijk) {
 }
 
 __global__ void
-kernel_rk_step1(const Scalar *Ex, const Scalar *Ey,
-                       const Scalar *Ez, const Scalar *Bx,
-                       const Scalar *By, const Scalar *Bz, Scalar *dEx,
-                       Scalar *dEy, Scalar *dEz, Scalar *dBx,
-                       Scalar *dBy, Scalar *dBz, const Scalar *P,
-                       Scalar *dP, int shift, Scalar As) {
+kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
+                const Scalar *Bx, const Scalar *By, const Scalar *Bz,
+                Scalar *dEx, Scalar *dEy, Scalar *dEz, Scalar *dBx,
+                Scalar *dBy, Scalar *dBz, Scalar *jx, Scalar *jy,
+                Scalar *jz, const Scalar *P, Scalar *dP, int shift,
+                Scalar As) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -161,16 +161,18 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey,
 
     dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
                                               P[ijk] / dev_params.tau);
+    jx[ijk] = Jx;
+    jy[ijk] = Jy;
+    jz[ijk] = Jz;
   }
 }
 
 __global__ void
 kernel_rk_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
-                       Scalar *By, Scalar *Bz, const Scalar *dEx,
-                       const Scalar *dEy, const Scalar *dEz,
-                       const Scalar *dBx, const Scalar *dBy,
-                       const Scalar *dBz, const Scalar *dP, Scalar *P,
-                       int shift, Scalar Bs) {
+                Scalar *By, Scalar *Bz, const Scalar *dEx,
+                const Scalar *dEy, const Scalar *dEz, const Scalar *dBx,
+                const Scalar *dBy, const Scalar *dBz, const Scalar *dP,
+                Scalar *P, int shift, Scalar Bs) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -198,7 +200,7 @@ kernel_rk_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 
 __global__ void
 kernel_Epar(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
-                   const Scalar *By, const Scalar *Bz, int shift) {
+            const Scalar *By, const Scalar *Bz, int shift) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -226,7 +228,7 @@ kernel_Epar(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
 
 __global__ void
 kernel_EgtB(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
-                   const Scalar *By, const Scalar *Bz, int shift) {
+            const Scalar *By, const Scalar *Bz, int shift) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -257,10 +259,9 @@ kernel_EgtB(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
 
 __global__ void
 kernel_KO_step1(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
-                       Scalar *By, Scalar *Bz, Scalar *Ex_tmp,
-                       Scalar *Ey_tmp, Scalar *Ez_tmp, Scalar *Bx_tmp,
-                       Scalar *By_tmp, Scalar *Bz_tmp, Scalar *P,
-                       Scalar *P_tmp, int shift) {
+                Scalar *By, Scalar *Bz, Scalar *Ex_tmp, Scalar *Ey_tmp,
+                Scalar *Ez_tmp, Scalar *Bx_tmp, Scalar *By_tmp,
+                Scalar *Bz_tmp, Scalar *P, Scalar *P_tmp, int shift) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -288,10 +289,9 @@ kernel_KO_step1(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 
 __global__ void
 kernel_KO_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
-                       Scalar *By, Scalar *Bz, Scalar *Ex_tmp,
-                       Scalar *Ey_tmp, Scalar *Ez_tmp, Scalar *Bx_tmp,
-                       Scalar *By_tmp, Scalar *Bz_tmp, Scalar *P,
-                       Scalar *P_tmp, int shift) {
+                Scalar *By, Scalar *Bz, Scalar *Ex_tmp, Scalar *Ey_tmp,
+                Scalar *Ez_tmp, Scalar *Bx_tmp, Scalar *By_tmp,
+                Scalar *Bz_tmp, Scalar *P, Scalar *P_tmp, int shift) {
   Scalar KO_const = 0.0;
 
   switch (FFE_DISSIPATION_ORDER) {
@@ -329,9 +329,9 @@ kernel_KO_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 }
 
 __global__ void
-kernel_boundary_pulsar(Scalar *Ex, Scalar *Ey, Scalar *Ez,
-                              Scalar *Bx, Scalar *By, Scalar *Bz,
-                              Scalar *P, Scalar t, int shift) {
+kernel_boundary_pulsar(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
+                       Scalar *By, Scalar *Bz, Scalar *P, Scalar t,
+                       int shift) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -415,11 +415,11 @@ kernel_boundary_pulsar(Scalar *Ex, Scalar *Ey, Scalar *Ez,
 
       Scalar w = dev_params.omega;
       // Scalar w = dev_params.omega + wpert(t, z);
-      Scalar vx = - w * y;
+      Scalar vx = -w * y;
       Scalar vy = w * x;
-      Scalar exn = - vy * Bz[ijk];
+      Scalar exn = -vy * Bz[ijk];
       Scalar eyn = vx * Bz[ijk];
-      Scalar ezn = - vx * By[ijk] + vy * Bx[ijk];
+      Scalar ezn = -vx * By[ijk] + vy * Bx[ijk];
       s = shape(r, dev_params.radius - d0, scaleEperp);
       Exnew =
           (exn * x + eyn * y + ezn * z) * x / r2 * s +
@@ -461,14 +461,60 @@ kernel_boundary_pulsar(Scalar *Ex, Scalar *Ey, Scalar *Ez,
   }
 }
 
+__global__ void
+kernel_compute_skymap(Scalar *skymap, int Nth, int Nph,
+                      const Scalar *Jx, const Scalar *Jy,
+                      const Scalar *Jz, const Scalar *Bx,
+                      const Scalar *By, const Scalar *Bz,
+                      const Scalar *Ex, const Scalar *Ey,
+                      const Scalar *Ez, float Rmin, float Rmax,
+                      float min_lambda, int ppc) {
+  // Loop over the cells
+  size_t ijk;
+  int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0];
+  int j = threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1];
+  int k = threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2];
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] &&
+      k < dev_grid.dims[2] - dev_grid.guard[2]) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+    Scalar jx = Jx[ijk];
+    Scalar jy = Jy[ijk];
+    Scalar jz = Jz[ijk];
+    Scalar bx = Bx[ijk];
+    Scalar by = By[ijk];
+    Scalar bz = Bz[ijk];
+
+    Scalar x = dev_grid.pos(0, i, true);
+    Scalar y = dev_grid.pos(1, j, true);
+    Scalar z = dev_grid.pos(2, k, true);
+    Scalar r = sqrt(x * x + y * y + z * z);
+
+    Scalar b2 = bx * bx + by * by + bz * bz;
+    Scalar lambda = (jx * bx + jy * by + jz * bz) / b2;
+
+    if (lambda > min_lambda && r > Rmin && r < Rmax) {
+      Scalar ex = Ex[ijk];
+      Scalar ey = Ey[ijk];
+      Scalar ez = Ez[ijk];
+      // Generate ppc particles in the cell and compute their emission
+      for (int n = 0; n < ppc; n++) {
+
+      }
+    }
+  }
+}
+
 void
 field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
   kernel_rk_step1<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
-      dB.dev_ptr(1), dB.dev_ptr(2), P.dev_ptr(), dP.dev_ptr(),
-      m_env.params().shift_ghost, As);
+      dB.dev_ptr(1), dB.dev_ptr(2), m_data.B0.dev_ptr(0),
+      m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2), P.dev_ptr(),
+      dP.dev_ptr(), m_env.params().shift_ghost, As);
   CudaCheckError();
   kernel_rk_step2<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
@@ -534,7 +580,6 @@ field_solver_EZ::boundary_absorbing() {
       m_env.params().shift_ghost);
   CudaCheckError();
 }
-
 
 void
 field_solver_EZ::evolve_fields(Scalar time) {
@@ -608,6 +653,11 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
   dP.assign_dev(0.0);
   Ptmp = multi_array<Scalar>(m_data.env.grid().extent());
   Ptmp.assign_dev(0.0);
+
+  skymap = multi_array<Scalar>(env.params().skymap_Nth,
+                               env.params().skymap_Nph);
+  skymap.assign_dev(0.0);
+  skymap.sync_to_host();
 
   blockGroupSize =
       dim3((m_data.env.grid().reduced_dim(0) +

@@ -75,6 +75,8 @@ struct sim_params {
   Scalar rpert2 = 10.0; ///< Perturbation range
   Scalar dw0 = 0.001; ///< Amplitude of the angular velocity perturbation
 
+  int skymap_Nth = 256;
+  int skymap_Nph = 512;
 };
 
 /// Reads a toml config file, parses the above data structure, and returns it.

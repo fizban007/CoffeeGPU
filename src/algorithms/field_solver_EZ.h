@@ -7,6 +7,7 @@ class field_solver_EZ {
  public:
   vector_field<Scalar> Etmp, Btmp, dE, dB;
   multi_array<Scalar> P, dP, Ptmp;
+  multi_array<Scalar> skymap;
 
   field_solver_EZ(sim_data& mydata, sim_environment& env);
   ~field_solver_EZ();

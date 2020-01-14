@@ -36,6 +36,38 @@ interpolate(T* f, std::size_t idx_lin, Stagger in, Stagger out,
 
 template <typename T>
 HOST_DEVICE T
+interpolate(T* f, std::size_t idx_lin, Vec3<float> out, int dim0,
+            int dim1) {
+  int di_m = 0;
+  int di_p = 1;
+  int dj_m = 0;
+  int dj_p = 1;
+  int dk_m = 0;
+  int dk_p = 1;
+
+  Scalar f11 =
+      (1.0f - out.z) *
+          f[idx_lin + di_p + dj_p * dim0 + dk_m * dim0 * dim1] +
+      out.z * f[idx_lin + di_p + dj_p * dim0 + dk_p * dim0 * dim1];
+  Scalar f10 =
+      (1.0f - out.z) *
+          f[idx_lin + di_p + dj_m * dim0 + dk_m * dim0 * dim1] +
+      out.z * f[idx_lin + di_p + dj_m * dim0 + dk_p * dim0 * dim1];
+  Scalar f01 =
+      (1.0f - out.z) *
+          f[idx_lin + di_m + dj_p * dim0 + dk_m * dim0 * dim1] +
+      out.z * f[idx_lin + di_m + dj_p * dim0 + dk_p * dim0 * dim1];
+  Scalar f00 =
+      (1.0f - out.z) *
+          f[idx_lin + di_m + dj_m * dim0 + dk_m * dim0 * dim1] +
+      out.z * f[idx_lin + di_m + dj_m * dim0 + dk_p * dim0 * dim1];
+  Scalar f1 = out.y * f11 + (1.0f - out.y) * f10;
+  Scalar f0 = out.y * f01 + (1.0f - out.y) * f00;
+  return out.x * f1 + (1.0f - out.x) * f0;
+}
+
+template <typename T>
+HOST_DEVICE T
 interpolate(T* f, Index idx, Stagger in, Stagger out, int dim0,
             int dim1) {
   std::size_t idx_lin = idx.x + idx.y * dim0 + idx.z * dim0 * dim1;

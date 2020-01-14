@@ -206,6 +206,9 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   add_grid_output(data.B.data(0), "Bx", data.B.stagger(0), datafile);
   add_grid_output(data.B.data(1), "By", data.B.stagger(1), datafile);
   add_grid_output(data.B.data(2), "Bz", data.B.stagger(2), datafile);
+  add_grid_output(data.B0.data(0), "Jx", data.B0.stagger(0), datafile);
+  add_grid_output(data.B0.data(1), "Jy", data.B0.stagger(1), datafile);
+  add_grid_output(data.B0.data(2), "Jz", data.B0.stagger(2), datafile);
 
   // datafile.close();
   H5Fclose(datafile);
