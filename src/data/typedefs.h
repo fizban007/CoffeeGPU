@@ -5,7 +5,7 @@ namespace Coffee {
 
 #ifndef USE_DOUBLE
 typedef float Scalar;
-#define TINY 1e-7
+#define TINY ((float)(1e-7))
 #else
 typedef double Scalar;
 #define TINY 1e-11

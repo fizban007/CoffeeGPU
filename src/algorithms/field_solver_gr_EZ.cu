@@ -13,7 +13,6 @@
 #define BLOCK_SIZE_Y 2
 #define BLOCK_SIZE_Z 2
 
-#define TINY 1e-7
 
 #define FFE_DISSIPATION_ORDER 6
 
