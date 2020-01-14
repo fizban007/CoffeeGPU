@@ -33,8 +33,8 @@ get_r(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar R2 = get_R2(x, y, z);
   return std::sqrt(
       (R2 - a * a +
-       std::sqrt(std::max(square(R2 - a * a) + 4 * square(a * z), TINY))) /
-      2);
+       std::sqrt(std::max(square(R2 - a * a) + 4.0f * square(a * z), TINY))) /
+      2.0f);
 }
 
 HOST_DEVICE Scalar
@@ -45,48 +45,48 @@ get_g() {
 HOST_DEVICE Scalar
 get_beta_d1(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
-  return 2 * r * r * r * (r * x + a * y) / std::max(a * a + r * r, TINY) /
+  return 2.0f * r * r * r * (r * x + a * y) / std::max(a * a + r * r, TINY) /
          std::max(r * r * r * r + a * a * z * z, TINY);
 }
 
 HOST_DEVICE Scalar
 get_beta_d2(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
-  return 2 * r * r * r * (-a * x + r * y) / std::max(a * a + r * r, TINY) /
+  return 2.0f * r * r * r * (-a * x + r * y) / std::max(a * a + r * r, TINY) /
          std::max(r * r * r * r + a * a * z * z, TINY);
 }
 
 HOST_DEVICE Scalar
 get_beta_d3(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
-  return 2 * r * r * z / std::max(r * r * r * r + a * a * z * z, TINY);
+  return 2.0f * r * r * z / std::max(r * r * r * r + a * a * z * z, TINY);
 }
 
 HOST_DEVICE Scalar
 get_beta_u1(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
-  return 2 * r * r * r * (r * x + a * y) / std::max(a * a + r * r, TINY) /
-         std::max(2 * r * r * r + r * r * r * r + a * a * z * z, TINY);
+  return 2.0f * r * r * r * (r * x + a * y) / std::max(a * a + r * r, TINY) /
+         std::max(2.0f * r * r * r + r * r * r * r + a * a * z * z, TINY);
 }
 
 HOST_DEVICE Scalar
 get_beta_u2(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
   return 2 * r * r * r * (-a * x + r * y) / std::max(a * a + r * r, TINY) /
-         std::max(2 * r * r * r + r * r * r * r + a * a * z * z, TINY);
+         std::max(2.0f * r * r * r + r * r * r * r + a * a * z * z, TINY);
 }
 
 HOST_DEVICE Scalar
 get_beta_u3(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
-  return 2 * r * r * z /
-         std::max(2 * r * r * r + r * r * r * r + a * a * z * z, TINY);
+  return 2.0f * r * r * z /
+         std::max(2.0f * r * r * r + r * r * r * r + a * a * z * z, TINY);
 }
 
 HOST_DEVICE Scalar
 get_gamma(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
-  return 1 + 2 * r * r * r / std::max(r * r * r * r + a * a * z * z, TINY);
+  return 1.0f + 2.0f * r * r * r / std::max(r * r * r * r + a * a * z * z, TINY);
 }
 
 HOST_DEVICE Scalar
@@ -99,7 +99,7 @@ get_alpha(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
   return std::sqrt(
       1.0 /
-      (1.0 + 2.0 * r * r * r / std::max(r * r * r * r + a * a * z * z, TINY)));
+      (1.0f + 2.0f * r * r * r / std::max(r * r * r * r + a * a * z * z, TINY)));
 }
 
 HOST_DEVICE Scalar
@@ -152,7 +152,7 @@ get_gamma_u11(Scalar a, Scalar x, Scalar y, Scalar z) {
   return 1.0 -
          2.0 * r * r * r * square(r * x + a * y) /
              std::max(square(a * a + r * r), TINY) /
-             std::max(2 * r * r * r + r * r * r * r + a * a * z * z, TINY);
+             std::max(2.0f * r * r * r + r * r * r * r + a * a * z * z, TINY);
 }
 
 HOST_DEVICE Scalar
@@ -160,14 +160,14 @@ get_gamma_u12(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
   return -2.0 * r * r * r * (r * x + a * y) * (-a * x + r * y) /
          std::max(square(a * a + r * r), TINY) /
-         std::max(2 * r * r * r + r * r * r * r + a * a * z * z, TINY);
+         std::max(2.0f * r * r * r + r * r * r * r + a * a * z * z, TINY);
 }
 
 HOST_DEVICE Scalar
 get_gamma_u13(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
   return -2.0 * r * r * (r * x + a * y) * z / std::max(a * a + r * r, TINY) /
-         std::max(2 * r * r * r + r * r * r * r + a * a * z * z, TINY);
+         std::max(2.0f * r * r * r + r * r * r * r + a * a * z * z, TINY);
 }
 
 HOST_DEVICE Scalar
@@ -176,14 +176,14 @@ get_gamma_u22(Scalar a, Scalar x, Scalar y, Scalar z) {
   return 1.0 -
          2.0 * r * r * r * square(a * x - r * y) /
              std::max(square(a * a + r * r), TINY) /
-             std::max(2 * r * r * r + r * r * r * r + a * a * z * z, TINY);
+             std::max(2.0f * r * r * r + r * r * r * r + a * a * z * z, TINY);
 }
 
 HOST_DEVICE Scalar
 get_gamma_u23(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
   return 2.0 * r * r * (a * x - r * y) * z / std::max(a * a + r * r, TINY) /
-         std::max(2 * r * r * r + r * r * r * r + a * a * z * z, TINY);
+         std::max(2.0f * r * r * r + r * r * r * r + a * a * z * z, TINY);
 }
 
 HOST_DEVICE Scalar
@@ -191,19 +191,19 @@ get_gamma_u33(Scalar a, Scalar x, Scalar y, Scalar z) {
   Scalar r = get_r(a, x, y, z);
   return 1.0 -
          2.0 * r * z * z /
-             std::max(2 * r * r * r + r * r * r * r + a * a * z * z, TINY);
+             std::max(2.0f * r * r * r + r * r * r * r + a * a * z * z, TINY);
 }
 
 __device__ inline Scalar
 diff1x4(const Scalar *f, int ijk) {
-  return (f[ijk - 2] - 8 * f[ijk - 1] + 8 * f[ijk + 1] - f[ijk + 2]) /
+  return (f[ijk - 2] - 8.0 * f[ijk - 1] + 8.0 * f[ijk + 1] - f[ijk + 2]) /
          12.0;
 }
 
 __device__ inline Scalar
 diff1y4(const Scalar *f, int ijk) {
   int s = dev_grid.dims[0];
-  return (f[ijk - 2 * s] - 8 * f[ijk - 1 * s] + 8 * f[ijk + 1 * s] -
+  return (f[ijk - 2 * s] - 8.0 * f[ijk - 1 * s] + 8.0 * f[ijk + 1 * s] -
           f[ijk + 2 * s]) /
          12.0;
 }
@@ -211,50 +211,50 @@ diff1y4(const Scalar *f, int ijk) {
 __device__ inline Scalar
 diff1z4(const Scalar *f, int ijk) {
   int s = dev_grid.dims[0] * dev_grid.dims[1];
-  return (f[ijk - 2 * s] - 8 * f[ijk - 1 * s] + 8 * f[ijk + 1 * s] -
+  return (f[ijk - 2 * s] - 8.0 * f[ijk - 1 * s] + 8.0 * f[ijk + 1 * s] -
           f[ijk + 2 * s]) /
          12.0;
 }
 
 __device__ inline Scalar
 diff4x2(const Scalar *f, int ijk) {
-  return (f[ijk - 2] - 4 * f[ijk - 1] + 6 * f[ijk] - 4 * f[ijk + 1] +
+  return (f[ijk - 2] - 4.0 * f[ijk - 1] + 6.0 * f[ijk] - 4.0 * f[ijk + 1] +
           f[ijk + 2]);
 }
 
 __device__ inline Scalar
 diff4y2(const Scalar *f, int ijk) {
   int s = dev_grid.dims[0];
-  return (f[ijk - 2 * s] - 4 * f[ijk - 1 * s] + 6 * f[ijk] -
-          4 * f[ijk + 1 * s] + f[ijk + 2 * s]);
+  return (f[ijk - 2 * s] - 4.0 * f[ijk - 1 * s] + 6.0 * f[ijk] -
+          4.0 * f[ijk + 1 * s] + f[ijk + 2 * s]);
 }
 
 __device__ inline Scalar
 diff4z2(const Scalar *f, int ijk) {
   int s = dev_grid.dims[0] * dev_grid.dims[1];
-  return (f[ijk - 2 * s] - 4 * f[ijk - 1 * s] + 6 * f[ijk] -
-          4 * f[ijk + 1 * s] + f[ijk + 2 * s]);
+  return (f[ijk - 2 * s] - 4.0 * f[ijk - 1 * s] + 6.0 * f[ijk] -
+          4.0 * f[ijk + 1 * s] + f[ijk + 2 * s]);
 }
 
 __device__ inline Scalar
 diff6x2(const Scalar *f, int ijk) {
-  return (f[ijk - 3] - 6 * f[ijk - 2] + 15 * f[ijk - 1] - 20 * f[ijk] +
-          15 * f[ijk + 1] - 6 * f[ijk + 2] + f[ijk + 3]);
+  return (f[ijk - 3] - 6.0 * f[ijk - 2] + 15.0 * f[ijk - 1] - 20.0 * f[ijk] +
+          15.0 * f[ijk + 1] - 6.0 * f[ijk + 2] + f[ijk + 3]);
 }
 
 __device__ inline Scalar
 diff6y2(const Scalar *f, int ijk) {
   int s = dev_grid.dims[0];
-  return (f[ijk - 3 * s] - 6 * f[ijk - 2 * s] + 15 * f[ijk - 1 * s] -
-          20 * f[ijk] + 15 * f[ijk + 1 * s] - 6 * f[ijk + 2 * s] +
+  return (f[ijk - 3 * s] - 6.0 * f[ijk - 2 * s] + 15.0 * f[ijk - 1 * s] -
+          20.0 * f[ijk] + 15.0 * f[ijk + 1 * s] - 6.0 * f[ijk + 2 * s] +
           f[ijk + 3 * s]);
 }
 
 __device__ inline Scalar
 diff6z2(const Scalar *f, int ijk) {
   int s = dev_grid.dims[0] * dev_grid.dims[1];
-  return (f[ijk - 3 * s] - 6 * f[ijk - 2 * s] + 15 * f[ijk - 1 * s] -
-          20 * f[ijk] + 15 * f[ijk + 1 * s] - 6 * f[ijk + 2 * s] +
+  return (f[ijk - 3 * s] - 6.0 * f[ijk - 2 * s] + 15.0 * f[ijk - 1 * s] -
+          20.0 * f[ijk] + 15.0 * f[ijk + 1 * s] - 6.0 * f[ijk + 2 * s] +
           f[ijk + 3 * s]);
 }
 
@@ -279,10 +279,10 @@ div4(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
   Scalar tmpx =
       (fx[ijk - 2] * get_sqrt_gamma(dev_params.a,
                                     x - 2.0 * dev_grid.delta[0], y, z) -
-       8 * fx[ijk - 1] *
+       8.0 * fx[ijk - 1] *
            get_sqrt_gamma(dev_params.a, x - 1.0 * dev_grid.delta[0], y,
                           z) +
-       8 * fx[ijk + 1] *
+       8.0 * fx[ijk + 1] *
            get_sqrt_gamma(dev_params.a, x + 1.0 * dev_grid.delta[0], y,
                           z) -
        fx[ijk + 2] * get_sqrt_gamma(dev_params.a,
@@ -293,10 +293,10 @@ div4(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
   Scalar tmpy = (fy[ijk - 2 * s] *
                      get_sqrt_gamma(dev_params.a, x,
                                     y - 2.0 * dev_grid.delta[1], z) -
-                 8 * fy[ijk - 1 * s] *
+                 8.0 * fy[ijk - 1 * s] *
                      get_sqrt_gamma(dev_params.a, x,
                                     y - 1.0 * dev_grid.delta[1], z) +
-                 8 * fy[ijk + 1 * s] *
+                 8.0 * fy[ijk + 1 * s] *
                      get_sqrt_gamma(dev_params.a, x,
                                     y + 1.0 * dev_grid.delta[1], z) -
                  fy[ijk + 2 * s] *
@@ -307,10 +307,10 @@ div4(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
   Scalar tmpz =
       (fz[ijk - 2 * s] * get_sqrt_gamma(dev_params.a, x, y,
                                         z - 2.0 * dev_grid.delta[2]) -
-       8 * fz[ijk - 1 * s] *
+       8.0 * fz[ijk - 1 * s] *
            get_sqrt_gamma(dev_params.a, x, y,
                           z - 1.0 * dev_grid.delta[2]) +
-       8 * fz[ijk + 1 * s] *
+       8.0 * fz[ijk + 1 * s] *
            get_sqrt_gamma(dev_params.a, x, y,
                           z + 1.0 * dev_grid.delta[2]) -
        fz[ijk + 2 * s] * get_sqrt_gamma(dev_params.a, x, y,
