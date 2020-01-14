@@ -905,6 +905,7 @@ field_solver_gr_EZ::evolve_fields(Scalar time) {
 
   Dtmp.copy_from(m_data.E);
   Btmp.copy_from(m_data.B);
+  Ptmp.copy_from(P);
 
   for (int i = 0; i < 5; ++i) {
     timer::stamp();
