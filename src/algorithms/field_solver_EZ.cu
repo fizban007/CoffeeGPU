@@ -154,8 +154,8 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     Scalar Py = dfdy(P, ijk);
     Scalar Pz = dfdz(P, ijk);
 
-    dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
-                                              P[ijk] / dev_params.tau);
+    // dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
+    //                                           P[ijk] / dev_params.tau);
 
     // Inside the damping layer
     // Scalar x = dev_grid.pos(0, i, 1);
