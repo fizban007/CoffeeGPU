@@ -656,12 +656,18 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
 
 void
 field_solver_EZ::boundary_absorbing() {
-  kernel_boundary_absorbing_thread<<<blockGroupSize, blockSize>>>(
+  // kernel_boundary_absorbing_thread<<<blockGroupSize, blockSize>>>(
+  //     Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
+  //     Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
+  //     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+  //     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+  //     m_env.params().shift_ghost);
+  kernel_boundary_absorbing1_thread<<<blockGroupSize, blockSize>>>(
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
       Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      m_env.params().shift_ghost);
+      Ptmp.dev_ptr(), P.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -676,6 +682,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
 
   Etmp.copy_from(m_data.E);
   Btmp.copy_from(m_data.B);
+  Ptmp.copy_from(P);
 
   for (int i = 0; i < 5; ++i) {
     timer::stamp();
