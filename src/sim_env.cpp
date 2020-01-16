@@ -166,7 +166,7 @@ sim_environment::send_guard_cell_x(sim_data& data, int dir) {
   send_array_x(data.B.data(0), dir);
   send_array_x(data.B.data(1), dir);
   send_array_x(data.B.data(2), dir);
-  send_array_x(data.P.data(), dir);
+  send_array_x(data.P, dir);
 }
 
 void
@@ -177,7 +177,7 @@ sim_environment::send_guard_cell_y(sim_data& data, int dir) {
   send_array_y(data.B.data(0), dir);
   send_array_y(data.B.data(1), dir);
   send_array_y(data.B.data(2), dir);
-  send_array_y(data.P.data(), dir);
+  send_array_y(data.P, dir);
 }
 
 void
@@ -188,7 +188,7 @@ sim_environment::send_guard_cell_z(sim_data& data, int dir) {
   send_array_z(data.B.data(0), dir);
   send_array_z(data.B.data(1), dir);
   send_array_z(data.B.data(2), dir);
-  send_array_z(data.P.data(), dir);
+  send_array_z(data.P, dir);
 }
 
 void

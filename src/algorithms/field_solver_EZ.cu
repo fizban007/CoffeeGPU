@@ -681,7 +681,7 @@ field_solver_EZ::boundary_absorbing() {
       Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      Ptmp.dev_ptr(), P.dev_ptr(), m_env.params().shift_ghost);
+      Ptmp.dev_ptr(), m_data.P.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -696,7 +696,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
 
   Etmp.copy_from(m_data.E);
   Btmp.copy_from(m_data.B);
-  Ptmp.copy_from(P);
+  Ptmp.copy_from(m_data.P);
 
   for (int i = 0; i < 5; ++i) {
     timer::stamp();

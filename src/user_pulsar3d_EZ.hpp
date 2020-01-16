@@ -23,9 +23,8 @@ for (int i = 0; i < 3; ++i) {
                env.params().q_offset_z, 0, i);
   });
 }
-
 data.E.initialize();
 data.B0.initialize();
-data.P.initialize();
+data.P.assign_dev(0.0);
 
 #endif  // _USER_INIT_H_
