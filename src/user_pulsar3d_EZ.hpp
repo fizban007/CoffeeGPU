@@ -7,6 +7,7 @@ Stagger st_e[3] = {Stagger(0b111), Stagger(0b111), Stagger(0b111)};
 Stagger st_b[3] = {Stagger(0b111), Stagger(0b111), Stagger(0b111)};
 data.E.set_stagger(st_e);
 data.B.set_stagger(st_b);
+data.B0.set_stagger(st_b);
 
 for (int i = 0; i < 3; ++i) {
   data.B.initialize(i, [&](Scalar x, Scalar y, Scalar z) {
@@ -25,5 +26,6 @@ for (int i = 0; i < 3; ++i) {
 
 data.E.initialize();
 data.B0.initialize();
+data.P.initialize();
 
 #endif  // _USER_INIT_H_

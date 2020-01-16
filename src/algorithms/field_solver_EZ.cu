@@ -597,14 +597,14 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
       dB.dev_ptr(1), dB.dev_ptr(2), m_data.B0.dev_ptr(0),
-      m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2), P.dev_ptr(),
+      m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2), m_data.P.dev_ptr(),
       dP.dev_ptr(), m_env.params().shift_ghost, As);
   CudaCheckError();
   kernel_rk_step2<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
-      dB.dev_ptr(1), dB.dev_ptr(2), P.dev_ptr(), dP.dev_ptr(),
+      dB.dev_ptr(1), dB.dev_ptr(2), m_data.P.dev_ptr(), dP.dev_ptr(),
       m_env.params().shift_ghost, Bs);
   CudaCheckError();
 }
@@ -615,14 +615,14 @@ field_solver_EZ::Kreiss_Oliger() {
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
-      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2), P.dev_ptr(),
+      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2), m_data.P.dev_ptr(),
       Ptmp.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
   kernel_KO_step2<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
-      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2), P.dev_ptr(),
+      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2), m_data.P.dev_ptr(),
       Ptmp.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
@@ -650,7 +650,7 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
   kernel_boundary_pulsar<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      P.dev_ptr(), t, m_env.params().shift_ghost);
+      m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -697,7 +697,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
 
     timer::stamp();
     m_env.send_guard_cells(m_data);
-    m_env.send_guard_cell_array(P);
+    // m_env.send_guard_cell_array(P);
     CudaSafeCall(cudaDeviceSynchronize());
     if (m_env.rank() == 0)
       timer::show_duration_since_stamp("communication", "ms");
@@ -710,7 +710,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
   boundary_pulsar(time + m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
-  m_env.send_guard_cell_array(P);
+  // m_env.send_guard_cell_array(P);
   if (m_env.rank() == 0)
     timer::show_duration_since_stamp("Kreiss Oliger", "ms");
 }
@@ -731,8 +731,8 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
   dB.initialize();
   Btmp.copy_from(m_data.B);
 
-  P = multi_array<Scalar>(m_data.env.grid().extent());
-  P.assign_dev(0.0);
+  // P = multi_array<Scalar>(m_data.env.grid().extent());
+  // P.assign_dev(0.0);
   dP = multi_array<Scalar>(m_data.env.grid().extent());
   dP.assign_dev(0.0);
   Ptmp = multi_array<Scalar>(m_data.env.grid().extent());

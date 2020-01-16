@@ -11,6 +11,7 @@ class sim_environment;
 class sim_data {
  public:
   vector_field<Scalar> E, B, B0;
+  multi_array<Scalar> P;
   const sim_environment& env;
 
   sim_data(const sim_environment& env);
