@@ -150,12 +150,12 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     Scalar Jz = (divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) +
                  Jp * Bz[ijk]) /
                 B2;
-    // Scalar Px = dfdx(P, ijk);
-    // Scalar Py = dfdy(P, ijk);
-    // Scalar Pz = dfdz(P, ijk);
-    Scalar Px = 0.0;
-    Scalar Py = 0.0;
-    Scalar Pz = 0.0;
+    Scalar Px = dfdx(P, ijk);
+    Scalar Py = dfdy(P, ijk);
+    Scalar Pz = dfdz(P, ijk);
+    // Scalar Px = 0.0;
+    // Scalar Py = 0.0;
+    // Scalar Pz = 0.0;
 
     // dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
     //                                           P[ijk] / dev_params.tau);
@@ -332,11 +332,11 @@ kernel_KO_step1(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Ey_tmp[ijk] = KO(Ey, ijk);
     Ez_tmp[ijk] = KO(Ez, ijk);
 
-    Bx_tmp[ijk] = KO(Bx, ijk);
-    By_tmp[ijk] = KO(By, ijk);
-    Bz_tmp[ijk] = KO(Bz, ijk);
+    // Bx_tmp[ijk] = KO(Bx, ijk);
+    // By_tmp[ijk] = KO(By, ijk);
+    // Bz_tmp[ijk] = KO(Bz, ijk);
 
-    P_tmp[ijk] = KO(P, ijk);
+    // P_tmp[ijk] = KO(P, ijk);
     
     // // Exclude the damping layer
     // Scalar x = dev_grid.pos(0, i, 1);
@@ -418,11 +418,11 @@ kernel_KO_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Ey[ijk] -= dev_params.KOeps * KO_const * Ey_tmp[ijk];
     Ez[ijk] -= dev_params.KOeps * KO_const * Ez_tmp[ijk];
 
-    Bx[ijk] -= dev_params.KOeps * KO_const * Bx_tmp[ijk];
-    By[ijk] -= dev_params.KOeps * KO_const * By_tmp[ijk];
-    Bz[ijk] -= dev_params.KOeps * KO_const * Bz_tmp[ijk];
+    // Bx[ijk] -= dev_params.KOeps * KO_const * Bx_tmp[ijk];
+    // By[ijk] -= dev_params.KOeps * KO_const * By_tmp[ijk];
+    // Bz[ijk] -= dev_params.KOeps * KO_const * Bz_tmp[ijk];
 
-    P[ijk] -= dev_params.KOeps * KO_const * P_tmp[ijk];
+    // P[ijk] -= dev_params.KOeps * KO_const * P_tmp[ijk];
   }
 }
 
