@@ -110,8 +110,8 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
                 const Scalar *Bx, const Scalar *By, const Scalar *Bz,
                 Scalar *dEx, Scalar *dEy, Scalar *dEz, Scalar *dBx,
                 Scalar *dBy, Scalar *dBz, Scalar *jx, Scalar *jy,
-                Scalar *jz, const Scalar *P, Scalar *dP, int shift,
-                Scalar As) {
+                Scalar *jz, Scalar *DivB, Scalar *DivE, const Scalar *P,
+                Scalar *dP, int shift, Scalar As) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -196,6 +196,8 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     jx[ijk] = Jx;
     jy[ijk] = Jy;
     jz[ijk] = Jz;
+    DivB[ijk] = divB;
+    DivE[ijk] = divE;
   }
 }
 
@@ -611,8 +613,9 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       dE.dev_ptr(0), dE.dev_ptr(1), dE.dev_ptr(2), dB.dev_ptr(0),
       dB.dev_ptr(1), dB.dev_ptr(2), m_data.B0.dev_ptr(0),
-      m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2), m_data.P.dev_ptr(),
-      dP.dev_ptr(), m_env.params().shift_ghost, As);
+      m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2), m_data.divB.dev_ptr(),
+      m_data.divE.dev_ptr(), m_data.P.dev_ptr(), dP.dev_ptr(),
+      m_env.params().shift_ghost, As);
   CudaCheckError();
   kernel_rk_step2<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
