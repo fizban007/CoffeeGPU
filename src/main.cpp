@@ -2,7 +2,8 @@
 #include "data/sim_data.h"
 #include "sim_env.h"
 #include "utils/data_exporter.h"
-#include "algorithms/field_solver_EZ_cylindrical.h"
+#include "algorithms/field_solver_EZ.h"
+#include "algorithms/field_solver.h"
 #include "utils/timer.h"
 #include <fstream>
 
@@ -13,6 +14,9 @@
 using namespace std;
 using namespace Coffee;
 
+// #define ENG
+#define EZ
+
 int main(int argc, char *argv[]) {
   timer::stamp("begin");
   // Initialize the simulation environment
@@ -21,13 +25,21 @@ int main(int argc, char *argv[]) {
   // Initialize all the simulation data structures
   sim_data data(env);
   // field_solver_gr solver(data, env);
-  field_solver_EZ_cylindrical solver(data, env);
+#ifdef EZ
+  field_solver_EZ solver(data, env);
+#else
+  field_solver solver(data, env);
+#endif
 
   // #include "user_init.hpp"
   // #include "user_emwave.hpp"
   // #include "user_alfven.hpp"
   // #include "user_alfven_EZ.hpp"
-  #include "user_pulsar.hpp"
+#ifdef EZ
+  #include "user_pulsar3d_EZ.hpp"
+#else
+  #include "user_pulsar3d.hpp"
+#endif
 
   // Initialization for Wald problem
   // #include "user_wald.hpp" 
@@ -40,9 +52,11 @@ int main(int argc, char *argv[]) {
   // exporter.write_output(data, step, 0.0);
   // exporter.sync();
 
+#ifdef ENG
   ofstream efile;
   efile.open("Data/energy.txt", ios::out | ios::app);
-
+#endif
+  
   // Main simulation loop
   Scalar time = 0.0;
   for (step = 0; step <= env.params().max_steps; step++) {
@@ -51,22 +65,28 @@ int main(int argc, char *argv[]) {
     if (step % env.params().data_interval == 0) {
       timer::stamp("output");
       exporter.write_output(data, step, 0.0);
-      timer::show_duration_since_stamp("output", "ms", "output");
+      if (env.rank() == 0)
+        timer::show_duration_since_stamp("output", "ms", "output");
 
-      Scalar Wb = solver.total_energy(data.B);
-      Scalar We = solver.total_energy(data.E);
-      if (env.rank() == 0) {
-        efile << Wb << " " << We << std::endl;
-      }
+#ifdef ENG
+        Scalar Wb = solver.total_energy(data.B);
+        Scalar We = solver.total_energy(data.E);
+        if (env.rank() == 0) {
+          efile << Wb << " " << We << std::endl;
+        }
+#endif
     }
     timer::stamp("step");
     // solver.evolve_fields_gr();
     solver.evolve_fields(time);
-    timer::show_duration_since_stamp("evolve field", "ms", "step");
+    if (env.rank() == 0)
+      timer::show_duration_since_stamp("evolve field", "ms", "step");
     time += env.params().dt;
   }
 
+#ifdef ENG
   efile.close();
+#endif
 
   timer::show_duration_since_stamp("the whole program", "s", "begin");
 

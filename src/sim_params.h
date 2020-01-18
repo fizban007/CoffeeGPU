@@ -52,6 +52,21 @@ struct sim_params {
   Scalar radius = 10.0; ///< Radius of the pulsar
   Scalar omega = 0.001; ///< Angular velocity of the pulsar
   Scalar b0 = 1e3; ///< Magnetic field at stellar surface
+  // Scalar alpha = 0.0; ///< Inclination of the magnetic dipole moment
+  // Dipole parameters
+  Scalar p1 = 0.0;
+  Scalar p2 = 0.0;
+  Scalar p3 = 1.0;
+  // Quadrupole component
+  Scalar q11 = 0.0;
+  Scalar q12 = 0.0;
+  Scalar q13 = 0.0;
+  Scalar q22 = 0.0;
+  Scalar q23 = 0.0;
+  Scalar q_offset_x = 0.0;
+  Scalar q_offset_y = 0.0;
+  Scalar q_offset_z = 0.0;
+
 
   // Pulsar with Alfven wave perturbation
   Scalar tp_start = 0.0; ///< Time for the perturbation to start
@@ -60,6 +75,8 @@ struct sim_params {
   Scalar rpert2 = 10.0; ///< Perturbation range
   Scalar dw0 = 0.001; ///< Amplitude of the angular velocity perturbation
 
+  int skymap_Nth = 256;
+  int skymap_Nph = 512;
 };
 
 /// Reads a toml config file, parses the above data structure, and returns it.
