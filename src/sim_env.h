@@ -45,7 +45,9 @@ class sim_environment {
   MPI_Datatype scalar_type() const { return m_scalar_type; }
 
  private:
-  void initialize();
+  void exchange_types(MPI_Datatype *y_type,
+                      MPI_Datatype *x_type);
+  void setup_env_extra();
   void setup_domain();
 
   void send_array_x(multi_array<Scalar>& array, int dir);

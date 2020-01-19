@@ -28,8 +28,8 @@ class multi_array {
   /// initializes an array of the corresponding extent.
   explicit multi_array(const Extent& extent);
 
-  /// Standard copy constructor.
-  multi_array(const self_type& other);
+  /// Remove standard copy constructor.
+  multi_array(const self_type& other) = delete;
 
   /// Standard move constructor. The object `other` will become empty after the
   /// move.

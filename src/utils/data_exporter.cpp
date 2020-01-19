@@ -7,7 +7,7 @@
 #include "data/vec3.h"
 #include "sim_env.h"
 #include "sim_params.h"
-#include "utils/nvproftool.h"
+// #include "utils/nvproftool.h"
 //#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
 //#undef BOOST_NO_CXX11_SCOPED_ENUMS
@@ -101,7 +101,7 @@ data_exporter::~data_exporter() {}
 void
 data_exporter::write_output(sim_data& data, uint32_t timestep,
                             double time) {
-  RANGE_PUSH("Data output", CLR_BLUE);
+  // RANGE_PUSH("Data output", CLR_BLUE);
   if (m_thread != nullptr && m_thread->joinable()) m_thread->join();
 
   data.sync_to_host();
@@ -112,7 +112,7 @@ data_exporter::write_output(sim_data& data, uint32_t timestep,
   //                                time));
   write_field_output(data, timestep, time);
   std::cout << "Output written!" << std::endl;
-  RANGE_POP;
+  // RANGE_POP;
 }
 
 void
