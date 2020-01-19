@@ -7,7 +7,7 @@
 
 // 2D axisymmetric code in spherical coordinates. Original x, y, z
 // correspond to x = log r, theta, phi.
-// The field components in data are the normalized components.
+// The field components in data are the the upper components.
 
 #define BLOCK_SIZE_X 32
 #define BLOCK_SIZE_Y 2
@@ -198,12 +198,9 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     Scalar y = dev_grid.pos(1, j, 1);
     Scalar z = dev_grid.pos(2, k, 1);
 
-    Scalar cm2x = std::sqrt(get_gamma_d11(x - 2.0 * dev_grid.delta[0], y, z));
-    Scalar cm1x = std::sqrt(get_gamma_d11(x - 1.0 * dev_grid.delta[0], y, z));
-    Scalar cp1x = std::sqrt(get_gamma_d11(x + 1.0 * dev_grid.delta[0], y, z));
-    Scalar cp2x = std::sqrt(get_gamma_d11(x + 2.0 * dev_grid.delta[0], y, z));
+    Scalar gmsqrt = get_sqrt_gamma(x, y, z);
 
-    Scalar rotBx = dfdy(Bz, ijk) - dfdz(By, ijk);
+    Scalar rotBx = c0x * (cdfdy(Bz, ijk, ) - dfdz(By, ijk));
     Scalar rotBy = dfdz(Bx, ijk) - dfdx(Bz, ijk);
     Scalar rotBz = dfdx(By, ijk) - dfdy(Bx, ijk);
     Scalar rotEx = dfdy(Ez, ijk) - dfdz(Ey, ijk);

@@ -143,4 +143,5 @@ kernel_boundary_absorbing1_thread(const Scalar *enx, const Scalar *eny,
     }
   }
 }
+
 }

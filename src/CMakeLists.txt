@@ -18,6 +18,7 @@ set(Coffee_cuda_src
   "algorithms/boundary.cu"
   "algorithms/field_solver.cu"
   "algorithms/field_solver_EZ.cu"
+  "algorithms/field_solver_gr_EZ.cu"
   # "algorithms/field_solver_EZ_cylindrical.cu"
   # "algorithms/field_solver_gr.cu"
   "algorithms/pulsar.cu"

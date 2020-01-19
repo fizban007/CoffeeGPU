@@ -3,13 +3,13 @@
 
 namespace Coffee {
 
-class field_solver_EZ_spherical {
+class field_solver_gr_EZ {
  public:
-  vector_field<Scalar> Etmp, Btmp, dE, dB, El, Bl;
-  multi_array<Scalar> dP, Ptmp;
+  vector_field<Scalar> Dtmp, Btmp, dD, dB, Ed, Hd;
+  multi_array<Scalar> P, dP, Ptmp;
 
-  field_solver_EZ_spherical(sim_data& mydata, sim_environment& env);
-  ~field_solver_EZ_spherical();
+  field_solver_gr_EZ(sim_data& mydata, sim_environment& env);
+  ~field_solver_gr_EZ();
 
   void evolve_fields(Scalar time);
 
@@ -25,9 +25,10 @@ class field_solver_EZ_spherical {
   void rk_step(Scalar As, Scalar Bs);
   void Kreiss_Oliger();
 
-  void boundary_axis();
-  void boundary_pulsar(Scalar t);
   void boundary_absorbing();
+
+  void get_Ed();
+  void get_Hd();
 };
 
 }  // namespace Coffee
