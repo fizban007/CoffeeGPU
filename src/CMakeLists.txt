@@ -28,3 +28,12 @@ target_link_libraries(Coffee_cuda ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIB
 
 add_executable(coffee "main.cpp")
 target_link_libraries(coffee Coffee Coffee_cuda ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable(coffee-2d-cylindrical "main-pulsar2d-cylindrical.cpp")
+target_link_libraries(coffee-2d-cylindrical Coffee Coffee_cuda ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable(coffee-2d-spherical "main-pulsar2d-spherical.cpp")
+target_link_libraries(coffee-2d-spherical Coffee Coffee_cuda ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable(coffee-3d "main-pulsar3d.cpp")
+target_link_libraries(coffee-3d Coffee Coffee_cuda ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
