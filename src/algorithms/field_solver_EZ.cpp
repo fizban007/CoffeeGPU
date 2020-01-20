@@ -318,5 +318,54 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
   
 }
 
+void
+field_solver_EZ::evolve_fields(Scalar time) {
+  Scalar As[5] = {0, -0.4178904745, -1.192151694643, -1.697784692471,
+                  -1.514183444257};
+  Scalar Bs[5] = {0.1496590219993, 0.3792103129999, 0.8229550293869,
+                  0.6994504559488, 0.1530572479681};
+  Scalar cs[5] = {0, 0.1496590219993, 0.3704009573644, 0.6222557631345,
+                  0.9582821306784};
+
+  Etmp.copy_from(m_data.E);
+  Btmp.copy_from(m_data.B);
+  Ptmp.copy_from(m_data.P);
+
+  for (int i = 0; i < 5; ++i) {
+    timer::stamp();
+    rk_step(As[i], Bs[i]);
+    
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("rk_step", "ms");
+
+    timer::stamp();
+    if (m_env.params().clean_ep) clean_epar();
+    if (m_env.params().check_egb) check_eGTb();
+
+    boundary_pulsar(time + cs[i] * m_env.params().dt);
+    if (i == 4) boundary_absorbing();
+
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("clean/check/boundary", "ms");
+
+    timer::stamp();
+    m_env.send_guard_cells(m_data);
+    // m_env.send_guard_cell_array(P);
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("communication", "ms");
+  }
+
+  timer::stamp();
+  Kreiss_Oliger();
+  if (m_env.params().clean_ep) clean_epar();
+  if (m_env.params().check_egb) check_eGTb();
+  boundary_pulsar(time + m_env.params().dt);
+  
+  m_env.send_guard_cells(m_data);
+  // m_env.send_guard_cell_array(P);
+  if (m_env.rank() == 0)
+    timer::show_duration_since_stamp("Kreiss Oliger", "ms");
+}
+
 
 }  // namespace Coffee
