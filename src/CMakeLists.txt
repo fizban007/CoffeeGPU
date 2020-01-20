@@ -25,6 +25,7 @@ else()
     "data/multi_array.cpp"
     "sim_env.cpp"
     "algorithms/field_solver_EZ.cpp"
+    "algorithms/pulsar.cpp"
    )
 endif()
 
