@@ -4,6 +4,27 @@
 
 namespace Coffee {
 
+const Grid *l_grid;
+
+template <typename T>
+inline Scalar
+dfdx(const multi_array<T> &f, int ijk) {
+  return df1(f.host_ptr(), ijk, 1, l_grid->inv_delta[0]);
+}
+
+template <typename T>
+inline Scalar
+dfdy(const multi_array<T> &f, int ijk) {
+  return df1(f.host_ptr(), ijk, l_grid->dims[0], l_grid->inv_delta[1]);
+}
+
+template <typename T>
+inline Scalar
+dfdz(const multi_array<T> &f, int ijk) {
+  return df1(f.host_ptr(), ijk, l_grid->dims[0] * l_grid->dims[1],
+             l_grid->inv_delta[2]);
+}
+
 field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
     : m_data(mydata), m_env(env) {
   dE = vector_field<Scalar>(m_data.env.grid());
@@ -31,6 +52,7 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
                                env.params().skymap_Nph);
   skymap.assign(0.0);
   // skymap.sync_to_host();
+  l_grid = &env.grid();
 }
 
 field_solver_EZ::~field_solver_EZ() {}
