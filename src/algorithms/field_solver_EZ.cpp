@@ -303,7 +303,7 @@ field_solver_EZ::check_eGTb() {
             Ex[ijk] * Ex[ijk] + Ey[ijk] * Ey[ijk] + Ez[ijk] * Ez[ijk];
 
         if (E2 > B2) {
-          Scalar s = sqrt(B2 / E2);
+          Scalar s = std::sqrt(B2 / E2);
           Ex[ijk] *= s;
           Ey[ijk] *= s;
           Ez[ijk] *= s;
@@ -315,7 +315,146 @@ field_solver_EZ::check_eGTb() {
 
 void
 field_solver_EZ::boundary_pulsar(Scalar t) {
-  
+  int shift = m_env.params().shift_ghost;
+  auto &grid = m_env.grid();
+  auto &params = m_env.params();
+  size_t ijk;
+  auto &Ex = m_data.E.data(0);
+  auto &Ey = m_data.E.data(1);
+  auto &Ez = m_data.E.data(2);
+  auto &Bx = m_data.B.data(0);
+  auto &By = m_data.B.data(1);
+  auto &Bz = m_data.B.data(2);
+
+  Scalar rl = 2.0 * params.radius;
+  Scalar ri = 0.5 * params.radius;
+  Scalar scaleEpar = 0.5 * grid.delta[0];
+  Scalar scaleEperp = 0.25 * grid.delta[0];
+  Scalar scaleBperp = scaleEpar;
+  Scalar scaleBpar = scaleBperp;
+  Scalar d1 = 4.0 * grid.delta[0];
+  Scalar d0 = 0;
+  Scalar phase = params.omega * t; 
+  Scalar w = params.omega;
+  Scalar Bxnew, Bynew, Bznew, Exnew, Eynew, Eznew;
+
+  for (int k = grid.guard[2] - shift;
+       k < grid.dims[2] - grid.guard[2] + shift; k++) {
+    for (int j = grid.guard[1] - shift;
+         j < grid.dims[1] - grid.guard[1] + shift; j++) {
+      for (int i = grid.guard[0] - shift;
+           i < grid.dims[0] - grid.guard[0] + shift; i++) {
+        ijk = i + (j + k * grid.dims[1]) * grid.dims[0];
+
+        Scalar x = grid.pos(0, i, 1);
+        Scalar y = grid.pos(1, j, 1);
+        Scalar z = grid.pos(2, k, 1);
+        Scalar r2 = x * x + y * y + z * z;
+        if (r2 < TINY) r2 = TINY;
+        Scalar r = std::sqrt(r2);
+        
+        if (r < rl) {
+          // Scalar bxn = params.b0 * cube(params.radius) *
+          //              dipole_x(x, y, z, params.alpha, phase);
+          // Scalar byn = params.b0 * cube(params.radius) *
+          //              dipole_y(x, y, z, params.alpha, phase);
+          // Scalar bzn = params.b0 * cube(params.radius) *
+          //              dipole_z(x, y, z, params.alpha, phase);
+          Scalar bxn =
+              params.b0 *
+              quadru_dipole(x, y, z, params.p1, params.p2,
+                            params.p3, params.q11, params.q12,
+                            params.q13, params.q22, params.q23,
+                            params.q_offset_x, params.q_offset_y,
+                            params.q_offset_z, phase, 0);
+          Scalar byn =
+              params.b0 *
+              quadru_dipole(x, y, z, params.p1, params.p2,
+                            params.p3, params.q11, params.q12,
+                            params.q13, params.q22, params.q23,
+                            params.q_offset_x, params.q_offset_y,
+                            params.q_offset_z, phase, 1);
+          Scalar bzn =
+              params.b0 *
+              quadru_dipole(x, y, z, params.p1, params.p2,
+                            params.p3, params.q11, params.q12,
+                            params.q13, params.q22, params.q23,
+                            params.q_offset_x, params.q_offset_y,
+                            params.q_offset_z, phase, 2);
+          Scalar s = shape(r, params.radius - d1, scaleBperp);
+          Bxnew =
+              (bxn * x + byn * y + bzn * z) * x / r2 * s +
+              (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * x / r2 * (1 - s);
+          Bynew =
+              (bxn * x + byn * y + bzn * z) * y / r2 * s +
+              (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * y / r2 * (1 - s);
+          Bznew =
+              (bxn * x + byn * y + bzn * z) * z / r2 * s +
+              (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * z / r2 * (1 - s);
+          s = shape(r, params.radius - d1, scaleBpar);
+          Bxnew += (bxn - (bxn * x + byn * y + bzn * z) * x / r2) * s +
+                   (Bx[ijk] -
+                    (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * x / r2) *
+                       (1 - s);
+          Bynew += (byn - (bxn * x + byn * y + bzn * z) * y / r2) * s +
+                   (By[ijk] -
+                    (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * y / r2) *
+                       (1 - s);
+          Bznew += (bzn - (bxn * x + byn * y + bzn * z) * z / r2) * s +
+                   (Bz[ijk] -
+                    (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * z / r2) *
+                       (1 - s);
+
+          Bx[ijk] = Bxnew;
+          By[ijk] = Bynew;
+          Bz[ijk] = Bznew;
+
+          Scalar vx = -w * y;
+          Scalar vy = w * x;
+          Scalar exn = -vy * Bz[ijk];
+          Scalar eyn = vx * Bz[ijk];
+          Scalar ezn = -vx * By[ijk] + vy * Bx[ijk];
+          s = shape(r, params.radius - d0, scaleEperp);
+          Exnew =
+              (exn * x + eyn * y + ezn * z) * x / r2 * s +
+              (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * x / r2 * (1 - s);
+          Eynew =
+              (exn * x + eyn * y + ezn * z) * y / r2 * s +
+              (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * y / r2 * (1 - s);
+          Eznew =
+              (exn * x + eyn * y + ezn * z) * z / r2 * s +
+              (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * z / r2 * (1 - s);
+          s = shape(r, params.radius - d0, scaleEpar);
+          Exnew += (exn - (exn * x + eyn * y + ezn * z) * x / r2) * s +
+                   (Ex[ijk] -
+                    (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * x / r2) *
+                       (1 - s);
+          Eynew += (eyn - (exn * x + eyn * y + ezn * z) * y / r2) * s +
+                   (Ey[ijk] -
+                    (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * y / r2) *
+                       (1 - s);
+          Eznew += (ezn - (exn * x + eyn * y + ezn * z) * z / r2) * s +
+                   (Ez[ijk] -
+                    (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * z / r2) *
+                       (1 - s);
+          // Bx[ijk] = Bxnew;
+          // By[ijk] = Bynew;
+          // Bz[ijk] = Bznew;
+          Ex[ijk] = Exnew;
+          Ey[ijk] = Eynew;
+          Ez[ijk] = Eznew;
+          if (r < ri) {
+            Bx[ijk] = bxn;
+            By[ijk] = byn;
+            Bz[ijk] = bzn;
+            Ex[ijk] = exn;
+            Ey[ijk] = eyn;
+            Ez[ijk] = ezn;
+          }
+        }
+      }
+    }
+  }
 }
 
 
