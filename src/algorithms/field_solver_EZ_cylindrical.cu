@@ -8,7 +8,7 @@
 // 2D axisymmetric code. Original x, y, z correspond to R, z, phi.
 
 #define BLOCK_SIZE_R 32
-#define BLOCK_SIZE_Z 2
+#define BLOCK_SIZE_Z 4
 #define BLOCK_SIZE_F 1
 
 
@@ -547,9 +547,6 @@ kernel_boundary_absorbing_thread(const Scalar *enx, const Scalar *eny,
   Scalar x, y, z;
   Scalar sigx = 0.0, sigy = 0.0, sigz = 0.0, sig = 0.0;
   size_t ijk;
-  Scalar dx = dev_grid.delta[0] / 2.0;
-  Scalar dy = dev_grid.delta[1] / 2.0;
-  Scalar dz = dev_grid.delta[2] / 2.0;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
