@@ -24,37 +24,36 @@ damping_boundary(const vector_field<Scalar>& En,
   Scalar x, y, z;
   Scalar sigx = 0.0, sigy = 0.0, sigz = 0.0, sig = 0.0;
   size_t ijk = 0;
-  for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift; k++) {
-    for (int j = grid.guard[1] - shift; j < grid.dims[1] - grid.guard[1] + shift; j++) {
-      for (int i = grid.guard[0] - shift; i < grid.dims[0] - grid.guard[0] + shift; i++) {
-        ijk = i + j * grid.dims[0] +
-              k * grid.dims[0] * grid.dims[1];
+
+  Scalar xh =
+      params.lower[0] + params.size[0] - params.pml[0] * grid.delta[0];
+  Scalar xl = params.lower[0] + params.pml[0] * grid.delta[0];
+  Scalar yh =
+      params.lower[1] + params.size[1] - params.pml[1] * grid.delta[1];
+  Scalar yl = params.lower[1] + params.pml[1] * grid.delta[1];
+  Scalar zh =
+      params.lower[2] + params.size[2] - params.pml[2] * grid.delta[2];
+  Scalar zl = params.lower[2] + params.pml[2] * grid.delta[2];
+
+  for (int k = grid.guard[2] - shift;
+       k < grid.dims[2] - grid.guard[2] + shift; k++) {
+    for (int j = grid.guard[1] - shift;
+         j < grid.dims[1] - grid.guard[1] + shift; j++) {
+      for (int i = grid.guard[0] - shift;
+           i < grid.dims[0] - grid.guard[0] + shift; i++) {
+        ijk = i + j * grid.dims[0] + k * grid.dims[0] * grid.dims[1];
         x = grid.pos(0, i, 1);
         y = grid.pos(1, j, 1);
         z = grid.pos(2, k, 1);
-        Scalar xh = params.lower[0] + params.size[0] -
-                    params.pml[0] * grid.delta[0];
-        Scalar xl =
-            params.lower[0] + params.pml[0] * grid.delta[0];
-        Scalar yh = params.lower[1] + params.size[1] -
-                    params.pml[1] * grid.delta[1];
-        Scalar yl =
-            params.lower[1] + params.pml[1] * grid.delta[1];
-        Scalar zh = params.lower[2] + params.size[2] -
-                    params.pml[2] * grid.delta[2];
-        Scalar zl =
-            params.lower[2] + params.pml[2] * grid.delta[2];
+
         if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
           // if (x > xh || y < yl || y > yh) {
-          sigx =
-              pmlsigma(x, xl, xh, params.pmllen * grid.delta[0],
-                       params.sigpml);
-          sigy =
-              pmlsigma(y, yl, yh, params.pmllen * grid.delta[0],
-                       params.sigpml);
-          sigz =
-              pmlsigma(z, zl, zh, params.pmllen * grid.delta[0],
-                       params.sigpml);
+          sigx = pmlsigma(x, xl, xh, params.pmllen * grid.delta[0],
+                          params.sigpml);
+          sigy = pmlsigma(y, yl, yh, params.pmllen * grid.delta[0],
+                          params.sigpml);
+          sigz = pmlsigma(z, zl, zh, params.pmllen * grid.delta[0],
+                          params.sigpml);
           sig = sigx + sigy + sigz;
           // sig = sigx + sigy;
           if (sig > TINY) {
