@@ -72,7 +72,7 @@ dipole2(Scalar x, Scalar y, Scalar z, Scalar p1, Scalar p2, Scalar p3,
             p3t) /
            (std::sqrt(cube(r2)) + TINY);
   else
-    return 0;
+    return 0.0;
 }
 
 HOST_DEVICE Scalar
@@ -111,7 +111,7 @@ quadrupole(Scalar x, Scalar y, Scalar z, Scalar q11, Scalar q12,
             5.0 * z1 * xqx) /
            (r7 + TINY);
   else
-    return 0;
+    return 0.0;
 }
 
 HOST_DEVICE Scalar
@@ -122,6 +122,16 @@ quadru_dipole(Scalar x, Scalar y, Scalar z, Scalar p1, Scalar p2,
   return dipole2(x, y, z, p1, p2, p3, phase, n) +
          quadrupole(x, y, z, q11, q12, q13, q22, q23, q_offset_x,
                     q_offset_y, q_offset_z, phase, n);
+}
+
+HOST_DEVICE Scalar
+dipole_sph_2d(Scalar r, Scalar th, int n) {
+  if (n == 0)
+    return 2.0 * cos(th) / cube(r);
+  else if (n == 1)
+    return sin(th) / cube(r);
+  else
+    return 0.0;
 }
 
 }  // namespace Coffee

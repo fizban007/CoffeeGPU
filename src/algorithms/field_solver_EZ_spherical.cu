@@ -21,6 +21,8 @@ static dim3 blockSize(BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z);
 
 static dim3 blockGroupSize;
 
+// Finite difference formulae
+
 __device__ inline Scalar
 diff1x4(const Scalar *f, int ijk) {
   return (f[ijk - 2] - 8 * f[ijk - 1] + 8 * f[ijk + 1] - f[ijk + 2]) /
@@ -40,28 +42,6 @@ diff1z4(const Scalar *f, int ijk) {
   int s = dev_grid.dims[0] * dev_grid.dims[1];
   return (f[ijk - 2 * s] - 8 * f[ijk - 1 * s] + 8 * f[ijk + 1 * s] -
           f[ijk + 2 * s]) /
-         12.0;
-}
-
-__device__ inline Scalar
-cdiff1x4(const Scalar *f, int ijk, Scalar cm2, Scalar cm1, Scalar cp1, Scalar cp2) {
-  return (f[ijk - 2] * cm2 - 8 * f[ijk - 1] *cm1 + 8 * f[ijk + 1] * cp1 - f[ijk + 2] * cp2) /
-         12.0;
-}
-
-__device__ inline Scalar
-cdiff1y4(const Scalar *f, int ijk, Scalar cm2, Scalar cm1, Scalar cp1, Scalar cp2) {
-  int s = dev_grid.dims[0];
-  return (f[ijk - 2 * s] * cm2 - 8 * f[ijk - 1 * s] * cm1 + 8 * f[ijk + 1 * s] * cp1 -
-          f[ijk + 2 * s] * cp2) /
-         12.0;
-}
-
-__device__ inline Scalar
-cdiff1z4(const Scalar *f, int ijk, Scalar cm2, Scalar cm1, Scalar cp1, Scalar cp2) {
-  int s = dev_grid.dims[0] * dev_grid.dims[1];
-  return (f[ijk - 2 * s] * cm2 - 8 * f[ijk - 1 * s] * cm1 + 8 * f[ijk + 1 * s] * cp1 -
-          f[ijk + 2 * s] * cp2) /
          12.0;
 }
 
@@ -122,20 +102,6 @@ dfdz(const Scalar *f, int ijk) {
   return diff1z4(f, ijk) / dev_grid.delta[2];
 }
 
-__device__ inline Scalar
-cdfdx(const Scalar *f, int ijk, Scalar cm2, Scalar cm1, Scalar cp1, Scalar cp2) {
-  return cdiff1x4(f, ijk, cm2, cm2, cp1, cp2) / dev_grid.delta[0];
-}
-
-__device__ inline Scalar
-cdfdy(const Scalar *f, int ijk, Scalar cm2, Scalar cm1, Scalar cp1, Scalar cp2) {
-  return cdiff1y4(f, ijk, cm2, cm2, cp1, cp2) / dev_grid.delta[1];
-}
-
-__device__ inline Scalar
-cdfdz(const Scalar *f, int ijk, Scalar cm2, Scalar cm1, Scalar cp1, Scalar cp2) {
-  return cdiff1z4(f, ijk, cm2, cm2, cp1, cp2) / dev_grid.delta[2];
-}
 
 __device__ inline Scalar
 KO(const Scalar *f, int ijk) {
@@ -145,22 +111,34 @@ KO(const Scalar *f, int ijk) {
     return diff6x2(f, ijk) + diff6y2(f, ijk) + diff6z2(f, ijk);
 }
 
+// metric, where coordinate transformation can be included
+HD_INLINE Scalar
+get_r(Scalar x, Scalar y, Scalar z) {
+  return exp(x);
+}
+
+HD_INLINE Scalar
+get_th(Scalar x, Scalar y, Scalar z) {
+  return y;
+}
+
 HD_INLINE Scalar
 get_gamma_d11(Scalar x, Scalar y, Scalar z) {
-  Scalar r = exp(x);
+  Scalar r = get_r(x, y, z);
   return r * r;
 }
 
 HD_INLINE Scalar
 get_gamma_d22(Scalar x, Scalar y, Scalar z) {
-  Scalar r = exp(x);
+  Scalar r = get_r(x, y, z);
   return r * r;
 }
 
 HD_INLINE Scalar
 get_gamma_d33(Scalar x, Scalar y, Scalar z) {
-  Scalar r = exp(x);
-  return square(r * sin(y));
+  Scalar r = get_r(x, y, z);
+  Scalar th = get_th(x, y, z);
+  return square(r * sin(th));
 }
 
 HD_INLINE Scalar
@@ -245,7 +223,7 @@ kernel_compute_ElBl(const Scalar *Ex, const Scalar *Ey,
 }
 
 __global__ void
-kernel_rk_step1(const Scalar *Elx, const Scalar *Ely, const Scalar *Elz,
+kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely, const Scalar *Elz,
                 const Scalar *Blx, const Scalar *Bly, const Scalar *Blz,
                 const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
                 const Scalar *Bx, const Scalar *By, const Scalar *Bz,
@@ -349,7 +327,7 @@ kernel_rk_step1(const Scalar *Elx, const Scalar *Ely, const Scalar *Elz,
 }
 
 __global__ void
-kernel_rk_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
+kernel_rk_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                 Scalar *By, Scalar *Bz, const Scalar *dEx,
                 const Scalar *dEy, const Scalar *dEz, const Scalar *dBx,
                 const Scalar *dBy, const Scalar *dBz, Scalar *P, const Scalar *dP,
@@ -397,6 +375,203 @@ kernel_rk_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     //   P[ijk] = 0.0;
     // }
 
+  }
+}
+
+__global__ void
+kernel_Epar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
+                const Scalar *By, const Scalar *Bz, int shift) {
+  size_t ijk;
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k =
+      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+
+    Scalar B2 = get_gamma_d11(x, y, z) * Bx[ijk] * Bx[ijk] +
+                get_gamma_d22(x, y, z) * By[ijk] * By[ijk] +
+                get_gamma_d33(x, y, z) * Bz[ijk] * Bz[ijk];
+    if (B2 < TINY) B2 = TINY;
+    Scalar EB = get_gamma_d11(x, y, z) * Ex[ijk] * Bx[ijk] +
+                get_gamma_d22(x, y, z) * Ey[ijk] * By[ijk] +
+                get_gamma_d33(x, y, z) * Ez[ijk] * Bz[ijk];
+
+    Ex[ijk] = Ex[ijk] - EB / B2 * Bx[ijk];
+    Ey[ijk] = Ey[ijk] - EB / B2 * By[ijk];
+    Ez[ijk] = Ez[ijk] - EB / B2 * Bz[ijk];
+  }
+}
+
+__global__ void
+kernel_EgtB_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
+                const Scalar *By, const Scalar *Bz, int shift) {
+  size_t ijk;
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k =
+      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+
+    Scalar B2 = get_gamma_d11(x, y, z) * Bx[ijk] * Bx[ijk] +
+                get_gamma_d22(x, y, z) * By[ijk] * By[ijk] +
+                get_gamma_d33(x, y, z) * Bz[ijk] * Bz[ijk];
+    if (B2 < TINY) B2 = TINY;
+    Scalar E2 = get_gamma_d11(x, y, z) * Ex[ijk] * Ex[ijk] +
+                get_gamma_d22(x, y, z) * Ey[ijk] * Ey[ijk] +
+                get_gamma_d33(x, y, z) * Ez[ijk] * Ez[ijk];
+
+    if (E2 > B2) {
+      Scalar s = sqrt(B2 / E2);
+      Ex[ijk] *= s;
+      Ey[ijk] *= s;
+      Ez[ijk] *= s;
+    }
+  }
+}
+
+__global__ void
+kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
+                Scalar *By, Scalar *Bz, Scalar *Ex_tmp, Scalar *Ey_tmp,
+                Scalar *Ez_tmp, Scalar *Bx_tmp, Scalar *By_tmp,
+                Scalar *Bz_tmp, Scalar *P, Scalar *P_tmp, int shift) {
+  size_t ijk;
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k =
+      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+
+    Ex_tmp[ijk] = KO(Ex, ijk);
+    Ey_tmp[ijk] = KO(Ey, ijk);
+    Ez_tmp[ijk] = KO(Ez, ijk);
+
+    Bx_tmp[ijk] = KO(Bx, ijk);
+    By_tmp[ijk] = KO(By, ijk);
+    Bz_tmp[ijk] = KO(Bz, ijk);
+
+    P_tmp[ijk] = KO(P, ijk);
+  }
+}
+
+__global__ void
+kernel_KO_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
+                Scalar *By, Scalar *Bz, Scalar *Ex_tmp, Scalar *Ey_tmp,
+                Scalar *Ez_tmp, Scalar *Bx_tmp, Scalar *By_tmp,
+                Scalar *Bz_tmp, Scalar *P, Scalar *P_tmp, int shift) {
+  Scalar KO_const = 0.0;
+
+  switch (FFE_DISSIPATION_ORDER) {
+    case 4:
+      KO_const = -1. / 16;
+      break;
+    case 6:
+      KO_const = -1. / 64;
+      break;
+  }
+
+  size_t ijk;
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k =
+      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+
+    Ex[ijk] -= dev_params.KOeps * KO_const * Ex_tmp[ijk];
+    Ey[ijk] -= dev_params.KOeps * KO_const * Ey_tmp[ijk];
+    Ez[ijk] -= dev_params.KOeps * KO_const * Ez_tmp[ijk];
+
+    Bx[ijk] -= dev_params.KOeps * KO_const * Bx_tmp[ijk];
+    By[ijk] -= dev_params.KOeps * KO_const * By_tmp[ijk];
+    Bz[ijk] -= dev_params.KOeps * KO_const * Bz_tmp[ijk];
+
+    P[ijk] -= dev_params.KOeps * KO_const * P_tmp[ijk];
+  }
+}
+
+__device__ Scalar
+wpert(Scalar t, Scalar r, Scalar th) {
+  Scalar th1 = acos(std::sqrt(1.0 - 1.0 / dev_params.rpert1));
+  Scalar th2 = acos(std::sqrt(1.0 - 1.0 / dev_params.rpert2));
+  if (th1 > th2) {
+    Scalar tmp = th1;
+    th1 = th2;
+    th2 = tmp;
+  } 
+  Scalar mu = (th1 + th2) / 2.0;
+  Scalar s = (mu - th1) / 3.0;
+  if (t >= dev_params.tp_start && t <= dev_params.tp_end && th >= th1 &&
+      th <= th2)
+    return dev_params.dw0 * exp(- 0.5 * square((th - mu) / s)) *
+           sin((t - dev_params.tp_start) * 2.0 * M_PI /
+               (dev_params.tp_end - dev_params.tp_start)) *
+           0.5 *
+           (1.0 + tanh((r - 0.5 * dev_params.radius) /
+                       (0.05 * dev_params.radius)));
+  else
+    return 0;
+}
+
+__global__ void
+kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
+                           Scalar *Bx, Scalar *By, Scalar *Bz,
+                           Scalar *P, Scalar t, int shift) {
+  size_t ijk;
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k =
+      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
+    Scalar r = get_r(x, y, z);
+    Scalar th = get_th(x, y, z);
+    Scalar w = dev_params.omega + wpert(t, r, th);
+
+    if (r <= dev_params.radius) {
+      Scalar bxn = dev_params.b0 * dipole_sph_2d(r, th, 0);
+      Scalar byn = dev_params.b0 * dipole_sph_2d(r, th, 1);
+      Scalar bzn = dev_params.b0 * dipole_sph_2d(r, th, 2);
+      Bx[ijk] = bxn / std::sqrt(get_gamma_d11(x, y, z));
+      By[ijk] = byn / std::sqrt(get_gamma_d22(x, y, z));
+      Bz[ijk] = bzn / std::sqrt(get_gamma_d33(x, y, z));
+      Scalar v3n = w * r * sin(th);
+      Scalar exn = v3n * byn;
+      Scalar eyn = -v3n * bxn;
+      Ex[ijk] = exn / std::sqrt(get_gamma_d11(x, y, z));
+      Ey[ijk] = eyn / std::sqrt(get_gamma_d22(x, y, z));
+      Ez[ijk] = 0.0;
+    }
   }
 }
 
