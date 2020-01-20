@@ -446,6 +446,9 @@ kernel_boundary_pulsar(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                (Bz[ijk] -
                 (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * z / r2) *
                    (1 - s);
+      Bx[ijk] = Bxnew;
+      By[ijk] = Bynew;
+      Bz[ijk] = Bznew;
 
       Scalar w = dev_params.omega;
       // Scalar w = dev_params.omega + wpert(t, z);
@@ -477,9 +480,9 @@ kernel_boundary_pulsar(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                (Ez[ijk] -
                 (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * z / r2) *
                    (1 - s);
-      Bx[ijk] = Bxnew;
-      By[ijk] = Bynew;
-      Bz[ijk] = Bznew;
+      // Bx[ijk] = Bxnew;
+      // By[ijk] = Bynew;
+      // Bz[ijk] = Bznew;
       Ex[ijk] = Exnew;
       Ey[ijk] = Eynew;
       Ez[ijk] = Eznew;
