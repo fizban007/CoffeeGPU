@@ -1,5 +1,6 @@
 #include "field_solver_EZ.h"
 #include "algorithms/finite_diff.h"
+#include "algorithms/pulsar.h"
 #include "utils/timer.h"
 
 namespace Coffee {
@@ -334,7 +335,7 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
   Scalar scaleBpar = scaleBperp;
   Scalar d1 = 4.0 * grid.delta[0];
   Scalar d0 = 0;
-  Scalar phase = params.omega * t; 
+  Scalar phase = params.omega * t;
   Scalar w = params.omega;
   Scalar Bxnew, Bynew, Bznew, Exnew, Eynew, Eznew;
 
@@ -352,7 +353,7 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
         Scalar r2 = x * x + y * y + z * z;
         if (r2 < TINY) r2 = TINY;
         Scalar r = std::sqrt(r2);
-        
+
         if (r < rl) {
           // Scalar bxn = params.b0 * cube(params.radius) *
           //              dipole_x(x, y, z, params.alpha, phase);
@@ -362,48 +363,51 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
           //              dipole_z(x, y, z, params.alpha, phase);
           Scalar bxn =
               params.b0 *
-              quadru_dipole(x, y, z, params.p1, params.p2,
-                            params.p3, params.q11, params.q12,
-                            params.q13, params.q22, params.q23,
-                            params.q_offset_x, params.q_offset_y,
-                            params.q_offset_z, phase, 0);
+              quadru_dipole(x, y, z, params.p1, params.p2, params.p3,
+                            params.q11, params.q12, params.q13,
+                            params.q22, params.q23, params.q_offset_x,
+                            params.q_offset_y, params.q_offset_z, phase,
+                            0);
           Scalar byn =
               params.b0 *
-              quadru_dipole(x, y, z, params.p1, params.p2,
-                            params.p3, params.q11, params.q12,
-                            params.q13, params.q22, params.q23,
-                            params.q_offset_x, params.q_offset_y,
-                            params.q_offset_z, phase, 1);
+              quadru_dipole(x, y, z, params.p1, params.p2, params.p3,
+                            params.q11, params.q12, params.q13,
+                            params.q22, params.q23, params.q_offset_x,
+                            params.q_offset_y, params.q_offset_z, phase,
+                            1);
           Scalar bzn =
               params.b0 *
-              quadru_dipole(x, y, z, params.p1, params.p2,
-                            params.p3, params.q11, params.q12,
-                            params.q13, params.q22, params.q23,
-                            params.q_offset_x, params.q_offset_y,
-                            params.q_offset_z, phase, 2);
+              quadru_dipole(x, y, z, params.p1, params.p2, params.p3,
+                            params.q11, params.q12, params.q13,
+                            params.q22, params.q23, params.q_offset_x,
+                            params.q_offset_y, params.q_offset_z, phase,
+                            2);
           Scalar s = shape(r, params.radius - d1, scaleBperp);
-          Bxnew =
-              (bxn * x + byn * y + bzn * z) * x / r2 * s +
-              (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * x / r2 * (1 - s);
-          Bynew =
-              (bxn * x + byn * y + bzn * z) * y / r2 * s +
-              (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * y / r2 * (1 - s);
-          Bznew =
-              (bxn * x + byn * y + bzn * z) * z / r2 * s +
-              (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * z / r2 * (1 - s);
+          Bxnew = (bxn * x + byn * y + bzn * z) * x / r2 * s +
+                  (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * x / r2 *
+                      (1 - s);
+          Bynew = (bxn * x + byn * y + bzn * z) * y / r2 * s +
+                  (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * y / r2 *
+                      (1 - s);
+          Bznew = (bxn * x + byn * y + bzn * z) * z / r2 * s +
+                  (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * z / r2 *
+                      (1 - s);
           s = shape(r, params.radius - d1, scaleBpar);
-          Bxnew += (bxn - (bxn * x + byn * y + bzn * z) * x / r2) * s +
-                   (Bx[ijk] -
-                    (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * x / r2) *
-                       (1 - s);
-          Bynew += (byn - (bxn * x + byn * y + bzn * z) * y / r2) * s +
-                   (By[ijk] -
-                    (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * y / r2) *
-                       (1 - s);
-          Bznew += (bzn - (bxn * x + byn * y + bzn * z) * z / r2) * s +
-                   (Bz[ijk] -
-                    (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * z / r2) *
-                       (1 - s);
+          Bxnew +=
+              (bxn - (bxn * x + byn * y + bzn * z) * x / r2) * s +
+              (Bx[ijk] -
+               (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * x / r2) *
+                  (1 - s);
+          Bynew +=
+              (byn - (bxn * x + byn * y + bzn * z) * y / r2) * s +
+              (By[ijk] -
+               (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * y / r2) *
+                  (1 - s);
+          Bznew +=
+              (bzn - (bxn * x + byn * y + bzn * z) * z / r2) * s +
+              (Bz[ijk] -
+               (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * z / r2) *
+                  (1 - s);
 
           Bx[ijk] = Bxnew;
           By[ijk] = Bynew;
@@ -415,28 +419,31 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
           Scalar eyn = vx * Bz[ijk];
           Scalar ezn = -vx * By[ijk] + vy * Bx[ijk];
           s = shape(r, params.radius - d0, scaleEperp);
-          Exnew =
-              (exn * x + eyn * y + ezn * z) * x / r2 * s +
-              (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * x / r2 * (1 - s);
-          Eynew =
-              (exn * x + eyn * y + ezn * z) * y / r2 * s +
-              (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * y / r2 * (1 - s);
-          Eznew =
-              (exn * x + eyn * y + ezn * z) * z / r2 * s +
-              (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * z / r2 * (1 - s);
+          Exnew = (exn * x + eyn * y + ezn * z) * x / r2 * s +
+                  (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * x / r2 *
+                      (1 - s);
+          Eynew = (exn * x + eyn * y + ezn * z) * y / r2 * s +
+                  (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * y / r2 *
+                      (1 - s);
+          Eznew = (exn * x + eyn * y + ezn * z) * z / r2 * s +
+                  (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * z / r2 *
+                      (1 - s);
           s = shape(r, params.radius - d0, scaleEpar);
-          Exnew += (exn - (exn * x + eyn * y + ezn * z) * x / r2) * s +
-                   (Ex[ijk] -
-                    (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * x / r2) *
-                       (1 - s);
-          Eynew += (eyn - (exn * x + eyn * y + ezn * z) * y / r2) * s +
-                   (Ey[ijk] -
-                    (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * y / r2) *
-                       (1 - s);
-          Eznew += (ezn - (exn * x + eyn * y + ezn * z) * z / r2) * s +
-                   (Ez[ijk] -
-                    (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * z / r2) *
-                       (1 - s);
+          Exnew +=
+              (exn - (exn * x + eyn * y + ezn * z) * x / r2) * s +
+              (Ex[ijk] -
+               (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * x / r2) *
+                  (1 - s);
+          Eynew +=
+              (eyn - (exn * x + eyn * y + ezn * z) * y / r2) * s +
+              (Ey[ijk] -
+               (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * y / r2) *
+                  (1 - s);
+          Eznew +=
+              (ezn - (exn * x + eyn * y + ezn * z) * z / r2) * s +
+              (Ez[ijk] -
+               (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * z / r2) *
+                  (1 - s);
           // Bx[ijk] = Bxnew;
           // By[ijk] = Bynew;
           // Bz[ijk] = Bznew;
@@ -473,7 +480,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
   for (int i = 0; i < 5; ++i) {
     timer::stamp();
     rk_step(As[i], Bs[i]);
-    
+
     if (m_env.rank() == 0)
       timer::show_duration_since_stamp("rk_step", "ms");
 
@@ -499,12 +506,11 @@ field_solver_EZ::evolve_fields(Scalar time) {
   if (m_env.params().clean_ep) clean_epar();
   if (m_env.params().check_egb) check_eGTb();
   boundary_pulsar(time + m_env.params().dt);
-  
+
   m_env.send_guard_cells(m_data);
   // m_env.send_guard_cell_array(P);
   if (m_env.rank() == 0)
     timer::show_duration_since_stamp("Kreiss Oliger", "ms");
 }
-
 
 }  // namespace Coffee
