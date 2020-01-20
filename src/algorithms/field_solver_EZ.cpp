@@ -25,6 +25,12 @@ dfdz(const multi_array<T> &f, int ijk) {
              l_grid->inv_delta[2]);
 }
 
+template <typename T>
+inline Scalar
+KO(const multi_array<T> &f, int ijk) {
+  return KO(f.host_ptr(), ijk, *l_grid);
+}
+
 field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
     : m_data(mydata), m_env(env) {
   dE = vector_field<Scalar>(m_data.env.grid());
@@ -157,7 +163,7 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
         By[ijk] = By[ijk] + Bs * dBy[ijk];
         Bz[ijk] = Bz[ijk] + Bs * dBz[ijk];
 
-        m_data.P[ijk] = P[ijk] + Bs * dP[ijk];
+        m_data.P[ijk] = m_data.P[ijk] + Bs * dP[ijk];
       }
     }
   }
@@ -190,15 +196,15 @@ field_solver_EZ::Kreiss_Oliger() {
            i < grid.dims[0] - grid.guard[0] + shift; i++) {
         ijk = i + (j + k * grid.dims[1]) * grid.dims[0];
 
-        Ex_tmp[ijk] = KO(Ex, ijk, grid);
-        Ey_tmp[ijk] = KO(Ey, ijk, grid);
-        Ez_tmp[ijk] = KO(Ez, ijk, grid);
+        Ex_tmp[ijk] = KO(Ex, ijk);
+        Ey_tmp[ijk] = KO(Ey, ijk);
+        Ez_tmp[ijk] = KO(Ez, ijk);
 
-        Bx_tmp[ijk] = KO(Bx, ijk, grid);
-        By_tmp[ijk] = KO(By, ijk, grid);
-        Bz_tmp[ijk] = KO(Bz, ijk, grid);
+        Bx_tmp[ijk] = KO(Bx, ijk);
+        By_tmp[ijk] = KO(By, ijk);
+        Bz_tmp[ijk] = KO(Bz, ijk);
 
-        P_tmp[ijk] = KO(P, ijk, grid);
+        Ptmp[ijk] = KO(m_data.P, ijk);
       }
     }
   }
@@ -230,7 +236,7 @@ field_solver_EZ::Kreiss_Oliger() {
         By[ijk] -= params.KOeps * KO_const * By_tmp[ijk];
         Bz[ijk] -= params.KOeps * KO_const * Bz_tmp[ijk];
 
-        P[ijk] -= params.KOeps * KO_const * P_tmp[ijk];
+        m_data.P[ijk] -= params.KOeps * KO_const * Ptmp[ijk];
       }
     }
   }
