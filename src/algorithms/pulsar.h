@@ -3,20 +3,9 @@
 
 #include "cuda/cuda_control.h"
 #include "data/typedefs.h"
+#include "utils/util_functions.h"
 
 namespace Coffee {
-
-template <typename T>
-HD_INLINE T
-square(T x) {
-  return x * x;
-}
-
-template <typename T>
-HD_INLINE T
-cube(T x) {
-  return x * x * x;
-}
 
 HOST_DEVICE Scalar dipole_x(Scalar x, Scalar y, Scalar z, Scalar alpha,
                             Scalar phase);

@@ -1,4 +1,5 @@
 #include "field_solver_EZ.h"
+#include "algorithms/damping_boundary.h"
 #include "algorithms/finite_diff.h"
 #include "algorithms/pulsar.h"
 #include "utils/timer.h"
@@ -312,6 +313,14 @@ field_solver_EZ::check_eGTb() {
       }
     }
   }
+}
+
+void
+field_solver_EZ::boundary_absorbing() {
+  auto &params = m_env.params();
+  auto &grid = m_env.grid();
+  damping_boundary(Etmp, Btmp, m_data.E, m_data.B, Ptmp, m_data.P,
+                   params.shift_ghost, grid, params);
 }
 
 void
