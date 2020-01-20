@@ -1,3 +1,7 @@
+#ifndef _METRIC_CKS_H_
+#define _METRIC_CKS_H_
+
+
 #include "data/typedefs.h"
 
 namespace Coffee {
@@ -45,3 +49,5 @@ HOST_DEVICE Scalar get_gamma_u33(Scalar a, Scalar x, Scalar y, Scalar z);
 }
 
 }
+
+#endif // _METRIC_CKS_H_

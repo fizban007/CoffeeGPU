@@ -1,3 +1,6 @@
+#ifndef _METRIC_CKS_IMPL_H_
+#define _METRIC_CKS_IMPL_H_
+
 #include "metric_cks.h"
 
 namespace Coffee {
@@ -176,3 +179,5 @@ get_gamma_u33(Scalar a, Scalar x, Scalar y, Scalar z) {
 }
 
 }
+
+#endif // _METRIC_CKS_IMPL_H_

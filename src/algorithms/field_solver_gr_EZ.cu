@@ -25,85 +25,20 @@ static dim3 blockSize(BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z);
 
 static dim3 blockGroupSize;
 
-
-
-__device__ inline Scalar
-diff1x4(const Scalar *f, int ijk) {
-  return (f[ijk - 2] - 8.0 * f[ijk - 1] + 8.0 * f[ijk + 1] - f[ijk + 2]) /
-         12.0;
-}
-
-__device__ inline Scalar
-diff1y4(const Scalar *f, int ijk) {
-  int s = dev_grid.dims[0];
-  return (f[ijk - 2 * s] - 8.0 * f[ijk - 1 * s] + 8.0 * f[ijk + 1 * s] -
-          f[ijk + 2 * s]) /
-         12.0;
-}
-
-__device__ inline Scalar
-diff1z4(const Scalar *f, int ijk) {
-  int s = dev_grid.dims[0] * dev_grid.dims[1];
-  return (f[ijk - 2 * s] - 8.0 * f[ijk - 1 * s] + 8.0 * f[ijk + 1 * s] -
-          f[ijk + 2 * s]) /
-         12.0;
-}
-
-__device__ inline Scalar
-diff4x2(const Scalar *f, int ijk) {
-  return (f[ijk - 2] - 4.0 * f[ijk - 1] + 6.0 * f[ijk] - 4.0 * f[ijk + 1] +
-          f[ijk + 2]);
-}
-
-__device__ inline Scalar
-diff4y2(const Scalar *f, int ijk) {
-  int s = dev_grid.dims[0];
-  return (f[ijk - 2 * s] - 4.0 * f[ijk - 1 * s] + 6.0 * f[ijk] -
-          4.0 * f[ijk + 1 * s] + f[ijk + 2 * s]);
-}
-
-__device__ inline Scalar
-diff4z2(const Scalar *f, int ijk) {
-  int s = dev_grid.dims[0] * dev_grid.dims[1];
-  return (f[ijk - 2 * s] - 4.0 * f[ijk - 1 * s] + 6.0 * f[ijk] -
-          4.0 * f[ijk + 1 * s] + f[ijk + 2 * s]);
-}
-
-__device__ inline Scalar
-diff6x2(const Scalar *f, int ijk) {
-  return (f[ijk - 3] - 6.0 * f[ijk - 2] + 15.0 * f[ijk - 1] - 20.0 * f[ijk] +
-          15.0 * f[ijk + 1] - 6.0 * f[ijk + 2] + f[ijk + 3]);
-}
-
-__device__ inline Scalar
-diff6y2(const Scalar *f, int ijk) {
-  int s = dev_grid.dims[0];
-  return (f[ijk - 3 * s] - 6.0 * f[ijk - 2 * s] + 15.0 * f[ijk - 1 * s] -
-          20.0 * f[ijk] + 15.0 * f[ijk + 1 * s] - 6.0 * f[ijk + 2 * s] +
-          f[ijk + 3 * s]);
-}
-
-__device__ inline Scalar
-diff6z2(const Scalar *f, int ijk) {
-  int s = dev_grid.dims[0] * dev_grid.dims[1];
-  return (f[ijk - 3 * s] - 6.0 * f[ijk - 2 * s] + 15.0 * f[ijk - 1 * s] -
-          20.0 * f[ijk] + 15.0 * f[ijk + 1 * s] - 6.0 * f[ijk + 2 * s] +
-          f[ijk + 3 * s]);
-}
-
-__device__ inline Scalar
+__device__ __forceinline__ Scalar
 dfdx(const Scalar *f, int ijk) {
-  return diff1x4(f, ijk) / dev_grid.delta[0];
+  return df1(f, ijk, 1, dev_grid.inv_delta[0]);
 }
 
-__device__ inline Scalar
+__device__ __forceinline__ Scalar
 dfdy(const Scalar *f, int ijk) {
-  return diff1y4(f, ijk) / dev_grid.delta[1];
+  return df1(f, ijk, dev_grid.dims[0], dev_grid.inv_delta[1]);
 }
 
-__device__ inline Scalar
+__device__ __forceinline__ Scalar
 dfdz(const Scalar *f, int ijk) {
-  return diff1z4(f, ijk) / dev_grid.delta[2];
+  return df1(f, ijk, dev_grid.dims[0] * dev_grid.dims[1],
+             dev_grid.inv_delta[2]);
 }
 
 __device__ Scalar
