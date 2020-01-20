@@ -174,8 +174,80 @@ get_sqrt_gamma(Scalar x, Scalar y, Scalar z) {
   return std::sqrt(get_gamma(x, y, z));
 }
 
+__device__ Scalar
+div4(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
+     Scalar x, Scalar y, Scalar z) {
+  Scalar tmpx =
+      (fx[ijk - 2] * get_sqrt_gamma(x - 2.0 * dev_grid.delta[0], y, z) -
+       8.0 * fx[ijk - 1] *
+           get_sqrt_gamma(x - 1.0 * dev_grid.delta[0], y, z) +
+       8.0 * fx[ijk + 1] *
+           get_sqrt_gamma(x + 1.0 * dev_grid.delta[0], y, z) -
+       fx[ijk + 2] *
+           get_sqrt_gamma(x + 2.0 * dev_grid.delta[0], y, z)) /
+      12.0 / dev_grid.delta[0];
+  int s = dev_grid.dims[0];
+  Scalar tmpy =
+      (fy[ijk - 2 * s] *
+           get_sqrt_gamma(x, y - 2.0 * dev_grid.delta[1], z) -
+       8.0 * fy[ijk - 1 * s] *
+           get_sqrt_gamma(x, y - 1.0 * dev_grid.delta[1], z) +
+       8.0 * fy[ijk + 1 * s] *
+           get_sqrt_gamma(x, y + 1.0 * dev_grid.delta[1], z) -
+       fy[ijk + 2 * s] *
+           get_sqrt_gamma(x, y + 2.0 * dev_grid.delta[1], z)) /
+      12.0 / dev_grid.delta[1];
+  s = dev_grid.dims[0] * dev_grid.dims[1];
+  Scalar tmpz =
+      (fz[ijk - 2 * s] *
+           get_sqrt_gamma(x, y, z - 2.0 * dev_grid.delta[2]) -
+       8.0 * fz[ijk - 1 * s] *
+           get_sqrt_gamma(x, y, z - 1.0 * dev_grid.delta[2]) +
+       8.0 * fz[ijk + 1 * s] *
+           get_sqrt_gamma(x, y, z + 1.0 * dev_grid.delta[2]) -
+       fz[ijk + 2 * s] *
+           get_sqrt_gamma(x, y, z + 2.0 * dev_grid.delta[2])) /
+      12.0 / dev_grid.delta[2];
+  return (tmpx + tmpy + tmpz) / get_sqrt_gamma(x, y, z);
+}
+
+
 __global__ void
-kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
+kernel_compute_ElBl(const Scalar *Ex, const Scalar *Ey,
+                    const Scalar *Ez, const Scalar *Bx,
+                    const Scalar *By, const Scalar *Bz, Scalar *Elx,
+                    Scalar *Ely, Scalar *Elz, Scalar *Blx, Scalar *Bly,
+                    Scalar *Blz, int shift) {
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k =
+      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    size_t ijk = i + j * dev_grid.dims[0] +
+                 k * dev_grid.dims[0] * dev_grid.dims[1];
+
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
+
+    Elx[ijk] = get_gamma_d11(x, y, z) * Ex[ijk];
+    Ely[ijk] = get_gamma_d22(x, y, z) * Ey[ijk];
+    Elz[ijk] = get_gamma_d33(x, y, z) * Ez[ijk];
+
+    Blx[ijk] = get_gamma_d11(x, y, z) * Bx[ijk];
+    Bly[ijk] = get_gamma_d22(x, y, z) * By[ijk];
+    Blz[ijk] = get_gamma_d33(x, y, z) * Bz[ijk];
+  }
+}
+
+__global__ void
+kernel_rk_step1(const Scalar *Elx, const Scalar *Ely, const Scalar *Elz,
+                const Scalar *Blx, const Scalar *Bly, const Scalar *Blz,
+                const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
                 const Scalar *Bx, const Scalar *By, const Scalar *Bz,
                 Scalar *dEx, Scalar *dEy, Scalar *dEz, Scalar *dBx,
                 Scalar *dBy, Scalar *dBz, Scalar *jx, Scalar *jy,
@@ -200,37 +272,37 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
 
     Scalar gmsqrt = get_sqrt_gamma(x, y, z);
 
-    Scalar rotBx = c0x * (cdfdy(Bz, ijk, ) - dfdz(By, ijk));
-    Scalar rotBy = dfdz(Bx, ijk) - dfdx(Bz, ijk);
-    Scalar rotBz = dfdx(By, ijk) - dfdy(Bx, ijk);
-    Scalar rotEx = dfdy(Ez, ijk) - dfdz(Ey, ijk);
-    Scalar rotEy = dfdz(Ex, ijk) - dfdx(Ez, ijk);
-    Scalar rotEz = dfdx(Ey, ijk) - dfdy(Ex, ijk);
+    Scalar rotBx = (dfdy(Blz, ijk) - dfdz(Bly, ijk)) / gmsqrt;
+    Scalar rotBy = (dfdz(Blx, ijk) - dfdx(Blz, ijk)) / gmsqrt;
+    Scalar rotBz = (dfdx(Bly, ijk) - dfdy(Blx, ijk)) / gmsqrt;
+    Scalar rotEx = (dfdy(Elz, ijk) - dfdz(Ely, ijk)) / gmsqrt;
+    Scalar rotEy = (dfdz(Elx, ijk) - dfdx(Elz, ijk)) / gmsqrt;
+    Scalar rotEz = (dfdx(Ely, ijk) - dfdy(Elx, ijk)) / gmsqrt;
 
-    Scalar divE = dfdx(Ex, ijk) + dfdy(Ey, ijk) + dfdz(Ez, ijk);
-    Scalar divB = dfdx(Bx, ijk) + dfdy(By, ijk) + dfdz(Bz, ijk);
+    Scalar divE = div4(Ex, Ey, Ez, ijk, x, y, z);
+    Scalar divB = div4(Bx, By, Bz, ijk, x, y, z);
 
     Scalar B2 =
-        Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] * Bz[ijk];
+        Bx[ijk] * Blx[ijk] + By[ijk] * Bly[ijk] + Bz[ijk] * Blz[ijk];
     if (B2 < TINY) B2 = TINY;
 
-    Scalar Jp = (Bx[ijk] * rotBx + By[ijk] * rotBy + Bz[ijk] * rotBz) -
-                (Ex[ijk] * rotEx + Ey[ijk] * rotEy + Ez[ijk] * rotEz);
-    Scalar Jx = (divE * (Ey[ijk] * Bz[ijk] - Ez[ijk] * By[ijk]) +
+    Scalar Jp = (Blx[ijk] * rotBx + Bly[ijk] * rotBy + Blz[ijk] * rotBz) -
+                (Elx[ijk] * rotEx + Ely[ijk] * rotEy + Elz[ijk] * rotEz);
+    Scalar Jx = (divE * (Ely[ijk] * Blz[ijk] - Elz[ijk] * Bly[ijk]) / gmsqrt +
                  Jp * Bx[ijk]) /
                 B2;
-    Scalar Jy = (divE * (Ez[ijk] * Bx[ijk] - Ex[ijk] * Bz[ijk]) +
+    Scalar Jy = (divE * (Elz[ijk] * Blx[ijk] - Elx[ijk] * Blz[ijk]) / gmsqrt +
                  Jp * By[ijk]) /
                 B2;
-    Scalar Jz = (divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) +
+    Scalar Jz = (divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) / gmsqrt +
                  Jp * Bz[ijk]) /
                 B2;
-    // Scalar Px = dfdx(P, ijk);
-    // Scalar Py = dfdy(P, ijk);
-    // Scalar Pz = dfdz(P, ijk);
-    Scalar Px = 0.0;
-    Scalar Py = 0.0;
-    Scalar Pz = 0.0;
+    Scalar Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
+    Scalar Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
+    Scalar Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
+    // Scalar Px = 0.0;
+    // Scalar Py = 0.0;
+    // Scalar Pz = 0.0;
 
     // dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
     //                                           P[ijk] / dev_params.tau);
