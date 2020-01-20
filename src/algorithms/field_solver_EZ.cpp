@@ -92,7 +92,7 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
        k < grid.dims[2] - grid.guard[2] + shift; k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
-#pragma omp simd
+#pragma omp simd simdlen(8)
       for (int i = grid.guard[0] - shift;
            i < grid.dims[0] - grid.guard[0] + shift; i++) {
         ijk = i + (j + k * grid.dims[1]) * grid.dims[0];
@@ -156,7 +156,7 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
        k < grid.dims[2] - grid.guard[2] + shift; k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
-#pragma omp simd
+#pragma omp simd simdlen(8)
       for (int i = grid.guard[0] - shift;
            i < grid.dims[0] - grid.guard[0] + shift; i++) {
         ijk = i + (j + k * grid.dims[1]) * grid.dims[0];
@@ -198,7 +198,7 @@ field_solver_EZ::Kreiss_Oliger() {
        k < grid.dims[2] - grid.guard[2] + shift; k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
-#pragma omp simd
+#pragma omp simd simdlen(8)
       for (int i = grid.guard[0] - shift;
            i < grid.dims[0] - grid.guard[0] + shift; i++) {
         ijk = i + (j + k * grid.dims[1]) * grid.dims[0];
@@ -265,7 +265,7 @@ field_solver_EZ::clean_epar() {
        k < grid.dims[2] - grid.guard[2] + shift; k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
-#pragma omp simd
+#pragma omp simd simdlen(8)
       for (int i = grid.guard[0] - shift;
            i < grid.dims[0] - grid.guard[0] + shift; i++) {
         ijk = i + (j + k * grid.dims[1]) * grid.dims[0];
@@ -300,7 +300,7 @@ field_solver_EZ::check_eGTb() {
        k < grid.dims[2] - grid.guard[2] + shift; k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
-#pragma omp simd
+#pragma omp simd simdlen(8)
       for (int i = grid.guard[0] - shift;
            i < grid.dims[0] - grid.guard[0] + shift; i++) {
         ijk = i + (j + k * grid.dims[1]) * grid.dims[0];
@@ -359,7 +359,7 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
        k < grid.dims[2] - grid.guard[2] + shift; k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
-#pragma omp simd
+// #pragma omp simd simdlen(8)
       for (int i = grid.guard[0] - shift;
            i < grid.dims[0] - grid.guard[0] + shift; i++) {
         ijk = i + (j + k * grid.dims[1]) * grid.dims[0];
