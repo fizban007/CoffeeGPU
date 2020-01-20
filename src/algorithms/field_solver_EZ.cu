@@ -1,3 +1,4 @@
+#include "algorithms/finite_diff.h"
 #include "boundary.h"
 #include "cuda/constant_mem.h"
 #include "cuda/constant_mem_func.h"
@@ -10,100 +11,27 @@
 #define BLOCK_SIZE_Y 2
 #define BLOCK_SIZE_Z 2
 
-#define FFE_DISSIPATION_ORDER 6
-
 namespace Coffee {
+
+__device__ __forceinline__ Scalar
+dfdx(const Scalar *f, int ijk) {
+  return df1(f, ijk, 1, dev_grid.inv_delta[0]);
+}
+
+__device__ __forceinline__ Scalar
+dfdy(const Scalar *f, int ijk) {
+  return df1(f, ijk, dev_grid.dims[0], dev_grid.inv_delta[1]);
+}
+
+__device__ __forceinline__ Scalar
+dfdz(const Scalar *f, int ijk) {
+  return df1(f, ijk, dev_grid.dims[0] * dev_grid.dims[1],
+             dev_grid.inv_delta[2]);
+}
 
 static dim3 blockSize(BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z);
 
 static dim3 blockGroupSize;
-
-__device__ inline Scalar
-diff1x4(const Scalar *f, int ijk) {
-  return (f[ijk - 2] - 8 * f[ijk - 1] + 8 * f[ijk + 1] - f[ijk + 2]) /
-         12.0;
-}
-
-__device__ inline Scalar
-diff1y4(const Scalar *f, int ijk) {
-  int s = dev_grid.dims[0];
-  return (f[ijk - 2 * s] - 8 * f[ijk - 1 * s] + 8 * f[ijk + 1 * s] -
-          f[ijk + 2 * s]) /
-         12.0;
-}
-
-__device__ inline Scalar
-diff1z4(const Scalar *f, int ijk) {
-  int s = dev_grid.dims[0] * dev_grid.dims[1];
-  return (f[ijk - 2 * s] - 8 * f[ijk - 1 * s] + 8 * f[ijk + 1 * s] -
-          f[ijk + 2 * s]) /
-         12.0;
-}
-
-__device__ inline Scalar
-diff4x2(const Scalar *f, int ijk) {
-  return (f[ijk - 2] - 4 * f[ijk - 1] + 6 * f[ijk] - 4 * f[ijk + 1] +
-          f[ijk + 2]);
-}
-
-__device__ inline Scalar
-diff4y2(const Scalar *f, int ijk) {
-  int s = dev_grid.dims[0];
-  return (f[ijk - 2 * s] - 4 * f[ijk - 1 * s] + 6 * f[ijk] -
-          4 * f[ijk + 1 * s] + f[ijk + 2 * s]);
-}
-
-__device__ inline Scalar
-diff4z2(const Scalar *f, int ijk) {
-  int s = dev_grid.dims[0] * dev_grid.dims[1];
-  return (f[ijk - 2 * s] - 4 * f[ijk - 1 * s] + 6 * f[ijk] -
-          4 * f[ijk + 1 * s] + f[ijk + 2 * s]);
-}
-
-__device__ inline Scalar
-diff6x2(const Scalar *f, int ijk) {
-  return (f[ijk - 3] - 6 * f[ijk - 2] + 15 * f[ijk - 1] - 20 * f[ijk] +
-          15 * f[ijk + 1] - 6 * f[ijk + 2] + f[ijk + 3]);
-}
-
-__device__ inline Scalar
-diff6y2(const Scalar *f, int ijk) {
-  int s = dev_grid.dims[0];
-  return (f[ijk - 3 * s] - 6 * f[ijk - 2 * s] + 15 * f[ijk - 1 * s] -
-          20 * f[ijk] + 15 * f[ijk + 1 * s] - 6 * f[ijk + 2 * s] +
-          f[ijk + 3 * s]);
-}
-
-__device__ inline Scalar
-diff6z2(const Scalar *f, int ijk) {
-  int s = dev_grid.dims[0] * dev_grid.dims[1];
-  return (f[ijk - 3 * s] - 6 * f[ijk - 2 * s] + 15 * f[ijk - 1 * s] -
-          20 * f[ijk] + 15 * f[ijk + 1 * s] - 6 * f[ijk + 2 * s] +
-          f[ijk + 3 * s]);
-}
-
-__device__ inline Scalar
-dfdx(const Scalar *f, int ijk) {
-  return diff1x4(f, ijk) / dev_grid.delta[0];
-}
-
-__device__ inline Scalar
-dfdy(const Scalar *f, int ijk) {
-  return diff1y4(f, ijk) / dev_grid.delta[1];
-}
-
-__device__ inline Scalar
-dfdz(const Scalar *f, int ijk) {
-  return diff1z4(f, ijk) / dev_grid.delta[2];
-}
-
-__device__ inline Scalar
-KO(const Scalar *f, int ijk) {
-  if (FFE_DISSIPATION_ORDER == 4)
-    return diff4x2(f, ijk) + diff4y2(f, ijk) + diff4z2(f, ijk);
-  if (FFE_DISSIPATION_ORDER == 6)
-    return diff6x2(f, ijk) + diff6y2(f, ijk) + diff6z2(f, ijk);
-}
 
 __global__ void
 kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
@@ -158,7 +86,8 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     Scalar Pz = 0.0;
 
     // dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
-    //                                           P[ijk] / dev_params.tau);
+    //                                           P[ijk] /
+    //                                           dev_params.tau);
 
     // Inside the damping layer
     // Scalar x = dev_grid.pos(0, i, 1);
@@ -205,8 +134,8 @@ __global__ void
 kernel_rk_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                 Scalar *By, Scalar *Bz, const Scalar *dEx,
                 const Scalar *dEy, const Scalar *dEz, const Scalar *dBx,
-                const Scalar *dBy, const Scalar *dBz, Scalar *P, const Scalar *dP,
-                int shift, Scalar Bs) {
+                const Scalar *dBy, const Scalar *dBz, Scalar *P,
+                const Scalar *dP, int shift, Scalar Bs) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -249,7 +178,6 @@ kernel_rk_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     // if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
     //   P[ijk] = 0.0;
     // }
-
   }
 }
 
@@ -330,38 +258,44 @@ kernel_KO_step1(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
 
-    Ex_tmp[ijk] = KO(Ex, ijk);
-    Ey_tmp[ijk] = KO(Ey, ijk);
-    Ez_tmp[ijk] = KO(Ez, ijk);
+    Ex_tmp[ijk] = KO(Ex, ijk, dev_grid);
+    Ey_tmp[ijk] = KO(Ey, ijk, dev_grid);
+    Ez_tmp[ijk] = KO(Ez, ijk, dev_grid);
 
-    Bx_tmp[ijk] = KO(Bx, ijk);
-    By_tmp[ijk] = KO(By, ijk);
-    Bz_tmp[ijk] = KO(Bz, ijk);
+    Bx_tmp[ijk] = KO(Bx, ijk, dev_grid);
+    By_tmp[ijk] = KO(By, ijk, dev_grid);
+    Bz_tmp[ijk] = KO(Bz, ijk, dev_grid);
 
-    P_tmp[ijk] = KO(P, ijk);
-    
+    P_tmp[ijk] = KO(P, ijk, dev_grid);
+
     // // Exclude the damping layer
     // Scalar x = dev_grid.pos(0, i, 1);
     // Scalar y = dev_grid.pos(1, j, 1);
     // Scalar z = dev_grid.pos(2, k, 1);
     // Scalar xh =
     //     dev_params.lower[0] + dev_params.size[0] -
-    //     (dev_params.pml[0] + dev_params.guard[0]) * dev_grid.delta[0];
+    //     (dev_params.pml[0] + dev_params.guard[0]) *
+    //     dev_grid.delta[0];
     // Scalar xl =
     //     dev_params.lower[0] +
-    //     (dev_params.pml[0] + dev_params.guard[0]) * dev_grid.delta[0];
+    //     (dev_params.pml[0] + dev_params.guard[0]) *
+    //     dev_grid.delta[0];
     // Scalar yh =
     //     dev_params.lower[1] + dev_params.size[1] -
-    //     (dev_params.pml[1] + dev_params.guard[1]) * dev_grid.delta[1];
+    //     (dev_params.pml[1] + dev_params.guard[1]) *
+    //     dev_grid.delta[1];
     // Scalar yl =
     //     dev_params.lower[1] +
-    //     (dev_params.pml[1] + dev_params.guard[1]) * dev_grid.delta[1];
+    //     (dev_params.pml[1] + dev_params.guard[1]) *
+    //     dev_grid.delta[1];
     // Scalar zh =
     //     dev_params.lower[2] + dev_params.size[2] -
-    //     (dev_params.pml[2] + dev_params.guard[2]) * dev_grid.delta[2];
+    //     (dev_params.pml[2] + dev_params.guard[2]) *
+    //     dev_grid.delta[2];
     // Scalar zl =
     //     dev_params.lower[2] +
-    //     (dev_params.pml[2] + dev_params.guard[2]) * dev_grid.delta[2];
+    //     (dev_params.pml[2] + dev_params.guard[2]) *
+    //     dev_grid.delta[2];
     // if (x < xh && x > xl && y < yh && y > yl && z < zh && z > zl) {
     //   Ex_tmp[ijk] = KO(Ex, ijk);
     //   Ey_tmp[ijk] = KO(Ey, ijk);
@@ -600,7 +534,6 @@ kernel_compute_skymap(Scalar *skymap, int Nth, int Nph,
       Scalar ez = Ez[ijk];
       // Generate ppc particles in the cell and compute their emission
       for (int n = 0; n < ppc; n++) {
-
       }
     }
   }
@@ -632,15 +565,15 @@ field_solver_EZ::Kreiss_Oliger() {
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
-      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2), m_data.P.dev_ptr(),
-      Ptmp.dev_ptr(), m_env.params().shift_ghost);
+      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
+      m_data.P.dev_ptr(), Ptmp.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
   kernel_KO_step2<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
-      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2), m_data.P.dev_ptr(),
-      Ptmp.dev_ptr(), m_env.params().shift_ghost);
+      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
+      m_data.P.dev_ptr(), Ptmp.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 

@@ -24,6 +24,7 @@ else()
   list(APPEND Coffee_src
     "data/multi_array.cpp"
     "sim_env.cpp"
+    "algorithms/field_solver_EZ.cpp"
    )
 endif()
 

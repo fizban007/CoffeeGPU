@@ -26,7 +26,6 @@
                   file)
 
 // using namespace H5;
-using namespace HighFive;
 
 namespace Coffee {
 
@@ -106,10 +105,6 @@ data_exporter::write_output(sim_data& data, uint32_t timestep,
 
   data.sync_to_host();
 
-  // Launch a new thread to handle the field output
-  // m_thread.reset(new std::thread(&data_exporter::write_field_output,
-  //                                this, std::ref(data), timestep,
-  //                                time));
   write_field_output(data, timestep, time);
   std::cout << "Output written!" << std::endl;
   // RANGE_POP;
@@ -130,76 +125,14 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   std::string num = ss.str();
   std::string filename =
       outputDirectory + std::string("fld.") + num + std::string(".h5");
-  // File datafile(
-  //     outputDirectory + std::string("fld.") + num +
-  //     std::string(".h5"), File::ReadWrite | File::Create |
-  //     File::Truncate, MPIOFileDriver(MPI_COMM_WORLD, MPI_INFO_NULL));
+  
   hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 
   hid_t datafile =
       H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
   H5Pclose(plist_id);
-  // H5F_ACC_TRUNC);
-  // H5F_ACC_RDWR);
-  // add_grid_output(
-  //     data, "E1",
-  //     [](sim_data& data, multi_array<Scalar>& p, Index idx,
-  //        Index idx_out) {
-  //       p(idx_out) = data.E(0, idx) + data.Ebg(0, idx);
-  //     },
-  //     datafile);
-  // ADD_GRID_OUTPUT(
-  //     data, "Ex",
-  //     {
-  //       p(idx_out) = 0.25 * (data.E(0, idx) +
-  //                            data.E(0, idx.x, idx.y + 1, idx.z) +
-  //                            data.E(0, idx.x, idx.y, idx.z + 1) +
-  //                            data.E(0, idx.x, idx.y + 1, idx.z + 1));
-  //     },
-  //     datafile);
-  // ADD_GRID_OUTPUT(
-  //     data, "Ey",
-  //     {
-  //       p(idx_out) = 0.25 * (data.E(1, idx) +
-  //                            data.E(1, idx.x + 1, idx.y, idx.z) +
-  //                            data.E(1, idx.x, idx.y, idx.z + 1) +
-  //                            data.E(1, idx.x + 1, idx.y, idx.z + 1));
-  //     },
-  //     datafile);
-  // ADD_GRID_OUTPUT(
-  //     data, "Ez",
-  //     {
-  //       p(idx_out) = 0.25 * (data.E(2, idx) +
-  //                            data.E(2, idx.x + 1, idx.y, idx.z) +
-  //                            data.E(2, idx.x, idx.y + 1, idx.z) +
-  //                            data.E(2, idx.x + 1, idx.y + 1, idx.z));
-  //     },
-  //     datafile);
-  // ADD_GRID_OUTPUT(
-  //     data, "Bx",
-  //     {
-  //       p(idx_out) =
-  //           0.5 * (data.B(0, idx) + data.B(0, idx.x - 1, idx.y,
-  //           idx.z));
-  //     },
-  //     datafile);
-  // ADD_GRID_OUTPUT(
-  //     data, "By",
-  //     {
-  //       p(idx_out) =
-  //           0.5 * (data.B(1, idx) + data.B(1, idx.x, idx.y - 1,
-  //           idx.z));
-  //     },
-  //     datafile);
-  // ADD_GRID_OUTPUT(
-  //     data, "Bz",
-  //     {
-  //       p(idx_out) =
-  //           0.5 * (data.B(2, idx) + data.B(2, idx.x, idx.y, idx.z -
-  //           1));
-  //     },
-  //     datafile);
+  
   add_grid_output(data.E.data(0), "Ex", data.E.stagger(0), datafile);
   add_grid_output(data.E.data(1), "Ey", data.E.stagger(1), datafile);
   add_grid_output(data.E.data(2), "Ez", data.E.stagger(2), datafile);
