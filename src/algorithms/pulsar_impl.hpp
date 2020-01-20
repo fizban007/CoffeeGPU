@@ -3,7 +3,7 @@
 
 #include "algorithms/pulsar.h"
 #include "data/typedefs.h"
-#include "math.h"
+#include <cmath>
 
 namespace Coffee {
 
