@@ -689,7 +689,7 @@ field_solver::~field_solver() {}
 
 void
 field_solver::evolve_fields(Scalar t) {
-  RANGE_PUSH("Compute", CLR_GREEN);
+  // RANGE_PUSH("Compute", CLR_GREEN);
   copy_fields();
 
   // substep #1:
@@ -698,21 +698,21 @@ field_solver::evolve_fields(Scalar t) {
   check_eGTb();
   boundary_pulsar(t + m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
-  RANGE_POP;
+  // RANGE_POP;
   m_env.send_guard_cells(m_data);
 
   // substep #2:
-  RANGE_PUSH("Compute", CLR_GREEN);
+  // RANGE_PUSH("Compute", CLR_GREEN);
   rk_push();
   rk_update(0.75, 0.25, 0.25);
   check_eGTb();
   boundary_pulsar(t + 0.5 * m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
-  RANGE_POP;
+  // RANGE_POP;
   m_env.send_guard_cells(m_data);
 
   // substep #3:
-  RANGE_PUSH("Compute", CLR_GREEN);
+  // RANGE_PUSH("Compute", CLR_GREEN);
   rk_push();
   rk_update(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
   clean_epar();
@@ -720,7 +720,7 @@ field_solver::evolve_fields(Scalar t) {
   boundary_pulsar(t + m_env.params().dt);
   boundary_absorbing();
   CudaSafeCall(cudaDeviceSynchronize());
-  RANGE_POP;
+  // RANGE_POP;
 
   m_env.send_guard_cells(m_data);
 }
