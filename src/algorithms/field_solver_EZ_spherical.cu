@@ -699,6 +699,24 @@ field_solver_EZ_spherical::Kreiss_Oliger() {
 }
 
 void
+field_solver_EZ_spherical::check_eGTb() {
+  kernel_EgtB_sph<<<blockGroupSize, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      m_env.params().shift_ghost);
+  CudaCheckError();
+}
+
+void
+field_solver_EZ_spherical::clean_epar() {
+  kernel_Epar_sph<<<blockGroupSize, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      m_env.params().shift_ghost);
+  CudaCheckError();
+}
+
+void
 field_solver_EZ_spherical::boundary_pulsar(Scalar t) {
   kernel_boundary_pulsar_sph<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
@@ -742,6 +760,7 @@ field_solver_EZ_spherical::evolve_fields(Scalar time) {
 
   for (int i = 0; i < 5; ++i) {
     timer::stamp();
+    get_ElBl();
     rk_step(As[i], Bs[i]);
     CudaSafeCall(cudaDeviceSynchronize());
     if (m_env.rank() == 0)
