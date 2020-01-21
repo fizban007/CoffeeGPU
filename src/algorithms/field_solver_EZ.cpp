@@ -471,6 +471,65 @@ void field_solver_EZ::check_eGTb() {
   }
 }
 
+void field_solver_EZ::clean_epar_check_eGTb() {
+  int shift = m_env.params().shift_ghost;
+  auto &grid = m_env.grid();
+  size_t ijk;
+  auto &Ex = m_data.E.data(0);
+  auto &Ey = m_data.E.data(1);
+  auto &Ez = m_data.E.data(2);
+  auto &Bx = m_data.B.data(0);
+  auto &By = m_data.B.data(1);
+  auto &Bz = m_data.B.data(2);
+
+  for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
+       k++) {
+    for (int j = grid.guard[1] - shift;
+         j < grid.dims[1] - grid.guard[1] + shift; j++) {
+      for (int i = grid.guard[0] - shift;
+           i < grid.dims[0] - grid.guard[0] + shift; i+=8) {
+        ijk = i + (j + k * grid.dims[1]) * grid.dims[0];
+
+        Vec8f bxvec, byvec, bzvec, exvec, eyvec, ezvec;
+        bxvec.load(Bx.host_ptr() + ijk);
+        byvec.load(By.host_ptr() + ijk);
+        bzvec.load(Bz.host_ptr() + ijk);
+        exvec.load(Ex.host_ptr() + ijk);
+        eyvec.load(Ey.host_ptr() + ijk);
+        ezvec.load(Ez.host_ptr() + ijk);
+        
+        auto B2 = bxvec * bxvec + byvec * byvec + bzvec * bzvec;
+        B2 = max(B2, TINY);
+        auto EB = bxvec * exvec + byvec * eyvec + bzvec * ezvec;
+
+        exvec = exvec - EB * bxvec / B2;
+        eyvec = eyvec - EB * byvec / B2;
+        ezvec = ezvec - EB * bzvec / B2;
+
+        // Scalar B2 = Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] * Bz[ijk];
+        // if (B2 < TINY)
+        //   B2 = TINY;
+        // Scalar EB = Ex[ijk] * Bx[ijk] + Ey[ijk] * By[ijk] + Ez[ijk] * Bz[ijk];
+
+        auto E2 = exvec * exvec + eyvec * eyvec + ezvec * ezvec;
+        auto s = sqrt(B2 / E2);
+
+        auto egtb = B2 > E2;
+        exvec = select(egtb, exvec * s, exvec);
+        eyvec = select(egtb, eyvec * s, eyvec);
+        ezvec = select(egtb, ezvec * s, ezvec);
+
+        exvec.store(Ex.host_ptr() + ijk);
+        eyvec.store(Ey.host_ptr() + ijk);
+        ezvec.store(Ez.host_ptr() + ijk);
+        // Ex[ijk] = Ex[ijk] - EB / B2 * Bx[ijk];
+        // Ey[ijk] = Ey[ijk] - EB / B2 * By[ijk];
+        // Ez[ijk] = Ez[ijk] - EB / B2 * Bz[ijk];
+      }
+    }
+  }
+}
+
 void field_solver_EZ::boundary_absorbing() {
   auto &params = m_env.params();
   auto &grid = m_env.grid();
@@ -634,10 +693,11 @@ void field_solver_EZ::evolve_fields(Scalar time) {
       timer::show_duration_since_stamp("rk_step", "ms");
 
     timer::stamp();
-    if (m_env.params().clean_ep)
-      clean_epar();
-    if (m_env.params().check_egb)
-      check_eGTb();
+    // if (m_env.params().clean_ep)
+    //   clean_epar();
+    // if (m_env.params().check_egb)
+    //   check_eGTb();
+    clean_epar_check_eGTb();
 
     boundary_pulsar(time + cs[i] * m_env.params().dt);
     if (i == 4)
@@ -655,10 +715,11 @@ void field_solver_EZ::evolve_fields(Scalar time) {
 
   timer::stamp();
   Kreiss_Oliger();
-  if (m_env.params().clean_ep)
-    clean_epar();
-  if (m_env.params().check_egb)
-    check_eGTb();
+  clean_epar_check_eGTb();
+  // if (m_env.params().clean_ep)
+  //   clean_epar();
+  // if (m_env.params().check_egb)
+  //   check_eGTb();
   boundary_pulsar(time + m_env.params().dt);
 
   m_env.send_guard_cells(m_data);

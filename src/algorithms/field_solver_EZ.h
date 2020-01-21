@@ -22,6 +22,7 @@ class field_solver_EZ {
 
   void check_eGTb();
   void clean_epar();
+  void clean_epar_check_eGTb();
 
   void rk_step(Scalar As, Scalar Bs);
   void Kreiss_Oliger();
