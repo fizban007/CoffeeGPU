@@ -2,52 +2,55 @@
 #define _FINITE_DIFF_SIMD_H_
 
 #include "data/grid.h"
+#include "utils/simd.h"
 #include "vectorf256.h"
 
 namespace Coffee {
 
 #define FFE_DISSIPATION_ORDER 6
 
-HD_INLINE Vec8f diff1_4_simd(const float *f, int ijk, int s) {
-  Vec8f fm2;
+using namespace simd;
+
+HD_INLINE Vec_f_t diff1_4_simd(const Scalar *f, int ijk, int s) {
+  Vec_f_t fm2;
   fm2.load(f + ijk - 2 * s);
-  Vec8f fm1;
+  Vec_f_t fm1;
   fm1.load(f + ijk - s);
-  Vec8f fp1;
+  Vec_f_t fp1;
   fp1.load(f + ijk + s);
-  Vec8f fp2;
+  Vec_f_t fp2;
   fp2.load(f + ijk + 2 * s);
   return (fm2 - 8.0 * fm1 + 8.0 * fp1 - fp2) / 12.0;
 }
 
-HD_INLINE Vec8f diff4_2_simd(const float *f, int ijk, int s) {
-  Vec8f fm2;
+HD_INLINE Vec_f_t diff4_2_simd(const Scalar *f, int ijk, int s) {
+  Vec_f_t fm2;
   fm2.load(f + ijk - 2 * s);
-  Vec8f fm1;
+  Vec_f_t fm1;
   fm1.load(f + ijk - s);
-  Vec8f f0;
+  Vec_f_t f0;
   f0.load(f + ijk);
-  Vec8f fp1;
+  Vec_f_t fp1;
   fp1.load(f + ijk + s);
-  Vec8f fp2;
+  Vec_f_t fp2;
   fp2.load(f + ijk + 2 * s);
   return (fm2 - 4.0 * fm1 + 6.0 * f0 - 4.0 * fp1 + fp2);
 }
 
-HD_INLINE Vec8f diff6_2_simd(const float *f, int ijk, int s) {
-  Vec8f fm3;
+HD_INLINE Vec_f_t diff6_2_simd(const Scalar *f, int ijk, int s) {
+  Vec_f_t fm3;
   fm3.load(f + ijk - 3 * s);
-  Vec8f fm2;
+  Vec_f_t fm2;
   fm2.load(f + ijk - 2 * s);
-  Vec8f fm1;
+  Vec_f_t fm1;
   fm1.load(f + ijk - s);
-  Vec8f f0;
+  Vec_f_t f0;
   f0.load(f + ijk);
-  Vec8f fp1;
+  Vec_f_t fp1;
   fp1.load(f + ijk + s);
-  Vec8f fp2;
+  Vec_f_t fp2;
   fp2.load(f + ijk + 2 * s);
-  Vec8f fp3;
+  Vec_f_t fp3;
   fp3.load(f + ijk + 3 * s);
   return (fm3 - 6.0 * fm2 + 15.0 * fm1 - 20.0 * f0 + 15.0 * fp1 - 6.0 * fp2 +
           fp3);
@@ -66,11 +69,11 @@ diff6_2(const Scalar *f, int ijk, int s) {
           f[ijk + 3 * s]);
 }
 
-HD_INLINE Vec8f df1_simd(const float *f, int ijk, int s, float inv_delta) {
+HD_INLINE Vec_f_t df1_simd(const Scalar *f, int ijk, int s, Scalar inv_delta) {
   return diff1_4_simd(f, ijk, s) * inv_delta;
 }
 
-HD_INLINE Vec8f KO_simd(const Scalar *f, int ijk, const Grid &grid) {
+HD_INLINE Vec_f_t KO_simd(const Scalar *f, int ijk, const Grid &grid) {
   if (FFE_DISSIPATION_ORDER == 4)
     return diff4_2(f, ijk, 1) + diff4_2(f, ijk, grid.dims[0]) +
            diff4_2(f, ijk, grid.dims[0] * grid.dims[1]);
