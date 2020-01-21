@@ -8,12 +8,13 @@
 #include "utils/timer.h"
 #include <fstream>
 
-#include "algorithms/metric.h"
+#include "algorithms/metric_cks.h"
 // #include "algorithms/interpolation.h"
 // #include "algorithms/pulsar.h"
 
 using namespace std;
 using namespace Coffee;
+using namespace CKS;
 
 // #define ENG
 #define EZ

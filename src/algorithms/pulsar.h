@@ -35,13 +35,9 @@ HOST_DEVICE Scalar quadru_dipole(Scalar x, Scalar y, Scalar z,
                                  Scalar q_offset_z, Scalar phase,
                                  int n);
 
+HOST_DEVICE Scalar dipole_sph_2d(Scalar r, Scalar th, int n);
+
 }  // namespace Coffee
-
-
-HOST_DEVICE Scalar
-dipole_sph_2d(Scalar r, Scalar th, int n);
-
-}
 
 #endif  // _PULSAR_H_
 

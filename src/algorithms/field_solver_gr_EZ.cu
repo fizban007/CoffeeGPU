@@ -88,14 +88,6 @@ div4(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
   return (tmpx + tmpy + tmpz) / get_sqrt_gamma(dev_params.a, x, y, z);
 }
 
-__device__ inline Scalar
-KO(const Scalar *f, int ijk) {
-  if (FFE_DISSIPATION_ORDER == 4)
-    return diff4x2(f, ijk) + diff4y2(f, ijk) + diff4z2(f, ijk);
-  if (FFE_DISSIPATION_ORDER == 6)
-    return diff6x2(f, ijk) + diff6y2(f, ijk) + diff6z2(f, ijk);
-}
-
 __global__ void
 kernel_compute_E_gr(const Scalar *Dx, const Scalar *Dy,
                     const Scalar *Dz, const Scalar *Bx,
@@ -522,15 +514,15 @@ kernel_KO_step1_gr(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
 
-    Ex_tmp[ijk] = KO(Ex, ijk);
-    Ey_tmp[ijk] = KO(Ey, ijk);
-    Ez_tmp[ijk] = KO(Ez, ijk);
+    Ex_tmp[ijk] = KO(Ex, ijk, dev_grid);
+    Ey_tmp[ijk] = KO(Ey, ijk, dev_grid);
+    Ez_tmp[ijk] = KO(Ez, ijk, dev_grid);
 
-    Bx_tmp[ijk] = KO(Bx, ijk);
-    By_tmp[ijk] = KO(By, ijk);
-    Bz_tmp[ijk] = KO(Bz, ijk);
+    Bx_tmp[ijk] = KO(Bx, ijk, dev_grid);
+    By_tmp[ijk] = KO(By, ijk, dev_grid);
+    Bz_tmp[ijk] = KO(Bz, ijk, dev_grid);
 
-    P_tmp[ijk] = KO(P, ijk);
+    P_tmp[ijk] = KO(P, ijk, dev_grid);
   }
 }
 

@@ -3,6 +3,7 @@
 #include "cuda/cuda_utility.h"
 #include "field_solver_EZ_cylindrical.h"
 #include "pulsar.h"
+#include "boundary.h"
 #include "utils/timer.h"
 
 // 2D axisymmetric code. Original x, y, z correspond to R, z, phi.
@@ -527,18 +528,8 @@ kernel_boundary_pulsar_thread(Scalar *ER, Scalar *Ez, Scalar *Ef,
   }
 }
 
-HOST_DEVICE Scalar
-pmlsigma(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Scalar sig0) {
-  if (x > xh)
-    return sig0 * cube((x - xh) / pmlscale);
-  else if (x < xl)
-    return sig0 * cube((xl - x) / pmlscale);
-  else
-    return 0.0;
-}
-
 __global__ void
-kernel_boundary_absorbing_thread(const Scalar *enx, const Scalar *eny,
+kernel_boundary_absorbing_cylindrical(const Scalar *enx, const Scalar *eny,
                                  const Scalar *enz, const Scalar *bnx,
                                  const Scalar *bny, const Scalar *bnz,
                                  Scalar *ex, Scalar *ey, Scalar *ez,
@@ -675,7 +666,7 @@ field_solver_EZ_cylindrical::boundary_pulsar(Scalar t) {
 
 void
 field_solver_EZ_cylindrical::boundary_absorbing() {
-  kernel_boundary_absorbing_thread<<<blockGroupSize, blockSize>>>(
+  kernel_boundary_absorbing_cylindrical<<<blockGroupSize, blockSize>>>(
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
       Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),

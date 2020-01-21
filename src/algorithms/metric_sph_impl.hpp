@@ -5,6 +5,10 @@
 #include "data/typedefs.h"
 #include <cmath>
 
+namespace Coffee {
+
+namespace SPH {
+
 HD_INLINE Scalar
 get_r(Scalar x, Scalar y, Scalar z) {
   return exp(x);
@@ -44,5 +48,9 @@ HD_INLINE Scalar
 get_sqrt_gamma(Scalar x, Scalar y, Scalar z) {
   return std::sqrt(get_gamma(x, y, z));
 }
+
+} // namespace SPH 
+
+} // namespace Coffee 
 
 #endif // _METRIC_SPH_IMPL_H_
