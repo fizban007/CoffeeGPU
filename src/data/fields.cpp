@@ -16,14 +16,14 @@ vector_field<T>::vector_field(const Grid& grid) : m_grid(&grid) {
   }
 }
 
-template <typename T>
-vector_field<T>::vector_field(const self_type& field)
-    : m_grid(field.m_grid) {
-  for (int i = 0; i < 3; i++) {
-    m_stagger[i] = field.m_stagger[i];
-    m_data[i] = field.m_data[i];
-  }
-}
+// template <typename T>
+// vector_field<T>::vector_field(const self_type& field)
+//     : m_grid(field.m_grid) {
+//   for (int i = 0; i < 3; i++) {
+//     m_stagger[i] = field.m_stagger[i];
+//     m_data[i] = field.m_data[i];
+//   }
+// }
 
 template <typename T>
 vector_field<T>::vector_field(self_type&& field)
@@ -37,16 +37,16 @@ vector_field<T>::vector_field(self_type&& field)
 template <typename T>
 vector_field<T>::~vector_field() {}
 
-template <typename T>
-vector_field<T>&
-vector_field<T>::operator=(const self_type &field) {
-  m_grid = field.m_grid;
-  for (int i = 0; i < 3; i++) {
-    m_stagger[i] = field.m_stagger[i];
-    m_data[i] = field.m_data[i];
-  }
-  return *this;
-}
+// template <typename T>
+// vector_field<T>&
+// vector_field<T>::operator=(const self_type &field) {
+//   m_grid = field.m_grid;
+//   for (int i = 0; i < 3; i++) {
+//     m_stagger[i] = field.m_stagger[i];
+//     m_data[i] = field.m_data[i];
+//   }
+//   return *this;
+// }
 
 template <typename T>
 vector_field<T>&
