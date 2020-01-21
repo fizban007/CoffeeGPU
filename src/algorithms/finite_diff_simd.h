@@ -64,11 +64,11 @@ inline Vec_f_t df1_simd(const Scalar *f, int ijk, int s, Scalar inv_delta) {
 
 inline Vec_f_t KO_simd(const Scalar *f, int ijk, const Grid &grid) {
   if (FFE_DISSIPATION_ORDER == 4)
-    return diff4_2(f, ijk, 1) + diff4_2(f, ijk, grid.dims[0]) +
-           diff4_2(f, ijk, grid.dims[0] * grid.dims[1]);
+    return diff4_2_simd(f, ijk, 1) + diff4_2_simd(f, ijk, grid.dims[0]) +
+           diff4_2_simd(f, ijk, grid.dims[0] * grid.dims[1]);
   else if (FFE_DISSIPATION_ORDER == 6)
-    return diff6_2(f, ijk, 1) + diff6_2(f, ijk, grid.dims[0]) +
-           diff6_2(f, ijk, grid.dims[0] * grid.dims[1]);
+    return diff6_2_simd(f, ijk, 1) + diff6_2_simd(f, ijk, grid.dims[0]) +
+           diff6_2_simd(f, ijk, grid.dims[0] * grid.dims[1]);
 }
 
 #endif
