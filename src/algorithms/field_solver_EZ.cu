@@ -1,4 +1,4 @@
-#include "algorithms/finite_diff.h"
+#include "algorithms/finite_diff_simd.h"
 #include "boundary.h"
 #include "cuda/constant_mem.h"
 #include "cuda/constant_mem_func.h"

@@ -1,11 +1,7 @@
 #include "field_solver_EZ.h"
 #include "algorithms/damping_boundary.h"
 #include "utils/simd.h"
-#if defined(__AVX2__)
 #include "algorithms/finite_diff_simd.h"
-#else
-#include "algorithms/finite_diff.h"
-#endif
 #include "algorithms/pulsar.h"
 #include "utils/timer.h"
 #include <omp.h>
@@ -105,7 +101,7 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
       // #pragma omp simd simdlen(8)
       // TODO: Need to consider case where iteration is not a multiple
-      // of 8
+      // of vec_width
       for (int i = grid.guard[0] - shift;
            i < grid.dims[0] - grid.guard[0] + shift; i += vec_width) {
         ijk = i + (j + k * grid.dims[1]) * grid.dims[0];
