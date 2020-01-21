@@ -1,11 +1,13 @@
 #ifndef _METRIC_CKS_IMPL_H_
 #define _METRIC_CKS_IMPL_H_
 
-#include "metric_cks.h"
+#include "algorithms/metric_cks.h"
+#include "data/typedefs.h"
+#include <cmath>
 
 namespace Coffee {
 
-using namespace CKS;
+namespace CKS {
 
 HOST_DEVICE Scalar
 get_R2(Scalar x, Scalar y, Scalar z) {
@@ -178,6 +180,8 @@ get_gamma_u33(Scalar a, Scalar x, Scalar y, Scalar z) {
              std::max(2.0f * r * r * r + r * r * r * r + a * a * z * z, TINY);
 }
 
-}
+} // namespace CKS 
+
+} // namespace Coffee
 
 #endif // _METRIC_CKS_IMPL_H_

@@ -8,6 +8,7 @@
 #include "utils/nvproftool.h"
 #include "utils/timer.h"
 #include "boundary.h"
+#include "algorithms/finite_diff.h"
 
 #define BLOCK_SIZE_X 32
 #define BLOCK_SIZE_Y 2
