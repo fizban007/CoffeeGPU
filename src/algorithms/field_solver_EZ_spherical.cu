@@ -1,10 +1,10 @@
+#include "algorithms/finite_diff.h"
 #include "cuda/constant_mem.h"
 #include "cuda/constant_mem_func.h"
 #include "cuda/cuda_utility.h"
 #include "field_solver_EZ_spherical.h"
 #include "pulsar.h"
 #include "utils/timer.h"
-#include "algorithms/finite_diff.h"
 
 // 2D axisymmetric code in spherical coordinates. Original x, y, z
 // correspond to x = log r, theta, phi.
@@ -23,7 +23,6 @@ using namespace SPH;
 static dim3 blockSize(BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z);
 
 static dim3 blockGroupSize;
-
 
 __device__ __forceinline__ Scalar
 dfdx(const Scalar *f, int ijk) {
@@ -562,10 +561,12 @@ kernel_boundary_absorbing_sph(const Scalar *enx, const Scalar *eny,
     x = dev_grid.pos(0, i, 1);
     y = dev_grid.pos(1, j, 1);
     z = dev_grid.pos(2, k, 1);
+    Scalar r = get_r(x, y, z);
     Scalar xh = dev_params.lower[0] + dev_params.size[0] -
                 dev_params.pml[0] * dev_grid.delta[0];
+    Scalar rh = get_r(xh, y, z);
     if (x > xh) {
-      sig = pmlsigma_sph(x, xh, dev_params.pmllen * dev_grid.delta[0],
+      sig = pmlsigma_sph(r, rh, dev_params.pmllen * 1.0,
                          dev_params.sigpml);
       if (sig > TINY) {
         ex[ijk] = exp(-sig) * enx[ijk] +
@@ -585,7 +586,8 @@ kernel_boundary_absorbing_sph(const Scalar *enx, const Scalar *eny,
   }
 }
 
-field_solver_EZ_spherical::field_solver_EZ_spherical(sim_data &mydata, sim_environment &env)
+field_solver_EZ_spherical::field_solver_EZ_spherical(
+    sim_data &mydata, sim_environment &env)
     : m_data(mydata), m_env(env) {
   dE = vector_field<Scalar>(m_data.env.grid());
   dE.copy_stagger(m_data.E);
@@ -641,12 +643,13 @@ field_solver_EZ_spherical::field_solver_EZ_spherical(sim_data &mydata, sim_envir
 
 field_solver_EZ_spherical::~field_solver_EZ_spherical() {}
 
-void get_ElBl() {
+void
+get_ElBl() {
   kernel_compute_ElBl<<<blockGroupSize, blockSize>>>(
-    m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-    m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-    El.dev_ptr(0), El.dev_ptr(1), El.dev_ptr(2), Bl.dev_ptr(0), 
-    Bl.dev_ptr(1), Bl.dev_ptr(2), m_env.params().shift_ghost);
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      El.dev_ptr(0), El.dev_ptr(1), El.dev_ptr(2), Bl.dev_ptr(0),
+      Bl.dev_ptr(1), Bl.dev_ptr(2), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -670,6 +673,150 @@ field_solver_EZ_spherical::rk_step(Scalar As, Scalar Bs) {
       dB.dev_ptr(1), dB.dev_ptr(2), m_data.P.dev_ptr(), dP.dev_ptr(),
       m_env.params().shift_ghost, Bs);
   CudaCheckError();
+}
+
+void
+field_solver_EZ_spherical::Kreiss_Oliger() {
+  kernel_KO_step1_sph<<<blockGroupSize, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
+      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
+      m_data.P.dev_ptr(), Ptmp.dev_ptr(), m_env.params().shift_ghost);
+  CudaCheckError();
+  kernel_KO_step2_sph<<<blockGroupSize, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
+      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
+      m_data.P.dev_ptr(), Ptmp.dev_ptr(), m_env.params().shift_ghost);
+  CudaCheckError();
+}
+
+void
+field_solver_EZ_spherical::boundary_pulsar(Scalar t) {
+  kernel_boundary_pulsar_sph<<<blockGroupSize, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
+  CudaCheckError();
+}
+
+void
+field_solver_EZ_spherical::boundary_axis() {
+  kernel_boundary_axis_sph<<<blockGroupSize, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      m_data.P.dev_ptr(), m_env.params().shift_ghost);
+  CudaCheckError();
+}
+
+void
+field_solver_EZ_spherical::boundary_absorbing() {
+  kernel_boundary_absorbing_sph<<<blockGroupSize, blockSize>>>(
+      Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
+      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      m_env.params().shift_ghost);
+  CudaCheckError();
+}
+
+void
+field_solver_EZ_spherical::evolve_fields(Scalar time) {
+  Scalar As[5] = {0, -0.4178904745, -1.192151694643, -1.697784692471,
+                  -1.514183444257};
+  Scalar Bs[5] = {0.1496590219993, 0.3792103129999, 0.8229550293869,
+                  0.6994504559488, 0.1530572479681};
+  Scalar cs[5] = {0, 0.1496590219993, 0.3704009573644, 0.6222557631345,
+                  0.9582821306784};
+
+  Etmp.copy_from(m_data.E);
+  Btmp.copy_from(m_data.B);
+  Ptmp.copy_from(m_data.P);
+
+  for (int i = 0; i < 5; ++i) {
+    timer::stamp();
+    rk_step(As[i], Bs[i]);
+    CudaSafeCall(cudaDeviceSynchronize());
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("rk_step", "ms");
+
+    timer::stamp();
+    if (m_env.params().clean_ep) clean_epar();
+    if (m_env.params().check_egb) check_eGTb();
+
+    boundary_pulsar(time + cs[i] * m_env.params().dt);
+    if (i == 4) boundary_absorbing();
+
+    CudaSafeCall(cudaDeviceSynchronize());
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("clean/check/boundary", "ms");
+
+    timer::stamp();
+    m_env.send_guard_cells(m_data);
+    // m_env.send_guard_cell_array(P);
+    CudaSafeCall(cudaDeviceSynchronize());
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("communication", "ms");
+  }
+
+  timer::stamp();
+  Kreiss_Oliger();
+  if (m_env.params().clean_ep) clean_epar();
+  if (m_env.params().check_egb) check_eGTb();
+  boundary_pulsar(time + m_env.params().dt);
+  CudaSafeCall(cudaDeviceSynchronize());
+  m_env.send_guard_cells(m_data);
+  // m_env.send_guard_cell_array(P);
+  if (m_env.rank() == 0)
+    timer::show_duration_since_stamp("Kreiss Oliger", "ms");
+}
+
+Scalar
+field_solver_EZ_spherical::total_energy(vector_field<Scalar> &f) {
+  f.sync_to_host();
+  Scalar Wtmp = 0.0, W = 0.0;
+  Scalar xh = m_env.params().lower[0] + m_env.params().size[0] -
+              m_env.params().pml[0] * m_env.grid().delta[0];
+  Scalar xl = m_env.params().lower[0];
+  Scalar yh = m_env.params().lower[1] + m_env.params().size[1] -
+              m_env.params().pml[1] * m_env.grid().delta[1];
+  Scalar yl = m_env.params().lower[1] +
+              m_env.params().pml[1] * m_env.grid().delta[1];
+  Scalar zh = m_env.params().lower[2] + m_env.params().size[2] -
+              m_env.params().pml[2] * m_env.grid().delta[2];
+  Scalar zl = m_env.params().lower[2] +
+              m_env.params().pml[2] * m_env.grid().delta[2];
+  for (int k = m_env.grid().guard[2];
+       k < m_env.grid().dims[2] - m_env.grid().guard[2]; ++k) {
+    for (int j = m_env.grid().guard[1];
+         j < m_env.grid().dims[1] - m_env.grid().guard[1]; ++j) {
+      for (int i = m_env.grid().guard[0];
+           i < m_env.grid().dims[0] - m_env.grid().guard[0]; ++i) {
+        int ijk = i + j * m_env.grid().dims[0] +
+                  k * m_env.grid().dims[0] * m_env.grid().dims[1];
+        Scalar x = m_env.grid().pos(0, i, 1);
+        Scalar y = m_env.grid().pos(1, j, 1);
+        Scalar z = m_env.grid().pos(2, k, 1);
+        Scalar r = get_r(x, y, z);
+        if (r >= m_env.params().radius && x < xh && x > xl && y < yh &&
+            y > yl && z < zh && z > zl) {
+          Wtmp += (get_gamma_d11(x, y, z) * f.data(0)[ijk] *
+                       f.data(0)[ijk] +
+                   get_gamma_d22(x, y, z) * f.data(1)[ijk] *
+                       f.data(1)[ijk] +
+                   get_gamma_d33(x, y, z) * f.data(2)[ijk] *
+                       f.data(2)[ijk]) *
+                  get_sqrt_gamma(x, y, z) * m_env.grid().delta[0] *
+                  m_env.grid().delta[1] * m_env.grid().delta[2];
+        }
+      }
+    }
+  }
+  MPI_Reduce(&Wtmp, &W, 1, m_env.scalar_type(), MPI_SUM, 0,
+             m_env.world());
+  return W;
 }
 
 }  // namespace Coffee
