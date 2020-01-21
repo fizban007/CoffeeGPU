@@ -5,6 +5,7 @@
 #include "field_solver_EZ_spherical.h"
 #include "pulsar.h"
 #include "utils/timer.h"
+#include "metric_sph.h"
 
 // 2D axisymmetric code in spherical coordinates. Original x, y, z
 // correspond to x = log r, theta, phi.
@@ -41,7 +42,7 @@ dfdz(const Scalar *f, int ijk) {
 }
 
 __device__ Scalar
-div4(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
+div4_sph(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
      Scalar x, Scalar y, Scalar z) {
   Scalar tmpx =
       (fx[ijk - 2] * get_sqrt_gamma(x - 2.0 * dev_grid.delta[0], y, z) -
@@ -146,8 +147,8 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     Scalar rotEy = (dfdz(Elx, ijk) - dfdx(Elz, ijk)) / gmsqrt;
     Scalar rotEz = (dfdx(Ely, ijk) - dfdy(Elx, ijk)) / gmsqrt;
 
-    Scalar divE = div4(Ex, Ey, Ez, ijk, x, y, z);
-    Scalar divB = div4(Bx, By, Bz, ijk, x, y, z);
+    Scalar divE = div4_sph(Ex, Ey, Ez, ijk, x, y, z);
+    Scalar divB = div4_sph(Bx, By, Bz, ijk, x, y, z);
 
     Scalar B2 =
         Bx[ijk] * Blx[ijk] + By[ijk] * Bly[ijk] + Bz[ijk] * Blz[ijk];
@@ -288,6 +289,10 @@ kernel_Epar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
 
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
+
     Scalar B2 = get_gamma_d11(x, y, z) * Bx[ijk] * Bx[ijk] +
                 get_gamma_d22(x, y, z) * By[ijk] * By[ijk] +
                 get_gamma_d33(x, y, z) * Bz[ijk] * Bz[ijk];
@@ -317,6 +322,10 @@ kernel_EgtB_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
       k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
+
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
 
     Scalar B2 = get_gamma_d11(x, y, z) * Bx[ijk] * Bx[ijk] +
                 get_gamma_d22(x, y, z) * By[ijk] * By[ijk] +
@@ -354,15 +363,15 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
 
-    Ex_tmp[ijk] = KO(Ex, ijk);
-    Ey_tmp[ijk] = KO(Ey, ijk);
-    Ez_tmp[ijk] = KO(Ez, ijk);
+    Ex_tmp[ijk] = KO(Ex, ijk, dev_grid);
+    Ey_tmp[ijk] = KO(Ey, ijk, dev_grid);
+    Ez_tmp[ijk] = KO(Ez, ijk, dev_grid);
 
-    Bx_tmp[ijk] = KO(Bx, ijk);
-    By_tmp[ijk] = KO(By, ijk);
-    Bz_tmp[ijk] = KO(Bz, ijk);
+    Bx_tmp[ijk] = KO(Bx, ijk, dev_grid);
+    By_tmp[ijk] = KO(By, ijk, dev_grid);
+    Bz_tmp[ijk] = KO(Bz, ijk, dev_grid);
 
-    P_tmp[ijk] = KO(P, ijk);
+    P_tmp[ijk] = KO(P, ijk, dev_grid);
   }
 }
 
@@ -409,7 +418,7 @@ kernel_KO_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 }
 
 __device__ Scalar
-wpert(Scalar t, Scalar r, Scalar th) {
+wpert_sph(Scalar t, Scalar r, Scalar th) {
   Scalar th1 = acos(std::sqrt(1.0 - 1.0 / dev_params.rpert1));
   Scalar th2 = acos(std::sqrt(1.0 - 1.0 / dev_params.rpert2));
   if (th1 > th2) {
@@ -452,7 +461,7 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar z = dev_grid.pos(2, k, 1);
     Scalar r = get_r(x, y, z);
     Scalar th = get_th(x, y, z);
-    Scalar w = dev_params.omega + wpert(t, r, th);
+    Scalar w = dev_params.omega + wpert_sph(t, r, th);
 
     if (r <= dev_params.radius) {
       Scalar bxn = dev_params.b0 * dipole_sph_2d(r, th, 0);
@@ -472,7 +481,7 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
 }
 
 __global__ void
-kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ry, Scalar *Ez, Scalar *Bx,
+kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                          Scalar *By, Scalar *Bz, Scalar *P, int shift) {
   size_t ijk;
   int i =
@@ -620,10 +629,6 @@ field_solver_EZ_spherical::field_solver_EZ_spherical(
   Ptmp = multi_array<Scalar>(m_data.env.grid().extent());
   Ptmp.assign_dev(0.0);
 
-  skymap = multi_array<Scalar>(env.params().skymap_Nth,
-                               env.params().skymap_Nph);
-  skymap.assign_dev(0.0);
-  skymap.sync_to_host();
 
   blockGroupSize =
       dim3((m_data.env.grid().reduced_dim(0) +
@@ -644,7 +649,7 @@ field_solver_EZ_spherical::field_solver_EZ_spherical(
 field_solver_EZ_spherical::~field_solver_EZ_spherical() {}
 
 void
-get_ElBl() {
+field_solver_EZ_spherical::get_ElBl() {
   kernel_compute_ElBl<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),

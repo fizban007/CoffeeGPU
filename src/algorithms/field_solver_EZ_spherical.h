@@ -21,6 +21,7 @@ class field_solver_EZ_spherical {
 
   void check_eGTb();
   void clean_epar();
+  void get_ElBl();
 
   void rk_step(Scalar As, Scalar Bs);
   void Kreiss_Oliger();

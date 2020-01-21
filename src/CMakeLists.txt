@@ -22,7 +22,6 @@ if(use_cuda AND CMAKE_CUDA_COMPILER)
     # "algorithms/field_solver_gr.cu"
     "algorithms/pulsar.cu"
     "algorithms/metric_cks.cu"
-    "algorithms/metric_sph.cu"
    )
 else()
   list(APPEND Coffee_src
