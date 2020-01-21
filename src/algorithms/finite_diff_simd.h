@@ -2,7 +2,7 @@
 #define _FINITE_DIFF_SIMD_H_
 
 #include "data/grid.h"
-#include "vectorclass.h"
+#include "vectorf256.h"
 
 namespace Coffee {
 
