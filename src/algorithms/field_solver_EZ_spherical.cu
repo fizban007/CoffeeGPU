@@ -760,6 +760,7 @@ field_solver_EZ_spherical::evolve_fields(Scalar time) {
 
   for (int i = 0; i < 5; ++i) {
     timer::stamp();
+    boundary_axis();
     get_ElBl();
     rk_step(As[i], Bs[i]);
     CudaSafeCall(cudaDeviceSynchronize());
