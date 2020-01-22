@@ -22,7 +22,7 @@ inline Vec_f_t diff1_4_simd(const Scalar *f, int ijk, int s) {
   fp1.load(f + ijk + s);
   Vec_f_t fp2;
   fp2.load(f + ijk + 2 * s);
-  return (fm2 - 8.0 * fm1 + 8.0 * fp1 - fp2) / 12.0;
+  return (fm2 - fm1 * 8.0 + fp1 * 8.0 - fp2) / 12.0;
 }
 
 inline Vec_f_t diff4_2_simd(const Scalar *f, int ijk, int s) {

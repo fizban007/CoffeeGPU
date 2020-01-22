@@ -501,7 +501,7 @@ field_solver_EZ::clean_epar_check_eGTb() {
         auto E2 = exvec * exvec + eyvec * eyvec + ezvec * ezvec;
         auto s = sqrt(B2 / E2);
 
-        auto egtb = B2 > E2;
+        auto egtb = E2 > B2;
         exvec = select(egtb, exvec * s, exvec);
         eyvec = select(egtb, eyvec * s, eyvec);
         ezvec = select(egtb, ezvec * s, ezvec);

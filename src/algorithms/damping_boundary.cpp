@@ -50,9 +50,9 @@ damping_boundary(const vector_field<Scalar>& En,
           // if (x > xh || y < yl || y > yh) {
           sigx = pmlsigma(x, xl, xh, params.pmllen * grid.delta[0],
                           params.sigpml);
-          sigy = pmlsigma(y, yl, yh, params.pmllen * grid.delta[0],
+          sigy = pmlsigma(y, yl, yh, params.pmllen * grid.delta[1],
                           params.sigpml);
-          sigz = pmlsigma(z, zl, zh, params.pmllen * grid.delta[0],
+          sigz = pmlsigma(z, zl, zh, params.pmllen * grid.delta[2],
                           params.sigpml);
           sig = sigx + sigy + sigz;
           // sig = sigx + sigy;
@@ -69,8 +69,8 @@ damping_boundary(const vector_field<Scalar>& En,
                       (1.0 - exp(-sig)) / sig * (by[ijk] - bny[ijk]);
             bz[ijk] = exp(-sig) * bnz[ijk] +
                       (1.0 - exp(-sig)) / sig * (bz[ijk] - bnz[ijk]);
-            P[ijk] = exp(-sig) * Pn[ijk] +
-                     (1.0 - exp(-sig)) / sig * (P[ijk] - Pn[ijk]);
+            // P[ijk] = exp(-sig) * Pn[ijk] +
+            //          (1.0 - exp(-sig)) / sig * (P[ijk] - Pn[ijk]);
           }
         }
       }
