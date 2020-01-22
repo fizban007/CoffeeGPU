@@ -519,7 +519,7 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       By[ijk] = 0.0;
       Bz[ijk] = 0.0;
       P[ijk] = P[ijk + s];
-      for (int l = 1; l <= 3; ++l) {
+      for (int l = 1; l <= dev_grid.guard[1]; ++l) {
         Ex[ijk - l * s] = Ex[ijk + l * s];
         Ey[ijk - l * s] = -Ey[ijk + l * s];
         Ez[ijk - l * s] = -Ez[ijk + l * s];
@@ -536,7 +536,7 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       By[ijk] = 0.0;
       Bz[ijk] = 0.0;
       P[ijk] = P[ijk - s];
-      for (int l = 1; l <= 3; ++l) {
+      for (int l = 1; l <= dev_grid.guard[1]; ++l) {
         Ex[ijk + l * s] = Ex[ijk - l * s];
         Ey[ijk + l * s] = -Ey[ijk - l * s];
         Ez[ijk + l * s] = -Ez[ijk - l * s];
