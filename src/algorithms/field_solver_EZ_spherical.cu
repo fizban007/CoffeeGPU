@@ -821,10 +821,10 @@ field_solver_EZ_spherical::total_energy(vector_field<Scalar> &f) {
               m_env.params().pml[1] * m_env.grid().delta[1];
   Scalar yl = m_env.params().lower[1] +
               m_env.params().pml[1] * m_env.grid().delta[1];
-  Scalar zh = m_env.params().lower[2] + m_env.params().size[2] -
-              m_env.params().pml[2] * m_env.grid().delta[2];
-  Scalar zl = m_env.params().lower[2] +
-              m_env.params().pml[2] * m_env.grid().delta[2];
+  // Scalar zh = m_env.params().lower[2] + m_env.params().size[2] -
+  //             m_env.params().pml[2] * m_env.grid().delta[2];
+  // Scalar zl = m_env.params().lower[2] +
+  //             m_env.params().pml[2] * m_env.grid().delta[2];
   for (int k = m_env.grid().guard[2];
        k < m_env.grid().dims[2] - m_env.grid().guard[2]; ++k) {
     for (int j = m_env.grid().guard[1];
@@ -838,7 +838,7 @@ field_solver_EZ_spherical::total_energy(vector_field<Scalar> &f) {
         Scalar z = m_env.grid().pos(2, k, 1);
         Scalar r = get_r(x, y, z);
         if (r >= m_env.params().radius && x < xh && x > xl && y < yh &&
-            y > yl && z < zh && z > zl) {
+            y > yl) {
           Wtmp += (get_gamma_d11(x, y, z) * f.data(0)[ijk] *
                        f.data(0)[ijk] +
                    get_gamma_d22(x, y, z) * f.data(1)[ijk] *
@@ -846,7 +846,7 @@ field_solver_EZ_spherical::total_energy(vector_field<Scalar> &f) {
                    get_gamma_d33(x, y, z) * f.data(2)[ijk] *
                        f.data(2)[ijk]) *
                   get_sqrt_gamma(x, y, z) * m_env.grid().delta[0] *
-                  m_env.grid().delta[1] * m_env.grid().delta[2];
+                  m_env.grid().delta[1];
         }
       }
     }
