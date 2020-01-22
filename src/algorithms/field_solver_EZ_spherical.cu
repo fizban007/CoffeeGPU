@@ -37,8 +37,9 @@ dfdy(const Scalar *f, int ijk) {
 
 __device__ __forceinline__ Scalar
 dfdz(const Scalar *f, int ijk) {
-  return df1(f, ijk, dev_grid.dims[0] * dev_grid.dims[1],
-             dev_grid.inv_delta[2]);
+  // return df1(f, ijk, dev_grid.dims[0] * dev_grid.dims[1],
+  //            dev_grid.inv_delta[2]);
+  return 0.0;
 }
 
 __device__ Scalar
@@ -64,18 +65,27 @@ div4_sph(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
        fy[ijk + 2 * s] *
            get_sqrt_gamma(x, y + 2.0 * dev_grid.delta[1], z)) /
       12.0 / dev_grid.delta[1];
-  s = dev_grid.dims[0] * dev_grid.dims[1];
-  Scalar tmpz =
-      (fz[ijk - 2 * s] *
-           get_sqrt_gamma(x, y, z - 2.0 * dev_grid.delta[2]) -
-       8.0 * fz[ijk - 1 * s] *
-           get_sqrt_gamma(x, y, z - 1.0 * dev_grid.delta[2]) +
-       8.0 * fz[ijk + 1 * s] *
-           get_sqrt_gamma(x, y, z + 1.0 * dev_grid.delta[2]) -
-       fz[ijk + 2 * s] *
-           get_sqrt_gamma(x, y, z + 2.0 * dev_grid.delta[2])) /
-      12.0 / dev_grid.delta[2];
+  // s = dev_grid.dims[0] * dev_grid.dims[1];
+  // Scalar tmpz =
+  //     (fz[ijk - 2 * s] *
+  //          get_sqrt_gamma(x, y, z - 2.0 * dev_grid.delta[2]) -
+  //      8.0 * fz[ijk - 1 * s] *
+  //          get_sqrt_gamma(x, y, z - 1.0 * dev_grid.delta[2]) +
+  //      8.0 * fz[ijk + 1 * s] *
+  //          get_sqrt_gamma(x, y, z + 1.0 * dev_grid.delta[2]) -
+  //      fz[ijk + 2 * s] *
+  //          get_sqrt_gamma(x, y, z + 2.0 * dev_grid.delta[2])) /
+  //     12.0 / dev_grid.delta[2];
+  Scalar tmpz = 0.0;
   return (tmpx + tmpy + tmpz) / get_sqrt_gamma(x, y, z);
+}
+
+HD_INLINE Scalar
+KO_2d(const Scalar *f, int ijk, const Grid &grid) {
+  if (FFE_DISSIPATION_ORDER == 4)
+    return diff4_2(f, ijk, 1) + diff4_2(f, ijk, grid.dims[0]);
+  else if (FFE_DISSIPATION_ORDER == 6)
+    return diff6_2(f, ijk, 1) + diff6_2(f, ijk, grid.dims[0]);
 }
 
 __global__ void
@@ -363,15 +373,15 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
 
-    Ex_tmp[ijk] = KO(Ex, ijk, dev_grid);
-    Ey_tmp[ijk] = KO(Ey, ijk, dev_grid);
-    Ez_tmp[ijk] = KO(Ez, ijk, dev_grid);
+    Ex_tmp[ijk] = KO_2d(Ex, ijk, dev_grid);
+    Ey_tmp[ijk] = KO_2d(Ey, ijk, dev_grid);
+    Ez_tmp[ijk] = KO_2d(Ez, ijk, dev_grid);
 
-    Bx_tmp[ijk] = KO(Bx, ijk, dev_grid);
-    By_tmp[ijk] = KO(By, ijk, dev_grid);
-    Bz_tmp[ijk] = KO(Bz, ijk, dev_grid);
+    Bx_tmp[ijk] = KO_2d(Bx, ijk, dev_grid);
+    By_tmp[ijk] = KO_2d(By, ijk, dev_grid);
+    Bz_tmp[ijk] = KO_2d(Bz, ijk, dev_grid);
 
-    P_tmp[ijk] = KO(P, ijk, dev_grid);
+    P_tmp[ijk] = KO_2d(P, ijk, dev_grid);
   }
 }
 
