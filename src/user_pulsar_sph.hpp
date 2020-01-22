@@ -34,5 +34,7 @@ data.B.initialize(2, [&](Scalar x, Scalar y, Scalar z) {
 
 data.E.initialize();
 data.B0.initialize();
+data.P.assign(0.0);
+data.P.sync_to_device();
 
 #endif  // _USER_INIT_H_

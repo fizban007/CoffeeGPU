@@ -169,12 +169,12 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
         (divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) / gmsqrt +
          Jp * Bz[ijk]) /
         B2;
-    Scalar Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
-    Scalar Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
-    Scalar Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
-    // Scalar Px = 0.0;
-    // Scalar Py = 0.0;
-    // Scalar Pz = 0.0;
+    // Scalar Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
+    // Scalar Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
+    // Scalar Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
+    Scalar Px = 0.0;
+    Scalar Py = 0.0;
+    Scalar Pz = 0.0;
 
     // dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
     //                                           P[ijk] /
