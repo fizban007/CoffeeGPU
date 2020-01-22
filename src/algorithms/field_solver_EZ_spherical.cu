@@ -754,13 +754,13 @@ field_solver_EZ_spherical::evolve_fields(Scalar time) {
   Scalar cs[5] = {0, 0.1496590219993, 0.3704009573644, 0.6222557631345,
                   0.9582821306784};
 
+  boundary_axis();
   Etmp.copy_from(m_data.E);
   Btmp.copy_from(m_data.B);
   Ptmp.copy_from(m_data.P);
 
   for (int i = 0; i < 5; ++i) {
     timer::stamp();
-    boundary_axis();
     get_ElBl();
     rk_step(As[i], Bs[i]);
     CudaSafeCall(cudaDeviceSynchronize());
@@ -771,9 +771,9 @@ field_solver_EZ_spherical::evolve_fields(Scalar time) {
     if (m_env.params().clean_ep) clean_epar();
     if (m_env.params().check_egb) check_eGTb();
 
-    boundary_axis();
     boundary_pulsar(time + cs[i] * m_env.params().dt);
     if (i == 4) boundary_absorbing();
+    boundary_axis();
 
     CudaSafeCall(cudaDeviceSynchronize());
     if (m_env.rank() == 0)
@@ -792,6 +792,7 @@ field_solver_EZ_spherical::evolve_fields(Scalar time) {
   if (m_env.params().clean_ep) clean_epar();
   if (m_env.params().check_egb) check_eGTb();
   boundary_pulsar(time + m_env.params().dt);
+  boundary_axis();
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
   // m_env.send_guard_cell_array(P);
