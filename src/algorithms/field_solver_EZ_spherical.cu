@@ -473,7 +473,7 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar th = get_th(x, y, z);
     Scalar w = dev_params.omega + wpert_sph(t, r, th);
 
-    if (r <= dev_params.radius) {
+    if (r <= dev_params.radius + dev_grid.delta[0]) {
       Scalar bxn = dev_params.b0 * dipole_sph_2d(r, th, 0);
       Scalar byn = dev_params.b0 * dipole_sph_2d(r, th, 1);
       Scalar bzn = dev_params.b0 * dipole_sph_2d(r, th, 2);
@@ -511,7 +511,7 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Scalar r = get_r(x, y, z);
     Scalar th = get_th(x, y, z);
     int s = dev_grid.dims[0];
-    if (std::abs(th) < dev_grid.delta[1] / 4.0) {
+    if (std::abs(th) < dev_grid.delta[1] / 2.0) {
       Ex[ijk] = Ex[ijk + s];
       Ey[ijk] = 0.0;
       Ez[ijk] = 0.0;
@@ -519,7 +519,7 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       By[ijk] = 0.0;
       Bz[ijk] = 0.0;
       P[ijk] = P[ijk + s];
-      for (int l = 1; l <= dev_grid.guard[1]; ++l) {
+      for (int l = 1; l <= 3; ++l) {
         Ex[ijk - l * s] = Ex[ijk + l * s];
         Ey[ijk - l * s] = -Ey[ijk + l * s];
         Ez[ijk - l * s] = -Ez[ijk + l * s];
@@ -528,7 +528,7 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
         Bz[ijk - l * s] = -Bz[ijk + l * s];
       }
     }
-    if (std::abs(th - M_PI) < dev_grid.delta[1] / 4.0) {
+    else if (std::abs(th - M_PI) < dev_grid.delta[1] / 2.0) {
       Ex[ijk] = Ex[ijk - s];
       Ey[ijk] = 0.0;
       Ez[ijk] = 0.0;
@@ -536,7 +536,7 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       By[ijk] = 0.0;
       Bz[ijk] = 0.0;
       P[ijk] = P[ijk - s];
-      for (int l = 1; l <= dev_grid.guard[1]; ++l) {
+      for (int l = 1; l <= 3; ++l) {
         Ex[ijk + l * s] = Ex[ijk - l * s];
         Ey[ijk + l * s] = -Ey[ijk - l * s];
         Ez[ijk + l * s] = -Ez[ijk - l * s];
