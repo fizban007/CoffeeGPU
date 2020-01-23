@@ -136,23 +136,35 @@ sim_environment::setup_domain() {
 
 void
 sim_environment::send_guard_cell_array(multi_array<Scalar>& array) {
-  send_array_x(array, -1);
-  send_array_x(array, 1);
-  send_array_y(array, -1);
-  send_array_y(array, 1);
-  send_array_z(array, -1);
-  send_array_z(array, 1);
+  if (m_mpi_dims[0] > 1 || m_is_periodic[0]) {
+    send_array_x(array, -1);
+    send_array_x(array, 1);
+  }
+  if (m_mpi_dims[1] > 1 || m_is_periodic[1]) {
+    send_array_y(array, -1);
+    send_array_y(array, 1);
+  }
+  if (m_mpi_dims[2] > 1 || m_is_periodic[2]) {
+    send_array_z(array, -1);
+    send_array_z(array, 1);
+  }
 }
 
 void
 sim_environment::send_guard_cells(sim_data& data) {
   // RANGE_PUSH("communication", CLR_CYAN);
-  send_guard_cell_x(data, -1);
-  send_guard_cell_x(data, 1);
-  send_guard_cell_y(data, -1);
-  send_guard_cell_y(data, 1);
-  send_guard_cell_z(data, -1);
-  send_guard_cell_z(data, 1);
+  if (m_mpi_dims[0] > 1 || m_is_periodic[0]) {
+    send_guard_cell_x(data, -1);
+    send_guard_cell_x(data, 1);
+  }
+  if (m_mpi_dims[1] > 1 || m_is_periodic[1]) {
+    send_guard_cell_y(data, -1);
+    send_guard_cell_y(data, 1);
+  }
+  if (m_mpi_dims[2] > 1 || m_is_periodic[2]) {
+    send_guard_cell_z(data, -1);
+    send_guard_cell_z(data, 1);
+  }
   // RANGE_POP;
 }
 
