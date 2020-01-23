@@ -176,7 +176,7 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
          Jp * By[ijk]) /
         B2;
     Scalar Jz =
-        (divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) / gmsqrt +
+        (divE * (Elx[ijk] * Bly[ijk] - Ely[ijk] * Blx[ijk]) / gmsqrt +
          Jp * Bz[ijk]) /
         B2;
     // Scalar Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
