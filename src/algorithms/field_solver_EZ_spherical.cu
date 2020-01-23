@@ -403,7 +403,7 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar th = get_th(x, y, z);
     Scalar w = dev_params.omega + wpert_sph(t, r, th);
 
-    if (r <= dev_params.radius + dev_grid.delta[0]) {
+    if (r <= dev_params.radius + TINY) {
       Scalar bxn = dev_params.b0 * dipole_sph_2d(r, th, 0);
       Scalar byn = dev_params.b0 * dipole_sph_2d(r, th, 1);
       Scalar bzn = dev_params.b0 * dipole_sph_2d(r, th, 2);
@@ -430,7 +430,7 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
 
   if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
-      j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
+      j < dev_grid.dims[1] - dev_grid.guard[1] + 1 + shift) {
     ijk = i + j * dev_grid.dims[0];
     Scalar x = dev_grid.pos(0, i, 1);
     Scalar y = dev_grid.pos(1, j, 1);
