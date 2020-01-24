@@ -581,9 +581,7 @@ field_solver_EZ_spherical::field_solver_EZ_spherical(
            (m_data.env.grid().reduced_dim(1) +
             m_env.params().shift_ghost * 2 + blockSize.y - 1) /
                blockSize.y,
-           (m_data.env.grid().reduced_dim(2) +
-            m_env.params().shift_ghost * 2 + blockSize.z - 1) /
-               blockSize.z);
+           1);
   std::cout << blockSize.x << ", " << blockSize.y << ", " << blockSize.z
             << std::endl;
   std::cout << blockGroupSize.x << ", " << blockGroupSize.y << ", "
