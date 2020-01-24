@@ -141,6 +141,8 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     Scalar y = dev_grid.pos(1, j, 1);
     Scalar z = 0.0;
 
+    Scalar Jx, Jy, Jz;
+
     Scalar gmsqrt = get_sqrt_gamma(x, y, z);
 
     Scalar rotBx = (dfdy(Blz, ijk) - dfdz(Bly, ijk)) / gmsqrt;
@@ -153,25 +155,33 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     Scalar divE = div4_sph(Ex, Ey, Ez, ijk, x, y, z);
     Scalar divB = div4_sph(Bx, By, Bz, ijk, x, y, z);
 
-    Scalar B2 =
-        Bx[ijk] * Blx[ijk] + By[ijk] * Bly[ijk] + Bz[ijk] * Blz[ijk];
-    if (B2 < TINY) B2 = TINY;
+    if (dev_params.calc_current) {
+      Scalar B2 =
+          Bx[ijk] * Blx[ijk] + By[ijk] * Bly[ijk] + Bz[ijk] * Blz[ijk];
+      if (B2 < TINY) B2 = TINY;
 
-    Scalar Jp =
-        (Blx[ijk] * rotBx + Bly[ijk] * rotBy + Blz[ijk] * rotBz) -
-        (Elx[ijk] * rotEx + Ely[ijk] * rotEy + Elz[ijk] * rotEz);
-    Scalar Jx =
-        (divE * (Ely[ijk] * Blz[ijk] - Elz[ijk] * Bly[ijk]) / gmsqrt +
-         Jp * Bx[ijk]) /
-        B2;
-    Scalar Jy =
-        (divE * (Elz[ijk] * Blx[ijk] - Elx[ijk] * Blz[ijk]) / gmsqrt +
-         Jp * By[ijk]) /
-        B2;
-    Scalar Jz =
-        (divE * (Elx[ijk] * Bly[ijk] - Ely[ijk] * Blx[ijk]) / gmsqrt +
-         Jp * Bz[ijk]) /
-        B2;
+      Scalar Jp =
+          (Blx[ijk] * rotBx + Bly[ijk] * rotBy + Blz[ijk] * rotBz) -
+          (Elx[ijk] * rotEx + Ely[ijk] * rotEy + Elz[ijk] * rotEz);
+      Jx =
+          (divE * (Ely[ijk] * Blz[ijk] - Elz[ijk] * Bly[ijk]) / gmsqrt +
+           Jp * Bx[ijk]) /
+          B2;
+      Jy =
+          (divE * (Elz[ijk] * Blx[ijk] - Elx[ijk] * Blz[ijk]) / gmsqrt +
+           Jp * By[ijk]) /
+          B2;
+      Jz =
+          (divE * (Elx[ijk] * Bly[ijk] - Ely[ijk] * Blx[ijk]) / gmsqrt +
+           Jp * Bz[ijk]) /
+          B2;
+    }
+    else {
+      Jx = 0.0;
+      Jy = 0.0;
+      Jz = 0.0;
+    }
+
     // Scalar Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
     // Scalar Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
     // Scalar Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
