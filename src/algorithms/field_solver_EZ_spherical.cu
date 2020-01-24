@@ -94,12 +94,9 @@ kernel_compute_ElBl(const Scalar *Ex, const Scalar *Ey,
                     const Scalar *By, const Scalar *Bz, Scalar *Elx,
                     Scalar *Ely, Scalar *Elz, Scalar *Blx, Scalar *Bly,
                     Scalar *Blz, int shift) {
-  int i =
-      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
-  int j =
-      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
-      j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  int j = threadIdx.y + blockIdx.y * blockDim.y;
+  if (i < dev_grid.dims[0] && j < dev_grid.dims[1]) {
     size_t ijk = i + j * dev_grid.dims[0];
 
     Scalar x = dev_grid.pos(0, i, 1);
@@ -447,7 +444,7 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Scalar th = get_th(x, y, z);
     int s = dev_grid.dims[0];
     if (std::abs(th) < dev_grid.delta[1] / 2.0) {
-      printf("i=%d: setting 0 boundary\n", i);
+      // printf("i=%d: setting 0 boundary\n", i);
       Ex[ijk] = Ex[ijk + s];
       Ey[ijk] = 0.0;
       Ez[ijk] = 0.0;
@@ -470,7 +467,7 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     r = get_r(x, y, z);
     th = get_th(x, y, z);
     if (std::abs(th - M_PI) < dev_grid.delta[1] / 2.0) {
-      printf("i=%d: setting pi boundary\n", i);
+      // printf("i=%d: setting pi boundary\n", i);
       Ex[ijk] = Ex[ijk - s];
       Ey[ijk] = 0.0;
       Ez[ijk] = 0.0;
@@ -597,7 +594,13 @@ field_solver_EZ_spherical::~field_solver_EZ_spherical() {}
 
 void
 field_solver_EZ_spherical::get_ElBl() {
-  kernel_compute_ElBl<<<blockGroupSize, blockSize>>>(
+  dim3 blockGroupSize1 =
+      dim3((m_data.env.grid().dims[0] + blockSize.x - 1) /
+               blockSize.x,
+           (m_data.env.grid().dims[1] + blockSize.y - 1) /
+               blockSize.y,
+           1);
+  kernel_compute_ElBl<<<blockGroupSize1, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       El.dev_ptr(0), El.dev_ptr(1), El.dev_ptr(2), Bl.dev_ptr(0),
