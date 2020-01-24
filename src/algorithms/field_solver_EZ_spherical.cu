@@ -436,11 +436,9 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
-  int j =
-      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
 
-  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
-      j < dev_grid.dims[1] - dev_grid.guard[1] + 1 + shift) {
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift) {
+    int j = dev_grid.guard[1];
     ijk = i + j * dev_grid.dims[0];
     Scalar x = dev_grid.pos(0, i, 1);
     Scalar y = dev_grid.pos(1, j, 1);
@@ -465,7 +463,12 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
         Bz[ijk - l * s] = -Bz[ijk + l * s];
       }
     }
-    else if (std::abs(th - M_PI) < dev_grid.delta[1] / 2.0) {
+    j = dev_grid.dims[1] - dev_grid.guard[1];
+    ijk = i + j * dev_grid.dims[0];
+    y = dev_grid.pos(1, j, 1);
+    r = get_r(x, y, z);
+    th = get_th(x, y, z);
+    if (std::abs(th - M_PI) < dev_grid.delta[1] / 2.0) {
       Ex[ijk] = Ex[ijk - s];
       Ey[ijk] = 0.0;
       Ez[ijk] = 0.0;
@@ -669,7 +672,10 @@ field_solver_EZ_spherical::boundary_pulsar(Scalar t) {
 
 void
 field_solver_EZ_spherical::boundary_axis() {
-  kernel_boundary_axis_sph<<<blockGroupSize, blockSize>>>(
+  int newgridsize = (m_data.env.grid().reduced_dim(0) +
+            m_env.params().shift_ghost * 2 + blockSize.x - 1) /
+               blockSize.x;
+  kernel_boundary_axis_sph<<<newgridsize, BLOCK_SIZE_X>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       m_data.P.dev_ptr(), m_env.params().shift_ghost);
