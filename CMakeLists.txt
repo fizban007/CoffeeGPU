@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.10)
 
 project (Coffee)
-enable_language(Fortran CXX)
+enable_language(CXX)
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -14,14 +14,15 @@ if (POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW) # CMake 3.12
 endif ()
 # cmake_policy(SET CMP0074 NEW)
-# set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
 #set(CXX_EXTRA_FLAGS "-DBOOST_NO_CXX11_SCOPED_ENUMS -lnvToolsExt")
-# set(CXX_EXTRA_FLAGS "-lnvToolsExt")
+#set(CXX_EXTRA_FLAGS "-DBOOST_NO_CXX11_SCOPED_ENUMS")
 if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+  # set(CXX_EXTRA_FLAGS "-DMAX_VECTOR_SIZE=256")
   set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -O3 -g -qopenmp-simd -DNDEBUG -xHost -no-prec-div ${CXX_EXTRA_FLAGS}")
 else()
   # set(CXX_EXTRA_FLAGS "-Wno-misleading-indentation -Wno-unused-parameter")
-  set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -O3 -g -fopenmp-simd -DNDEBUG -mtune=native ${CXX_EXTRA_FLAGS}")
+  set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -O3 -g -fopenmp-simd -DNDEBUG -march=native ${CXX_EXTRA_FLAGS}")
 endif()
 set(CMAKE_CXX_FLAGS_DEBUG "-std=c++11 -g3 -O0 ${CXX_EXTRA_FLAGS}")
 
@@ -40,10 +41,10 @@ message(${Boost_LIBRARIES})
 # set(FMT_INCLUDE_DIR deps/fmt)
 set(CATCH_INCLUDE_DIR deps/catch/single_include/catch2)
 set(CPPTOML_INCLUDE_DIR deps/cpptoml/include)
-set(HIGHFIVE_INCLUDE_DIR deps/highfive/include)
+set(VECTORCLASS_INCLUDE_DIR deps/vectorclass)
 
 include_directories(${MPI_INCLUDE_PATH} ${CPPTOML_INCLUDE_DIR} ${CATCH_INCLUDE_DIR}
-  ${HIGHFIVE_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+  ${VECTORCLASS_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
   ${Boost_INCLUDE_DIRS} src)
 
 ######### Check for cuda support
@@ -76,7 +77,7 @@ if (use_cuda)
     set(CMAKE_CUDA_FLAGS_DEBUG "-g -G")
     set(CMAKE_CUDA_FLAGS_RELEASE "-lineinfo -O3 -DNDEBUG")
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-    set(CMAKE_CUDA_STANDARD 14)
+    set(CMAKE_CUDA_STANDARD 11)
     set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
     # set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
     message(${CMAKE_CXX_COMPILER})
@@ -108,4 +109,4 @@ if (build_tests)
 endif()
 
 # Add the original Fortran code as compile target too
-add_subdirectory(original)
+#add_subdirectory(original)
