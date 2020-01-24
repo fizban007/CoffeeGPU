@@ -447,6 +447,7 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Scalar th = get_th(x, y, z);
     int s = dev_grid.dims[0];
     if (std::abs(th) < dev_grid.delta[1] / 2.0) {
+      printf("i=%d: setting 0 boundary\n", i);
       Ex[ijk] = Ex[ijk + s];
       Ey[ijk] = 0.0;
       Ez[ijk] = 0.0;
@@ -469,6 +470,7 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     r = get_r(x, y, z);
     th = get_th(x, y, z);
     if (std::abs(th - M_PI) < dev_grid.delta[1] / 2.0) {
+      printf("i=%d: setting pi boundary\n", i);
       Ex[ijk] = Ex[ijk - s];
       Ey[ijk] = 0.0;
       Ez[ijk] = 0.0;
