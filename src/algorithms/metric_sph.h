@@ -10,6 +10,11 @@ namespace Coffee {
 namespace SPH {
 
 HD_INLINE Scalar
+get_x(Scalar r) {
+	return log(r);
+}
+
+HD_INLINE Scalar
 get_r(Scalar x, Scalar y, Scalar z) {
   return exp(x);
 }

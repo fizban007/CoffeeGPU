@@ -31,6 +31,15 @@ dfdx(const Scalar *f, int ijk) {
 }
 
 __device__ __forceinline__ Scalar
+dfdx1(const Scalar *f, int ijk, Scalar x) {
+  Scalar x0 = get_x(dev_params.radius);
+  if (x >= x0 && x - 2.0 * dev_grid.delta[0] <= x0)
+    return diff1_4f(f, ijk, 1) * dev_grid.inv_delta[0];
+  else
+    return df1(f, ijk, 1, dev_grid.inv_delta[0]);
+}
+
+__device__ __forceinline__ Scalar
 dfdy(const Scalar *f, int ijk) {
   return df1(f, ijk, dev_grid.dims[0], dev_grid.inv_delta[1]);
 }
@@ -44,27 +53,41 @@ dfdz(const Scalar *f, int ijk) {
 
 __device__ Scalar
 div4_sph(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
-     Scalar x, Scalar y, Scalar z) {
-  Scalar tmpx =
-      (fx[ijk - 2] * get_sqrt_gamma(x - 2.0 * dev_grid.delta[0], y, z) -
-       8.0 * fx[ijk - 1] *
-           get_sqrt_gamma(x - 1.0 * dev_grid.delta[0], y, z) +
-       8.0 * fx[ijk + 1] *
-           get_sqrt_gamma(x + 1.0 * dev_grid.delta[0], y, z) -
-       fx[ijk + 2] *
-           get_sqrt_gamma(x + 2.0 * dev_grid.delta[0], y, z)) /
-      12.0 / dev_grid.delta[0];
+         Scalar x, Scalar y, Scalar z) {
+  Scalar x0 = get_x(dev_params.radius);
+  Scalar tmpx;
+  if (x >= x0 && x - 2.0 * dev_grid.delta[0] <= x0)
+    tmpx = (-25.0 / 12.0 * f[ijk] * get_sqrt_gamma(x, y, z) +
+            4.0 * f[ijk + s] *
+                get_sqrt_gamma(x + dev_grid.delta[0], y, z) -
+            3.0 * f[ijk + 2 * s] *
+                get_sqrt_gamma(x + 2.0 * dev_grid.delta[0], y, z) +
+            4.0 / 3.0 * f[ijk + 3 * s] *
+                get_sqrt_gamma(x + 3.0 * dev_grid.delta[0], y, z) -
+            1.0 / 4.0 * f[ijk + 4 * s] *
+                get_sqrt_gamma(x + 4.0 * dev_grid.delta[0], y, z)) *
+           dev_grid.inv_delta[0];
+  else
+    tmpx = (fx[ijk - 2] *
+                get_sqrt_gamma(x - 2.0 * dev_grid.delta[0], y, z) -
+            8.0 * fx[ijk - 1] *
+                get_sqrt_gamma(x - dev_grid.delta[0], y, z) +
+            8.0 * fx[ijk + 1] *
+                get_sqrt_gamma(x + dev_grid.delta[0], y, z) -
+            fx[ijk + 2] *
+                get_sqrt_gamma(x + 2.0 * dev_grid.delta[0], y, z)) /
+           12.0 * dev_grid.inv_delta[0];
   int s = dev_grid.dims[0];
   Scalar tmpy =
       (fy[ijk - 2 * s] *
            get_sqrt_gamma(x, y - 2.0 * dev_grid.delta[1], z) -
        8.0 * fy[ijk - 1 * s] *
-           get_sqrt_gamma(x, y - 1.0 * dev_grid.delta[1], z) +
+           get_sqrt_gamma(x, y - dev_grid.delta[1], z) +
        8.0 * fy[ijk + 1 * s] *
-           get_sqrt_gamma(x, y + 1.0 * dev_grid.delta[1], z) -
+           get_sqrt_gamma(x, y + dev_grid.delta[1], z) -
        fy[ijk + 2 * s] *
            get_sqrt_gamma(x, y + 2.0 * dev_grid.delta[1], z)) /
-      12.0 / dev_grid.delta[1];
+      12.0 * dev_grid.inv_delta[1];
   // s = dev_grid.dims[0] * dev_grid.dims[1];
   // Scalar tmpz =
   //     (fz[ijk - 2 * s] *
@@ -410,17 +433,29 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar th = get_th(x, y, z);
     Scalar w = dev_params.omega + wpert_sph(t, r, th);
 
-    if (r <= dev_params.radius + TINY) {
+    // if (r <= dev_params.radius + TINY) {
+    //   Scalar bxn = dev_params.b0 * dipole_sph_2d(r, th, 0);
+    //   Scalar byn = dev_params.b0 * dipole_sph_2d(r, th, 1);
+    //   Scalar bzn = dev_params.b0 * dipole_sph_2d(r, th, 2);
+    //   Bx[ijk] = bxn / std::sqrt(get_gamma_d11(x, y, z));
+    //   By[ijk] = byn / std::sqrt(get_gamma_d22(x, y, z));
+    //   Bz[ijk] = bzn / std::sqrt(get_gamma_d33(x, y, z));
+    //   Scalar v3n = w * r * sin(th);
+    //   Scalar exn = v3n * byn;
+    //   Scalar eyn = -v3n * bxn;
+    //   Ex[ijk] = exn / std::sqrt(get_gamma_d11(x, y, z));
+    //   Ey[ijk] = eyn / std::sqrt(get_gamma_d22(x, y, z));
+    //   Ez[ijk] = 0.0;
+    // }
+    if (std::abs(r - dev_params.radius) < dev_grid.delta[0] / 2.0) {
       Scalar bxn = dev_params.b0 * dipole_sph_2d(r, th, 0);
       Scalar byn = dev_params.b0 * dipole_sph_2d(r, th, 1);
       Scalar bzn = dev_params.b0 * dipole_sph_2d(r, th, 2);
       Bx[ijk] = bxn / std::sqrt(get_gamma_d11(x, y, z));
-      By[ijk] = byn / std::sqrt(get_gamma_d22(x, y, z));
-      Bz[ijk] = bzn / std::sqrt(get_gamma_d33(x, y, z));
+      
       Scalar v3n = w * r * sin(th);
       Scalar exn = v3n * byn;
       Scalar eyn = -v3n * bxn;
-      Ex[ijk] = exn / std::sqrt(get_gamma_d11(x, y, z));
       Ey[ijk] = eyn / std::sqrt(get_gamma_d22(x, y, z));
       Ez[ijk] = 0.0;
     }
