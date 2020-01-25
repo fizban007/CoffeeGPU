@@ -108,14 +108,14 @@ KO_2d(const Scalar *f, int ijk, Scalar x) {
   Scalar x0 = get_x(dev_params.radius);
   if (FFE_DISSIPATION_ORDER == 4) {
     if (x >= x0 && x - 2.0 * dev_grid.delta[0] <= x0)
-      return diff4_2f(f, ijk, 1) + diff4_2(f, ijk, grid.dims[0]);
+      return diff4_2f(f, ijk, 1) + diff4_2(f, ijk, dev_grid.dims[0]);
     else
-      return diff4_2(f, ijk, 1) + diff4_2(f, ijk, grid.dims[0]);
+      return diff4_2(f, ijk, 1) + diff4_2(f, ijk, dev_grid.dims[0]);
   } else if (FFE_DISSIPATION_ORDER == 6) {
     if (x >= x0 && x - 2.0 * dev_grid.delta[0] <= x0)
-      return diff6_2f(f, ijk, 1) + diff6_2(f, ijk, grid.dims[0]);
+      return diff6_2f(f, ijk, 1) + diff6_2(f, ijk, dev_grid.dims[0]);
     else
-      return diff6_2(f, ijk, 1) + diff6_2(f, ijk, grid.dims[0]);
+      return diff6_2(f, ijk, 1) + diff6_2(f, ijk, dev_grid.dims[0]);
   }
 }
 
