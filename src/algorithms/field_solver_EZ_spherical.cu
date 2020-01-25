@@ -339,15 +339,32 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
     ijk = i + j * dev_grid.dims[0];
 
-    Ex_tmp[ijk] = KO_2d(Ex, ijk, dev_grid);
-    Ey_tmp[ijk] = KO_2d(Ey, ijk, dev_grid);
-    Ez_tmp[ijk] = KO_2d(Ez, ijk, dev_grid);
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar x0 = get_x(dev_params.radius);
 
-    Bx_tmp[ijk] = KO_2d(Bx, ijk, dev_grid);
-    By_tmp[ijk] = KO_2d(By, ijk, dev_grid);
-    Bz_tmp[ijk] = KO_2d(Bz, ijk, dev_grid);
+    if (x - 2.0 * dev_grid.delta[0] > x0) {
+      Ex_tmp[ijk] = KO_2d(Ex, ijk, dev_grid);
+      Ey_tmp[ijk] = KO_2d(Ey, ijk, dev_grid);
+      Ez_tmp[ijk] = KO_2d(Ez, ijk, dev_grid);
 
-    P_tmp[ijk] = KO_2d(P, ijk, dev_grid);
+      Bx_tmp[ijk] = KO_2d(Bx, ijk, dev_grid);
+      By_tmp[ijk] = KO_2d(By, ijk, dev_grid);
+      Bz_tmp[ijk] = KO_2d(Bz, ijk, dev_grid);
+
+      P_tmp[ijk] = KO_2d(P, ijk, dev_grid);
+    }
+    else {
+      Ex_tmp[ijk] = 0.0;
+      Ey_tmp[ijk] = 0.0;
+      Ez_tmp[ijk] = 0.0;
+
+      Bx_tmp[ijk] = 0.0;
+      By_tmp[ijk] = 0.0;
+      Bz_tmp[ijk] = 0.0;
+
+      P_tmp[ijk] = 0.0;
+    }
   }
 }
 
