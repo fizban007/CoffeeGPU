@@ -134,11 +134,25 @@ KO_2d1(const Scalar *f, int ijk, Scalar x) {
 }
 
 __device__ Scalar
-KO_2d(const Scalar *f, int ijk, Scalar x) {
+KO_2d0(const Scalar *f, int ijk, Scalar x) {
   if (FFE_DISSIPATION_ORDER == 4) 
     return diff4_2(f, ijk, 1) + diff4_2(f, ijk, dev_grid.dims[0]);
   else if (FFE_DISSIPATION_ORDER == 6)
     return diff6_2(f, ijk, 1) + diff6_2(f, ijk, dev_grid.dims[0]);
+}
+
+__device__ Scalar
+KO_2d6(const Scalar *f, int ijk, Scalar x, Scalar y, Scalar z) {
+  Scalar dx = dev_grid.delta[0];
+  Scalar tmpx = (f[ijk - 3] * get_sqrt_gamma(x - 3.0 * dx, y, z) - 6.0 * f[ijk - 2] * get_sqrt_gamma(x - 2.0 * dx, y, z) + 15.0 * f[ijk - 1] * get_sqrt_gamma(x - dx, y, z) -
+          20.0 * f[ijk] * get_sqrt_gamma(x, y, z) + 15.0 * f[ijk + 1] * get_sqrt_gamma(x + dx, y, z) - 6.0 * f[ijk + 2] * get_sqrt_gamma(x + 2.0 * dx, y, z) +
+          f[ijk + 3] * get_sqrt_gamma(x + 3.0 * dx, y, z));
+  Scalar dy = dev_grid.delta[1];
+  int s = dev_grid.dims[0];
+  Scalar tmpy = f[ijk - 3 * s] * get_sqrt_gamma(x, y - 3.0 * dy, z) - 6.0 * f[ijk - 2 * s] * get_sqrt_gamma(x, y - 2.0 * dy, z) + 15.0 * f[ijk - s] * get_sqrt_gamma(x, y - dy, z) -
+          20.0 * f[ijk] * get_sqrt_gamma(x, y, z) + 15.0 * f[ijk + s] * get_sqrt_gamma(x, y + dy, z) - 6.0 * f[ijk + 2 * s] * get_sqrt_gamma(x, y + 2.0 * dy, z) +
+          f[ijk + 3 * s] * get_sqrt_gamma(x, y + 3.0 * dy, z);
+  return (tmpx + tmpy) / get_sqrt_gamma(x, y, z);
 }
 
 __global__ void
@@ -379,15 +393,15 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Scalar x0 = get_x(dev_params.radius);
 
     // if (x - 2.0 * dev_grid.delta[0] > x0) {
-      Ex_tmp[ijk] = KO_2d(Ex, ijk, x);
-      Ey_tmp[ijk] = KO_2d(Ey, ijk, x);
-      Ez_tmp[ijk] = KO_2d(Ez, ijk, x);
+      Ex_tmp[ijk] = KO_2d6(Ex, ijk, x, y, z);
+      Ey_tmp[ijk] = KO_2d6(Ey, ijk, x, y, z);
+      Ez_tmp[ijk] = KO_2d6(Ez, ijk, x, y, z);
 
-      Bx_tmp[ijk] = KO_2d(Bx, ijk, x);
-      By_tmp[ijk] = KO_2d(By, ijk, x);
-      Bz_tmp[ijk] = KO_2d(Bz, ijk, x);
+      Bx_tmp[ijk] = KO_2d6(Bx, ijk, x, y, z);
+      By_tmp[ijk] = KO_2d6(By, ijk, x, y, z);
+      Bz_tmp[ijk] = KO_2d6(Bz, ijk, x, y, z);
 
-      P_tmp[ijk] = KO_2d(P, ijk, x);
+      P_tmp[ijk] = KO_2d6(P, ijk, x, y, z);
     // }
     // else {
     //   Ex_tmp[ijk] = 0.0;
