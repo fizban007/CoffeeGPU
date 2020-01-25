@@ -104,11 +104,19 @@ div4_sph(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
 }
 
 HD_INLINE Scalar
-KO_2d(const Scalar *f, int ijk, const Grid &grid) {
-  if (FFE_DISSIPATION_ORDER == 4)
-    return diff4_2(f, ijk, 1) + diff4_2(f, ijk, grid.dims[0]);
-  else if (FFE_DISSIPATION_ORDER == 6)
-    return diff6_2(f, ijk, 1) + diff6_2(f, ijk, grid.dims[0]);
+KO_2d(const Scalar *f, int ijk, Scalar x) {
+  Scalar x0 = get_x(dev_params.radius);
+  if (FFE_DISSIPATION_ORDER == 4) {
+    if (x >= x0 && x - 2.0 * dev_grid.delta[0] <= x0)
+      return diff4_2f(f, ijk, 1) + diff4_2(f, ijk, grid.dims[0]);
+    else
+      return diff4_2(f, ijk, 1) + diff4_2(f, ijk, grid.dims[0]);
+  } else if (FFE_DISSIPATION_ORDER == 6) {
+    if (x >= x0 && x - 2.0 * dev_grid.delta[0] <= x0)
+      return diff6_2f(f, ijk, 1) + diff6_2(f, ijk, grid.dims[0]);
+    else
+      return diff6_2(f, ijk, 1) + diff6_2(f, ijk, grid.dims[0]);
+  }
 }
 
 __global__ void
@@ -345,15 +353,15 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Scalar x0 = get_x(dev_params.radius);
 
     if (x - 2.0 * dev_grid.delta[0] > x0) {
-      Ex_tmp[ijk] = KO_2d(Ex, ijk, dev_grid);
-      Ey_tmp[ijk] = KO_2d(Ey, ijk, dev_grid);
-      Ez_tmp[ijk] = KO_2d(Ez, ijk, dev_grid);
+      Ex_tmp[ijk] = KO_2d(Ex, ijk, x);
+      Ey_tmp[ijk] = KO_2d(Ey, ijk, x);
+      Ez_tmp[ijk] = KO_2d(Ez, ijk, x);
 
-      Bx_tmp[ijk] = KO_2d(Bx, ijk, dev_grid);
-      By_tmp[ijk] = KO_2d(By, ijk, dev_grid);
-      Bz_tmp[ijk] = KO_2d(Bz, ijk, dev_grid);
+      Bx_tmp[ijk] = KO_2d(Bx, ijk, x);
+      By_tmp[ijk] = KO_2d(By, ijk, x);
+      Bz_tmp[ijk] = KO_2d(Bz, ijk, x);
 
-      P_tmp[ijk] = KO_2d(P, ijk, dev_grid);
+      P_tmp[ijk] = KO_2d(P, ijk, x);
     }
     else {
       Ex_tmp[ijk] = 0.0;
