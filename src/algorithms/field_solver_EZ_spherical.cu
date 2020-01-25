@@ -352,7 +352,7 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Scalar y = dev_grid.pos(1, j, 1);
     Scalar x0 = get_x(dev_params.radius);
 
-    if (x - 2.0 * dev_grid.delta[0] > x0) {
+    // if (x - 2.0 * dev_grid.delta[0] > x0) {
       Ex_tmp[ijk] = KO_2d(Ex, ijk, x);
       Ey_tmp[ijk] = KO_2d(Ey, ijk, x);
       Ez_tmp[ijk] = KO_2d(Ez, ijk, x);
@@ -362,18 +362,18 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       Bz_tmp[ijk] = KO_2d(Bz, ijk, x);
 
       P_tmp[ijk] = KO_2d(P, ijk, x);
-    }
-    else {
-      Ex_tmp[ijk] = 0.0;
-      Ey_tmp[ijk] = 0.0;
-      Ez_tmp[ijk] = 0.0;
+    // }
+    // else {
+    //   Ex_tmp[ijk] = 0.0;
+    //   Ey_tmp[ijk] = 0.0;
+    //   Ez_tmp[ijk] = 0.0;
 
-      Bx_tmp[ijk] = 0.0;
-      By_tmp[ijk] = 0.0;
-      Bz_tmp[ijk] = 0.0;
+    //   Bx_tmp[ijk] = 0.0;
+    //   By_tmp[ijk] = 0.0;
+    //   Bz_tmp[ijk] = 0.0;
 
-      P_tmp[ijk] = 0.0;
-    }
+    //   P_tmp[ijk] = 0.0;
+    // }
   }
 }
 
