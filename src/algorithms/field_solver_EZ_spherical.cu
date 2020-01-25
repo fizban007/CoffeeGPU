@@ -103,7 +103,7 @@ div4_sph(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
   return (tmpx + tmpy + tmpz) / get_sqrt_gamma(x, y, z);
 }
 
-HD_INLINE Scalar
+__device__ Scalar
 KO_2d(const Scalar *f, int ijk, Scalar x) {
   Scalar x0 = get_x(dev_params.radius);
   if (FFE_DISSIPATION_ORDER == 4) {
