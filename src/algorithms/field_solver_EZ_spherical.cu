@@ -166,11 +166,11 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     Scalar gmsqrt = get_sqrt_gamma(x, y, z);
 
     Scalar rotBx = (dfdy(Blz, ijk) - dfdz(Bly, ijk)) / gmsqrt;
-    Scalar rotBy = (dfdz(Blx, ijk) - dfdx(Blz, ijk)) / gmsqrt;
-    Scalar rotBz = (dfdx(Bly, ijk) - dfdy(Blx, ijk)) / gmsqrt;
+    Scalar rotBy = (dfdz(Blx, ijk) - dfdx1(Blz, ijk, x)) / gmsqrt;
+    Scalar rotBz = (dfdx1(Bly, ijk, x) - dfdy(Blx, ijk)) / gmsqrt;
     Scalar rotEx = (dfdy(Elz, ijk) - dfdz(Ely, ijk)) / gmsqrt;
-    Scalar rotEy = (dfdz(Elx, ijk) - dfdx(Elz, ijk)) / gmsqrt;
-    Scalar rotEz = (dfdx(Ely, ijk) - dfdy(Elx, ijk)) / gmsqrt;
+    Scalar rotEy = (dfdz(Elx, ijk) - dfdx1(Elz, ijk, x)) / gmsqrt;
+    Scalar rotEz = (dfdx1(Ely, ijk, x) - dfdy(Elx, ijk)) / gmsqrt;
 
     Scalar divE = div4_sph(Ex, Ey, Ez, ijk, x, y, z);
     Scalar divB = div4_sph(Bx, By, Bz, ijk, x, y, z);
@@ -203,6 +203,7 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     }
 
     // Scalar Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
+    // Scalar Px = dfdx1(P, ijk, x) / get_gamma_d11(x, y, z);
     // Scalar Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
     // Scalar Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
     Scalar Px = 0.0;
