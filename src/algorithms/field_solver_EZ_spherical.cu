@@ -390,6 +390,7 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 
     Scalar x = dev_grid.pos(0, i, 1);
     Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = 0.0;
     Scalar x0 = get_x(dev_params.radius);
 
     // if (x - 2.0 * dev_grid.delta[0] > x0) {
