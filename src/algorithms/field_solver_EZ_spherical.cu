@@ -57,14 +57,14 @@ div4_sph(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
   Scalar x0 = get_x(dev_params.radius);
   Scalar tmpx;
   if (x >= x0 && x - 2.0 * dev_grid.delta[0] <= x0)
-    tmpx = (-25.0 / 12.0 * f[ijk] * get_sqrt_gamma(x, y, z) +
-            4.0 * f[ijk + s] *
+    tmpx = (-25.0 / 12.0 * fx[ijk] * get_sqrt_gamma(x, y, z) +
+            4.0 * fx[ijk + 1] *
                 get_sqrt_gamma(x + dev_grid.delta[0], y, z) -
-            3.0 * f[ijk + 2 * s] *
+            3.0 * fx[ijk + 2] *
                 get_sqrt_gamma(x + 2.0 * dev_grid.delta[0], y, z) +
-            4.0 / 3.0 * f[ijk + 3 * s] *
+            4.0 / 3.0 * fx[ijk + 3] *
                 get_sqrt_gamma(x + 3.0 * dev_grid.delta[0], y, z) -
-            1.0 / 4.0 * f[ijk + 4 * s] *
+            1.0 / 4.0 * fx[ijk + 4] *
                 get_sqrt_gamma(x + 4.0 * dev_grid.delta[0], y, z)) *
            dev_grid.inv_delta[0];
   else
