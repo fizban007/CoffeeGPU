@@ -3,9 +3,9 @@
 #include "cuda/constant_mem_func.h"
 #include "cuda/cuda_utility.h"
 #include "field_solver_EZ_spherical.h"
+#include "metric_sph.h"
 #include "pulsar.h"
 #include "utils/timer.h"
-#include "metric_sph.h"
 
 // 2D axisymmetric code in spherical coordinates. Original x, y, z
 // correspond to x = log r, theta, phi.
@@ -89,7 +89,9 @@ div4_sph1(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
            get_sqrt_gamma(x, y + 2.0 * dev_grid.delta[1], z)) /
       12.0 * dev_grid.inv_delta[1];
   Scalar tmpz = 0.0;
-  return (tmpx + tmpy + tmpz) / get_sqrt_gamma(x, y, z);
+  Scalar gmsqrt = get_sqrt_gamma(x, y, z);
+  if (gmsqrt < TINY) gmsqrt = TINY;
+  return (tmpx + tmpy + tmpz) / gmsqrt;
 }
 
 __device__ Scalar
@@ -114,7 +116,9 @@ div4_sph(const Scalar *fx, const Scalar *fy, const Scalar *fz, int ijk,
            get_sqrt_gamma(x, y + 2.0 * dev_grid.delta[1], z)) /
       12.0 * dev_grid.inv_delta[1];
   Scalar tmpz = 0.0;
-  return (tmpx + tmpy + tmpz) / get_sqrt_gamma(x, y, z);
+  Scalar gmsqrt = get_sqrt_gamma(x, y, z);
+  if (gmsqrt < TINY) gmsqrt = TINY;
+  return (tmpx + tmpy + tmpz) / gmsqrt;
 }
 
 __device__ Scalar
@@ -135,7 +139,7 @@ KO_2d1(const Scalar *f, int ijk, Scalar x) {
 
 __device__ Scalar
 KO_2d0(const Scalar *f, int ijk) {
-  if (FFE_DISSIPATION_ORDER == 4) 
+  if (FFE_DISSIPATION_ORDER == 4)
     return diff4_2(f, ijk, 1) + diff4_2(f, ijk, dev_grid.dims[0]);
   else if (FFE_DISSIPATION_ORDER == 6)
     return diff6_2(f, ijk, 1) + diff6_2(f, ijk, dev_grid.dims[0]);
@@ -161,7 +165,9 @@ KO_2d6(const Scalar *f, int ijk, Scalar x, Scalar y, Scalar z) {
       15.0 * f[ijk + s] * get_sqrt_gamma(x, y + dy, z) -
       6.0 * f[ijk + 2 * s] * get_sqrt_gamma(x, y + 2.0 * dy, z) +
       f[ijk + 3 * s] * get_sqrt_gamma(x, y + 3.0 * dy, z);
-  return (tmpx + tmpy) / get_sqrt_gamma(x, y, z);
+  Scalar gmsqrt = get_sqrt_gamma(x, y, z);
+  if (gmsqrt < TINY) gmsqrt = TINY;
+  return (tmpx + tmpy) / gmsqrt;
 }
 
 __global__ void
@@ -217,6 +223,7 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     Scalar Jx, Jy, Jz;
 
     Scalar gmsqrt = get_sqrt_gamma(x, y, z);
+    if (gmsqrt < TINY) gmsqrt = TINY;
 
     Scalar rotBx = (dfdy(Blz, ijk) - dfdz(Bly, ijk)) / gmsqrt;
     // Scalar rotBy = (dfdz(Blx, ijk) - dfdx1(Blz, ijk, x)) / gmsqrt;
@@ -252,8 +259,7 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
           (divE * (Elx[ijk] * Bly[ijk] - Ely[ijk] * Blx[ijk]) / gmsqrt +
            Jp * Bz[ijk]) /
           B2;
-    }
-    else {
+    } else {
       Jx = 0.0;
       Jy = 0.0;
       Jz = 0.0;
@@ -266,7 +272,6 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     Scalar Px = 0.0;
     Scalar Py = 0.0;
     Scalar Pz = 0.0;
-
 
     dBx[ijk] = As * dBx[ijk] - dev_params.dt * (rotEx + Px);
     dBy[ijk] = As * dBy[ijk] - dev_params.dt * (rotEy + Py);
@@ -298,7 +303,7 @@ kernel_rk_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
       threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  
+
   if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
       j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
     ijk = i + j * dev_grid.dims[0];
@@ -312,7 +317,6 @@ kernel_rk_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Bz[ijk] = Bz[ijk] + Bs * dBz[ijk];
 
     P[ijk] = P[ijk] + Bs * dP[ijk];
-
   }
 }
 
@@ -324,7 +328,7 @@ kernel_Epar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
       threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  
+
   if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
       j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
     ijk = i + j * dev_grid.dims[0];
@@ -355,7 +359,7 @@ kernel_EgtB_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
       threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  
+
   if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
       j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
     ijk = i + j * dev_grid.dims[0];
@@ -392,7 +396,7 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
       threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  
+
   if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
       j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
     ijk = i + j * dev_grid.dims[0];
@@ -421,7 +425,6 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     // Bz_tmp[ijk] = KO_2d0(Bz, ijk);
 
     // P_tmp[ijk] = KO_2d0(P, ijk);
-    
   }
 }
 
@@ -447,7 +450,7 @@ kernel_KO_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
       threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  
+
   if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
       j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
     ijk = i + j * dev_grid.dims[0];
@@ -496,7 +499,7 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
       threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  
+
   if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
       j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
     ijk = i + j * dev_grid.dims[0];
@@ -516,12 +519,10 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
       exn = v3n * byn;
       eyn = -v3n * bxn;
       if (std::abs(r - dev_params.radius) < dev_grid.delta[0] / 2.0) {
-      
         Bx[ijk] = bxn / std::sqrt(get_gamma_d11(x, y, z));
         Ey[ijk] = eyn / std::sqrt(get_gamma_d22(x, y, z));
         Ez[ijk] = 0.0;
-      }
-      else if (r < dev_params.radius - TINY) {
+      } else if (r < dev_params.radius - TINY) {
         Bx[ijk] = bxn / std::sqrt(get_gamma_d11(x, y, z));
         By[ijk] = byn / std::sqrt(get_gamma_d22(x, y, z));
         Bz[ijk] = bzn / std::sqrt(get_gamma_d33(x, y, z));
@@ -551,13 +552,13 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     int s = dev_grid.dims[0];
     if (std::abs(th) < dev_grid.delta[1] / 2.0) {
       // printf("i=%d: setting 0 boundary\n", i);
-      Ex[ijk] = Ex[ijk + s];
+      // Ex[ijk] = Ex[ijk + s];
       Ey[ijk] = 0.0;
       Ez[ijk] = 0.0;
-      Bx[ijk] = Bx[ijk + s];
+      // Bx[ijk] = Bx[ijk + s];
       By[ijk] = 0.0;
       Bz[ijk] = 0.0;
-      P[ijk] = P[ijk + s];
+      // P[ijk] = P[ijk + s];
       for (int l = 1; l <= 3; ++l) {
         Ex[ijk - l * s] = Ex[ijk + l * s];
         Ey[ijk - l * s] = -Ey[ijk + l * s];
@@ -574,13 +575,13 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     th = get_th(x, y, z);
     if (std::abs(th - M_PI) < dev_grid.delta[1] / 2.0) {
       // printf("i=%d: setting pi boundary\n", i);
-      Ex[ijk] = Ex[ijk - s];
+      // Ex[ijk] = Ex[ijk - s];
       Ey[ijk] = 0.0;
       Ez[ijk] = 0.0;
-      Bx[ijk] = Bx[ijk - s];
+      // Bx[ijk] = Bx[ijk - s];
       By[ijk] = 0.0;
       Bz[ijk] = 0.0;
-      P[ijk] = P[ijk - s];
+      // P[ijk] = P[ijk - s];
       for (int l = 1; l <= 3; ++l) {
         Ex[ijk + l * s] = Ex[ijk - l * s];
         Ey[ijk + l * s] = -Ey[ijk - l * s];
@@ -615,7 +616,7 @@ kernel_boundary_absorbing_sph(const Scalar *enx, const Scalar *eny,
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
       threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  
+
   if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
       j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
     ijk = i + j * dev_grid.dims[0];
@@ -681,7 +682,6 @@ field_solver_EZ_spherical::field_solver_EZ_spherical(
   Ptmp = multi_array<Scalar>(m_data.env.grid().extent());
   Ptmp.assign_dev(0.0);
 
-
   blockGroupSize =
       dim3((m_data.env.grid().reduced_dim(0) +
             m_env.params().shift_ghost * 2 + blockSize.x - 1) /
@@ -700,12 +700,9 @@ field_solver_EZ_spherical::~field_solver_EZ_spherical() {}
 
 void
 field_solver_EZ_spherical::get_ElBl() {
-  dim3 blockGroupSize1 =
-      dim3((m_data.env.grid().dims[0] + blockSize.x - 1) /
-               blockSize.x,
-           (m_data.env.grid().dims[1] + blockSize.y - 1) /
-               blockSize.y,
-           1);
+  dim3 blockGroupSize1 = dim3(
+      (m_data.env.grid().dims[0] + blockSize.x - 1) / blockSize.x,
+      (m_data.env.grid().dims[1] + blockSize.y - 1) / blockSize.y, 1);
   kernel_compute_ElBl<<<blockGroupSize1, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
@@ -784,8 +781,8 @@ field_solver_EZ_spherical::boundary_pulsar(Scalar t) {
 void
 field_solver_EZ_spherical::boundary_axis() {
   int newgridsize = (m_data.env.grid().reduced_dim(0) +
-            m_env.params().shift_ghost * 2 + blockSize.x - 1) /
-               blockSize.x;
+                     m_env.params().shift_ghost * 2 + blockSize.x - 1) /
+                    blockSize.x;
   kernel_boundary_axis_sph<<<newgridsize, BLOCK_SIZE_X>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
@@ -813,7 +810,7 @@ field_solver_EZ_spherical::evolve_fields(Scalar time) {
   Scalar cs[5] = {0, 0.1496590219993, 0.3704009573644, 0.6222557631345,
                   0.9582821306784};
 
-  boundary_axis();
+  // boundary_axis();
   Etmp.copy_from(m_data.E);
   Btmp.copy_from(m_data.B);
   Ptmp.copy_from(m_data.P);
@@ -885,14 +882,12 @@ field_solver_EZ_spherical::total_energy(vector_field<Scalar> &f) {
       Scalar r = get_r(x, y, z);
       if (r >= m_env.params().radius && x < xh && x > xl && y < yh &&
           y > yl) {
-        Wtmp += (get_gamma_d11(x, y, z) * f.data(0)[ijk] *
-                     f.data(0)[ijk] +
-                 get_gamma_d22(x, y, z) * f.data(1)[ijk] *
-                     f.data(1)[ijk] +
-                 get_gamma_d33(x, y, z) * f.data(2)[ijk] *
-                     f.data(2)[ijk]) *
-                get_sqrt_gamma(x, y, z) * m_env.grid().delta[0] *
-                m_env.grid().delta[1];
+        Wtmp +=
+            (get_gamma_d11(x, y, z) * f.data(0)[ijk] * f.data(0)[ijk] +
+             get_gamma_d22(x, y, z) * f.data(1)[ijk] * f.data(1)[ijk] +
+             get_gamma_d33(x, y, z) * f.data(2)[ijk] * f.data(2)[ijk]) *
+            get_sqrt_gamma(x, y, z) * m_env.grid().delta[0] *
+            m_env.grid().delta[1];
       }
     }
   }
