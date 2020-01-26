@@ -510,6 +510,7 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar th = get_th(x, y, z);
     Scalar w = dev_params.omega + wpert_sph(t, r, th);
     Scalar bxn, byn, bzn, exn, eyn, ezn, v3n;
+    Scalar g11sqrt, g22sqrt, g33sqrt;
 
     if (r < dev_params.radius + dev_grid.delta[0]) {
       bxn = dev_params.b0 * dipole_sph_2d(r, th, 0);
@@ -518,16 +519,20 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
       v3n = w * r * sin(th);
       exn = v3n * byn;
       eyn = -v3n * bxn;
+      g11sqrt = std::sqrt(get_gamma_d11(x, y, z));
+      g22sqrt = std::sqrt(get_gamma_d22(x, y, z));
+      g33sqrt = std::sqrt(get_gamma_d33(x, y, z));
+      if (g33sqrt < TINY) g33sqrt = TINY;
       if (std::abs(r - dev_params.radius) < dev_grid.delta[0] / 2.0) {
-        Bx[ijk] = bxn / std::sqrt(get_gamma_d11(x, y, z));
-        Ey[ijk] = eyn / std::sqrt(get_gamma_d22(x, y, z));
+        Bx[ijk] = bxn / g11sqrt;
+        Ey[ijk] = eyn / g22sqrt;
         Ez[ijk] = 0.0;
       } else if (r < dev_params.radius - TINY) {
-        Bx[ijk] = bxn / std::sqrt(get_gamma_d11(x, y, z));
-        By[ijk] = byn / std::sqrt(get_gamma_d22(x, y, z));
-        Bz[ijk] = bzn / std::sqrt(get_gamma_d33(x, y, z));
-        Ex[ijk] = exn / std::sqrt(get_gamma_d11(x, y, z));
-        Ey[ijk] = eyn / std::sqrt(get_gamma_d22(x, y, z));
+        Bx[ijk] = bxn / g11sqrt;
+        By[ijk] = byn / g22sqrt;
+        Bz[ijk] = bzn / g33sqrt;
+        Ex[ijk] = exn / g11sqrt;
+        Ey[ijk] = eyn / g22sqrt;
         Ez[ijk] = 0.0;
       }
     }

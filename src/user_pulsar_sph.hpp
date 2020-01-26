@@ -12,27 +12,27 @@ data.B.initialize(0, [&](Scalar x, Scalar y, Scalar z) {
   // Put your initial condition for Bx here
   Scalar r = get_r(x, y, z);
   Scalar th = get_th(x, y, z);
-  Scalar g11 = std::sqrt(get_gamma_d11(x, y, z));
-  if (g11 < TINY) g11 = TINY;
-  return env.params().b0 * dipole_sph_2d(r, th, 0) / g11;
+  Scalar g11sqrt = std::sqrt(get_gamma_d11(x, y, z));
+  if (g11sqrt < TINY) g11sqrt = TINY;
+  return env.params().b0 * dipole_sph_2d(r, th, 0) / g11sqrt;
 });
 
 data.B.initialize(1, [&](Scalar x, Scalar y, Scalar z) {
   // Put your initial condition for Bx here
   Scalar r = get_r(x, y, z);
   Scalar th = get_th(x, y, z);
-  Scalar g22 = std::sqrt(get_gamma_d22(x, y, z));
-  if (g22 < TINY) g22 = TINY;
-  return env.params().b0 * dipole_sph_2d(r, th, 1) / g22;
+  Scalar g22sqrt = std::sqrt(get_gamma_d22(x, y, z));
+  if (g22sqrt < TINY) g22sqrt = TINY;
+  return env.params().b0 * dipole_sph_2d(r, th, 1) / g22sqrt;
 });
 
 data.B.initialize(2, [&](Scalar x, Scalar y, Scalar z) {
   // Put your initial condition for Bx here
   Scalar r = get_r(x, y, z);
   Scalar th = get_th(x, y, z);
-  Scalar g33 = std::sqrt(get_gamma_d33(x, y, z));
-  if (g33 < TINY) g33 = TINY;
-  return env.params().b0 * dipole_sph_2d(r, th, 2) / g33;
+  Scalar g33sqrt = std::sqrt(get_gamma_d33(x, y, z));
+  if (g33sqrt < TINY) g33sqrt = TINY;
+  return env.params().b0 * dipole_sph_2d(r, th, 2) / g33sqrt;
 });
 
 data.E.initialize();
