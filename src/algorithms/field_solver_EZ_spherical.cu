@@ -557,13 +557,13 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     int s = dev_grid.dims[0];
     if (std::abs(th) < dev_grid.delta[1] / 2.0) {
       // printf("i=%d: setting 0 boundary\n", i);
-      // Ex[ijk] = Ex[ijk + s];
+      Ex[ijk] = Ex[ijk + s];
       Ey[ijk] = 0.0;
       Ez[ijk] = 0.0;
-      // Bx[ijk] = Bx[ijk + s];
+      Bx[ijk] = Bx[ijk + s];
       By[ijk] = 0.0;
       Bz[ijk] = 0.0;
-      // P[ijk] = P[ijk + s];
+      P[ijk] = P[ijk + s];
       for (int l = 1; l <= 3; ++l) {
         Ex[ijk - l * s] = Ex[ijk + l * s];
         Ey[ijk - l * s] = -Ey[ijk + l * s];
@@ -580,13 +580,13 @@ kernel_boundary_axis_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     th = get_th(x, y, z);
     if (std::abs(th - M_PI) < dev_grid.delta[1] / 2.0) {
       // printf("i=%d: setting pi boundary\n", i);
-      // Ex[ijk] = Ex[ijk - s];
+      Ex[ijk] = Ex[ijk - s];
       Ey[ijk] = 0.0;
       Ez[ijk] = 0.0;
-      // Bx[ijk] = Bx[ijk - s];
+      Bx[ijk] = Bx[ijk - s];
       By[ijk] = 0.0;
       Bz[ijk] = 0.0;
-      // P[ijk] = P[ijk - s];
+      P[ijk] = P[ijk - s];
       for (int l = 1; l <= 3; ++l) {
         Ex[ijk + l * s] = Ex[ijk - l * s];
         Ey[ijk + l * s] = -Ey[ijk - l * s];
@@ -815,7 +815,7 @@ field_solver_EZ_spherical::evolve_fields(Scalar time) {
   Scalar cs[5] = {0, 0.1496590219993, 0.3704009573644, 0.6222557631345,
                   0.9582821306784};
 
-  // boundary_axis();
+  boundary_axis();
   Etmp.copy_from(m_data.E);
   Btmp.copy_from(m_data.B);
   Ptmp.copy_from(m_data.P);
