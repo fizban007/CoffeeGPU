@@ -44,9 +44,11 @@ struct sim_params {
   Scalar sigpml = 0.1; ///< Parameter for the resistivity in the absorbing layer
 
   // EZ scheme
+  bool divB_clean = true; ///< Whether or not to do divergence cleaning
   Scalar ch2 = 1.0; ///< Dedner wave speed (squared)
   Scalar tau = 0.02; ///< Dedner damping time
   Scalar KOeps = 0.50; ///< Small parameter in Kreiss-Oliger dissipation (range [0-1])
+  bool KO_geometry = true; ///< Whether or not to include geometric factors in KO
 
   // Pulsar problem
   Scalar radius = 10.0; ///< Radius of the pulsar

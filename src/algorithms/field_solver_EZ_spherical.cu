@@ -265,13 +265,17 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
       Jz = 0.0;
     }
 
-    // Scalar Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
-    // Scalar Px = dfdx1(P, ijk, x) / get_gamma_d11(x, y, z);
-    // Scalar Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
-    // Scalar Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
-    Scalar Px = 0.0;
-    Scalar Py = 0.0;
-    Scalar Pz = 0.0;
+    if (dev_params.divB_clean) {
+      Scalar Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
+      Scalar Px = dfdx1(P, ijk, x) / get_gamma_d11(x, y, z);
+      Scalar Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
+      Scalar Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
+    }
+    else {
+      Scalar Px = 0.0;
+      Scalar Py = 0.0;
+      Scalar Pz = 0.0;
+    }
 
     dBx[ijk] = As * dBx[ijk] - dev_params.dt * (rotEx + Px);
     dBy[ijk] = As * dBy[ijk] - dev_params.dt * (rotEy + Py);
@@ -406,25 +410,28 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Scalar z = 0.0;
     Scalar x0 = get_x(dev_params.radius);
 
-    Ex_tmp[ijk] = KO_2d6(Ex, ijk, x, y, z);
-    Ey_tmp[ijk] = KO_2d6(Ey, ijk, x, y, z);
-    Ez_tmp[ijk] = KO_2d6(Ez, ijk, x, y, z);
+    if (dev_params.KO_geometry) {
+      Ex_tmp[ijk] = KO_2d6(Ex, ijk, x, y, z);
+      Ey_tmp[ijk] = KO_2d6(Ey, ijk, x, y, z);
+      Ez_tmp[ijk] = KO_2d6(Ez, ijk, x, y, z);
 
-    Bx_tmp[ijk] = KO_2d6(Bx, ijk, x, y, z);
-    By_tmp[ijk] = KO_2d6(By, ijk, x, y, z);
-    Bz_tmp[ijk] = KO_2d6(Bz, ijk, x, y, z);
+      Bx_tmp[ijk] = KO_2d6(Bx, ijk, x, y, z);
+      By_tmp[ijk] = KO_2d6(By, ijk, x, y, z);
+      Bz_tmp[ijk] = KO_2d6(Bz, ijk, x, y, z);
 
-    P_tmp[ijk] = KO_2d6(P, ijk, x, y, z);
+      P_tmp[ijk] = KO_2d6(P, ijk, x, y, z);
+    }
+    else {
+      Ex_tmp[ijk] = KO_2d0(Ex, ijk);
+      Ey_tmp[ijk] = KO_2d0(Ey, ijk);
+      Ez_tmp[ijk] = KO_2d0(Ez, ijk);
 
-    // Ex_tmp[ijk] = KO_2d0(Ex, ijk);
-    // Ey_tmp[ijk] = KO_2d0(Ey, ijk);
-    // Ez_tmp[ijk] = KO_2d0(Ez, ijk);
+      Bx_tmp[ijk] = KO_2d0(Bx, ijk);
+      By_tmp[ijk] = KO_2d0(By, ijk);
+      Bz_tmp[ijk] = KO_2d0(Bz, ijk);
 
-    // Bx_tmp[ijk] = KO_2d0(Bx, ijk);
-    // By_tmp[ijk] = KO_2d0(By, ijk);
-    // Bz_tmp[ijk] = KO_2d0(Bz, ijk);
-
-    // P_tmp[ijk] = KO_2d0(P, ijk);
+      P_tmp[ijk] = KO_2d0(P, ijk);
+    } 
   }
 }
 
