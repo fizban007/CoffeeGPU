@@ -221,6 +221,7 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     Scalar z = 0.0;
 
     Scalar Jx, Jy, Jz;
+    Scalar Px, Py, Pz;
 
     Scalar gmsqrt = get_sqrt_gamma(x, y, z);
     if (gmsqrt < TINY) gmsqrt = TINY;
@@ -266,15 +267,15 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     }
 
     if (dev_params.divB_clean) {
-      Scalar Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
-      // Scalar Px = dfdx1(P, ijk, x) / get_gamma_d11(x, y, z);
-      Scalar Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
-      Scalar Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
+      Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
+      // Px = dfdx1(P, ijk, x) / get_gamma_d11(x, y, z);
+      Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
+      Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
     }
     else {
-      Scalar Px = 0.0;
-      Scalar Py = 0.0;
-      Scalar Pz = 0.0;
+      Px = 0.0;
+      Py = 0.0;
+      Pz = 0.0;
     }
 
     dBx[ijk] = As * dBx[ijk] - dev_params.dt * (rotEx + Px);
