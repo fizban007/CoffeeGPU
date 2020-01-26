@@ -267,7 +267,7 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
 
     if (dev_params.divB_clean) {
       Scalar Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
-      Scalar Px = dfdx1(P, ijk, x) / get_gamma_d11(x, y, z);
+      // Scalar Px = dfdx1(P, ijk, x) / get_gamma_d11(x, y, z);
       Scalar Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
       Scalar Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
     }
