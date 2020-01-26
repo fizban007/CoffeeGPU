@@ -144,14 +144,23 @@ KO_2d0(const Scalar *f, int ijk) {
 __device__ Scalar
 KO_2d6(const Scalar *f, int ijk, Scalar x, Scalar y, Scalar z) {
   Scalar dx = dev_grid.delta[0];
-  Scalar tmpx = (f[ijk - 3] * get_sqrt_gamma(x - 3.0 * dx, y, z) - 6.0 * f[ijk - 2] * get_sqrt_gamma(x - 2.0 * dx, y, z) + 15.0 * f[ijk - 1] * get_sqrt_gamma(x - dx, y, z) -
-          20.0 * f[ijk] * get_sqrt_gamma(x, y, z) + 15.0 * f[ijk + 1] * get_sqrt_gamma(x + dx, y, z) - 6.0 * f[ijk + 2] * get_sqrt_gamma(x + 2.0 * dx, y, z) +
-          f[ijk + 3] * get_sqrt_gamma(x + 3.0 * dx, y, z));
+  Scalar tmpx = (f[ijk - 3] * get_sqrt_gamma(x - 3.0 * dx, y, z) -
+                 6.0 * f[ijk - 2] * get_sqrt_gamma(x - 2.0 * dx, y, z) +
+                 15.0 * f[ijk - 1] * get_sqrt_gamma(x - dx, y, z) -
+                 20.0 * f[ijk] * get_sqrt_gamma(x, y, z) +
+                 15.0 * f[ijk + 1] * get_sqrt_gamma(x + dx, y, z) -
+                 6.0 * f[ijk + 2] * get_sqrt_gamma(x + 2.0 * dx, y, z) +
+                 f[ijk + 3] * get_sqrt_gamma(x + 3.0 * dx, y, z));
   Scalar dy = dev_grid.delta[1];
   int s = dev_grid.dims[0];
-  Scalar tmpy = f[ijk - 3 * s] * get_sqrt_gamma(x, y - 3.0 * dy, z) - 6.0 * f[ijk - 2 * s] * get_sqrt_gamma(x, y - 2.0 * dy, z) + 15.0 * f[ijk - s] * get_sqrt_gamma(x, y - dy, z) -
-          20.0 * f[ijk] * get_sqrt_gamma(x, y, z) + 15.0 * f[ijk + s] * get_sqrt_gamma(x, y + dy, z) - 6.0 * f[ijk + 2 * s] * get_sqrt_gamma(x, y + 2.0 * dy, z) +
-          f[ijk + 3 * s] * get_sqrt_gamma(x, y + 3.0 * dy, z);
+  Scalar tmpy =
+      f[ijk - 3 * s] * get_sqrt_gamma(x, y - 3.0 * dy, z) -
+      6.0 * f[ijk - 2 * s] * get_sqrt_gamma(x, y - 2.0 * dy, z) +
+      15.0 * f[ijk - s] * get_sqrt_gamma(x, y - dy, z) -
+      20.0 * f[ijk] * get_sqrt_gamma(x, y, z) +
+      15.0 * f[ijk + s] * get_sqrt_gamma(x, y + dy, z) -
+      6.0 * f[ijk + 2 * s] * get_sqrt_gamma(x, y + 2.0 * dy, z) +
+      f[ijk + 3 * s] * get_sqrt_gamma(x, y + 3.0 * dy, z);
   return (tmpx + tmpy) / get_sqrt_gamma(x, y, z);
 }
 
@@ -393,25 +402,25 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Scalar z = 0.0;
     Scalar x0 = get_x(dev_params.radius);
 
-    // Ex_tmp[ijk] = KO_2d6(Ex, ijk, x, y, z);
-    // Ey_tmp[ijk] = KO_2d6(Ey, ijk, x, y, z);
-    // Ez_tmp[ijk] = KO_2d6(Ez, ijk, x, y, z);
+    Ex_tmp[ijk] = KO_2d6(Ex, ijk, x, y, z);
+    Ey_tmp[ijk] = KO_2d6(Ey, ijk, x, y, z);
+    Ez_tmp[ijk] = KO_2d6(Ez, ijk, x, y, z);
 
-    // Bx_tmp[ijk] = KO_2d6(Bx, ijk, x, y, z);
-    // By_tmp[ijk] = KO_2d6(By, ijk, x, y, z);
-    // Bz_tmp[ijk] = KO_2d6(Bz, ijk, x, y, z);
+    Bx_tmp[ijk] = KO_2d6(Bx, ijk, x, y, z);
+    By_tmp[ijk] = KO_2d6(By, ijk, x, y, z);
+    Bz_tmp[ijk] = KO_2d6(Bz, ijk, x, y, z);
 
-    // P_tmp[ijk] = KO_2d6(P, ijk, x, y, z);
+    P_tmp[ijk] = KO_2d6(P, ijk, x, y, z);
 
-    Ex_tmp[ijk] = KO_2d0(Ex, ijk);
-    Ey_tmp[ijk] = KO_2d0(Ey, ijk);
-    Ez_tmp[ijk] = KO_2d0(Ez, ijk);
+    // Ex_tmp[ijk] = KO_2d0(Ex, ijk);
+    // Ey_tmp[ijk] = KO_2d0(Ey, ijk);
+    // Ez_tmp[ijk] = KO_2d0(Ez, ijk);
 
-    Bx_tmp[ijk] = KO_2d0(Bx, ijk);
-    By_tmp[ijk] = KO_2d0(By, ijk);
-    Bz_tmp[ijk] = KO_2d0(Bz, ijk);
+    // Bx_tmp[ijk] = KO_2d0(Bx, ijk);
+    // By_tmp[ijk] = KO_2d0(By, ijk);
+    // Bz_tmp[ijk] = KO_2d0(Bz, ijk);
 
-    P_tmp[ijk] = KO_2d0(P, ijk);
+    // P_tmp[ijk] = KO_2d0(P, ijk);
     
   }
 }
@@ -426,7 +435,7 @@ kernel_KO_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 
   switch (FFE_DISSIPATION_ORDER) {
     case 4:
-      KO_const = -1. / 16;
+      KO_const = 1. / 16;
       break;
     case 6:
       KO_const = -1. / 64;
