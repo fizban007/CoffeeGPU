@@ -36,6 +36,22 @@ interpolate(T* f, std::size_t idx_lin, Stagger in, Stagger out,
 
 template <typename T>
 HOST_DEVICE T
+interpolate2d(T* f, std::size_t idx_lin, Stagger in, Stagger out,
+              int dim0) {
+  int di_m = (in[0] == out[0] ? 0 : -out[0]);
+  int di_p = (in[0] == out[0] ? 0 : 1 - out[0]);
+  int dj_m = (in[1] == out[1] ? 0 : -out[1]);
+  int dj_p = (in[1] == out[1] ? 0 : 1 - out[1]);
+
+  Scalar f1 = 0.5 * (f[idx_lin + di_p + dj_p * dim0] +
+                     f[idx_lin + di_p + dj_m * dim0]);
+  Scalar f0 = 0.5 * (f[idx_lin + di_m + dj_p * dim0] +
+                     f[idx_lin + di_m + dj_m * dim0]);
+  return 0.5 * (f1 + f0);
+}
+
+template <typename T>
+HOST_DEVICE T
 interpolate(T* f, std::size_t idx_lin, Vec3<float> out, int dim0,
             int dim1) {
   int di_m = 0;

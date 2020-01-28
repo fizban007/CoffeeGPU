@@ -21,7 +21,7 @@ assign_single_value(T* data, size_t size, T value) {
 template <typename T>
 __global__ void
 downsample_average(T* orig_data, float* dst_data, Extent orig_ext,
-           Extent dst_ext, Index offset, Stagger st, int d) {
+                   Extent dst_ext, Index offset, Stagger st, int d) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   int j = threadIdx.y + blockIdx.y * blockDim.y;
   int k = threadIdx.z + blockIdx.z * blockDim.z;
@@ -64,6 +64,24 @@ downsample(T* orig_data, float* dst_data, Extent orig_ext,
     dst_data[dst_idx] =
         interpolate(orig_data, orig_idx, st, Stagger(0b111), orig_ext.x,
                     orig_ext.y);
+
+    // dst_data[dst_idx] = orig_data[orig_idx];
+  }
+}
+
+template <typename T>
+__global__ void
+downsample2d(T* orig_data, float* dst_data, Extent orig_ext,
+             Extent dst_ext, Index offset, Stagger st, int d) {
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  int j = threadIdx.y + blockIdx.y * blockDim.y;
+  if (i < dst_ext.x && j < dst_ext.y) {
+    size_t orig_idx =
+        i * d + offset.x + (j * d + offset.y) * orig_ext.x;
+    size_t dst_idx = i + j * dst_ext.x;
+
+    dst_data[dst_idx] =
+        interpolate2d(orig_data, orig_idx, st, Stagger(0b111), orig_ext.x);
 
     // dst_data[dst_idx] = orig_data[orig_idx];
   }
@@ -131,15 +149,26 @@ multi_array<T>::downsample(int d, multi_array<float>& array,
                            Index offset, Stagger stagger,
                            float* h_ptr) {
   auto& ext = array.extent();
-  dim3 blockSize(32, 8, 4);
-  dim3 gridSize((ext.x + blockSize.x - 1) / blockSize.x,
-                (ext.y + blockSize.y - 1) / blockSize.y,
-                (ext.z + blockSize.z - 1) / blockSize.z);
-  Kernels::downsample<<<gridSize, blockSize>>>(
-      m_data_d, array.dev_ptr(), m_extent, array.extent(), offset,
-      stagger, d);
-  CudaCheckError();
-
+  if (ext.y == 1 && ext.z == 1) {
+    // Use 1D version which we did not implement
+  } else if (ext.z == 1) {  // Use 2D version
+    dim3 blockSize(32, 32);
+    dim3 gridSize((ext.x + blockSize.x - 1) / blockSize.x,
+                  (ext.y + blockSize.y - 1) / blockSize.y);
+    Kernels::downsample2d<<<gridSize, blockSize>>>(
+        m_data_d, array.dev_ptr(), m_extent, array.extent(), offset,
+        stagger, d);
+    CudaCheckError();
+  } else {
+    dim3 blockSize(32, 8, 4);
+    dim3 gridSize((ext.x + blockSize.x - 1) / blockSize.x,
+                  (ext.y + blockSize.y - 1) / blockSize.y,
+                  (ext.z + blockSize.z - 1) / blockSize.z);
+    Kernels::downsample<<<gridSize, blockSize>>>(
+        m_data_d, array.dev_ptr(), m_extent, array.extent(), offset,
+        stagger, d);
+    CudaCheckError();
+  }
   // CudaSafeCall(cudaMemcpy(h_ptr, array.m_data_d,
   //                         array.size() * sizeof(T),
   //                         cudaMemcpyDeviceToHost));
