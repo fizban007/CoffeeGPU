@@ -31,12 +31,7 @@ int main(int argc, char *argv[]) {
   field_solver solver(data, env);
 #endif
 
-#ifdef EZ
-  #include "user_alfven_EZ.hpp"
-#else
   #include "user_alfven.hpp"
-#endif
-
 
   uint32_t step = 0;
   data_exporter exporter(env, step);
