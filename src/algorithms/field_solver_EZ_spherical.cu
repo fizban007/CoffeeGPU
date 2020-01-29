@@ -489,11 +489,8 @@ wpert_sph(Scalar t, Scalar r, Scalar th) {
   if (t >= dev_params.tp_start && t <= dev_params.tp_end && th >= th1 &&
       th <= th2)
     return dev_params.dw0 * exp(-0.5 * square((th - mu) / s)) *
-           sin((t - dev_params.tp_start) * 2.0 * M_PI /
-               (dev_params.tp_end - dev_params.tp_start)) *
-           0.5 *
-           (1.0 + tanh((r - 0.5 * dev_params.radius) /
-                       (0.05 * dev_params.radius)));
+           sin((t - dev_params.tp_start) * 2.0 * M_PI * dev_params.nT /
+               (dev_params.tp_end - dev_params.tp_start));
   else
     return 0;
 }

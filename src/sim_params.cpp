@@ -107,6 +107,7 @@ parse_config(const std::string& filename) {
   result.rpert2 =
       config->get_as<double>("rpert2").value_or(defaults.rpert2);
   result.dw0 = config->get_as<double>("dw0").value_or(defaults.dw0);
+  result.nT = config->get_as<double>("nT").value_or(defaults.nT);
 
   return result;
 }
