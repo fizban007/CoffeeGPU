@@ -78,12 +78,17 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     Scalar Jz = (divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) +
                  Jp * Bz[ijk]) /
                 B2;
-    // Scalar Px = dfdx(P, ijk);
-    // Scalar Py = dfdy(P, ijk);
-    // Scalar Pz = dfdz(P, ijk);
-    Scalar Px = 0.0;
-    Scalar Py = 0.0;
-    Scalar Pz = 0.0;
+
+    if (dev_params.divB_clean) {
+      Scalar Px = dfdx(P, ijk);
+      Scalar Py = dfdy(P, ijk);
+      Scalar Pz = dfdz(P, ijk);
+    }
+    else {
+      Scalar Px = 0.0;
+      Scalar Py = 0.0;
+      Scalar Pz = 0.0;
+    }
 
     // dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
     //                                           P[ijk] /
@@ -648,7 +653,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
     if (m_env.params().clean_ep) clean_epar();
     if (m_env.params().check_egb) check_eGTb();
 
-    boundary_pulsar(time + cs[i] * m_env.params().dt);
+    if (dev_params.pulsar) boundary_pulsar(time + cs[i] * m_env.params().dt);
     if (i == 4) boundary_absorbing();
 
     CudaSafeCall(cudaDeviceSynchronize());
@@ -667,7 +672,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
   Kreiss_Oliger();
   if (m_env.params().clean_ep) clean_epar();
   if (m_env.params().check_egb) check_eGTb();
-  boundary_pulsar(time + m_env.params().dt);
+  if (dev_params.pulsar) boundary_pulsar(time + m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
   // m_env.send_guard_cell_array(P);
@@ -749,8 +754,8 @@ field_solver_EZ::total_energy(vector_field<Scalar> &f) {
         Scalar y = m_env.grid().pos(1, j, 1);
         Scalar z = m_env.grid().pos(2, k, 1);
         Scalar r = std::sqrt(x * x + y * y + z * z);
-        if (r >= m_env.params().radius && x < xh && x > xl && y < yh &&
-            y > yl && z < zh && z > zl) {
+        if ((!(m_env.params().pulsar && r < m_env.params().radius)) && x < xh &&
+            x > xl && y < yh && y > yl && z < zh && z > zl) {
           Wtmp += f.data(0)[ijk] * f.data(0)[ijk] +
                   f.data(1)[ijk] * f.data(1)[ijk] +
                   f.data(2)[ijk] * f.data(2)[ijk];

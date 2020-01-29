@@ -13,6 +13,7 @@ class field_solver {
   ~field_solver();
 
   void evolve_fields(Scalar t);
+  Scalar total_energy(vector_field<Scalar> &f);
 
  private:
   sim_data& m_data;

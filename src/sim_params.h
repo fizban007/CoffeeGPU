@@ -51,6 +51,7 @@ struct sim_params {
   bool KO_geometry = true; ///< Whether or not to include geometric factors in KO
 
   // Pulsar problem
+  bool pulsar = true; ///< Whether or not to use pulsar setup
   Scalar radius = 10.0; ///< Radius of the pulsar
   Scalar omega = 0.001; ///< Angular velocity of the pulsar
   Scalar b0 = 1e3; ///< Magnetic field at stellar surface

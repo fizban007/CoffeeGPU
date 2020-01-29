@@ -2,12 +2,18 @@
 #define _USER_INIT_H_
 
 Scalar c = 1;
-Scalar bx0 = 1.5;
-Scalar by0 = 2.8;
-Scalar bz0 = 3.2;
+// Scalar bx0 = 1.5;
+// Scalar by0 = 2.8;
+// Scalar bz0 = 3.2;
+// Scalar kx = 5.0 * 2.0 * M_PI / env.params().size[0];
+// Scalar ky = 8.0 * 2.0 * M_PI / env.params().size[1];
+// Scalar kz = 2.0 * 2.0 * M_PI / env.params().size[2];
+Scalar bx0 = 1.0;
+Scalar by0 = 0.0;
+Scalar bz0 = 0.0;
 Scalar kx = 5.0 * 2.0 * M_PI / env.params().size[0];
-Scalar ky = 8.0 * 2.0 * M_PI / env.params().size[1];
-Scalar kz = 2.0 * 2.0 * M_PI / env.params().size[2];
+Scalar ky = 0.0;
+Scalar kz = 1.0 * 2.0 * M_PI / env.params().size[2];
 Scalar bn = sqrt(bx0 * bx0 + by0 * by0 + bz0 * bz0);
 Scalar w = (kx * bx0 + ky * by0 + kz * bz0) / bn * c;
 Scalar xi0 = 0.2;

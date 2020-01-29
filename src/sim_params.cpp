@@ -74,6 +74,8 @@ parse_config(const std::string& filename) {
   result.KO_geometry = config->get_as<bool>("KO_geometry")
                            .value_or(defaults.KO_geometry);
 
+  result.pulsar =
+      config->get_as<bool>("pulsar").value_or(defaults.pulsar);
   result.radius =
       config->get_as<double>("radius").value_or(defaults.radius);
   result.omega =

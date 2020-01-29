@@ -696,7 +696,7 @@ field_solver::evolve_fields(Scalar t) {
   rk_push();
   rk_update(1.0, 0.0, 1.0);
   check_eGTb();
-  boundary_pulsar(t + m_env.params().dt);
+  if (dev_params.pulsar) boundary_pulsar(t + m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
   // RANGE_POP;
   m_env.send_guard_cells(m_data);
@@ -706,7 +706,7 @@ field_solver::evolve_fields(Scalar t) {
   rk_push();
   rk_update(0.75, 0.25, 0.25);
   check_eGTb();
-  boundary_pulsar(t + 0.5 * m_env.params().dt);
+  if (dev_params.pulsar) boundary_pulsar(t + 0.5 * m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
   // RANGE_POP;
   m_env.send_guard_cells(m_data);
@@ -717,7 +717,7 @@ field_solver::evolve_fields(Scalar t) {
   rk_update(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
   clean_epar();
   check_eGTb();
-  boundary_pulsar(t + m_env.params().dt);
+  if (dev_params.pulsar) boundary_pulsar(t + m_env.params().dt);
   boundary_absorbing();
   CudaSafeCall(cudaDeviceSynchronize());
   // RANGE_POP;
@@ -818,6 +818,52 @@ field_solver::boundary_absorbing() {
       m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       m_env.params().shift_ghost);
   CudaCheckError();
+}
+
+Scalar
+field_solver_EZ::total_energy(vector_field<Scalar> &f) {
+  f.sync_to_host();
+  Scalar Wtmp = 0.0, W = 0.0;
+  Scalar xh = m_env.params().lower[0] + m_env.params().size[0] -
+              m_env.params().pml[0] * m_env.grid().delta[0];
+  Scalar xl = m_env.params().lower[0] +
+              m_env.params().pml[0] * m_env.grid().delta[0];
+  Scalar yh = m_env.params().lower[1] + m_env.params().size[1] -
+              m_env.params().pml[1] * m_env.grid().delta[1];
+  Scalar yl = m_env.params().lower[1] +
+              m_env.params().pml[1] * m_env.grid().delta[1];
+  Scalar zh = m_env.params().lower[2] + m_env.params().size[2] -
+              m_env.params().pml[2] * m_env.grid().delta[2];
+  Scalar zl = m_env.params().lower[2] +
+              m_env.params().pml[2] * m_env.grid().delta[2];
+  for (int k = m_env.grid().guard[2];
+       k < m_env.grid().dims[2] - m_env.grid().guard[2]; ++k) {
+    for (int j = m_env.grid().guard[1];
+         j < m_env.grid().dims[1] - m_env.grid().guard[1]; ++j) {
+      for (int i = m_env.grid().guard[0];
+           i < m_env.grid().dims[0] - m_env.grid().guard[0]; ++i) {
+        int ijk = i + j * m_env.grid().dims[0] +
+                  k * m_env.grid().dims[0] * m_env.grid().dims[1];
+        Scalar x = m_env.grid().pos(0, i, 1);
+        Scalar y = m_env.grid().pos(1, j, 1);
+        Scalar z = m_env.grid().pos(2, k, 1);
+        Scalar r = std::sqrt(x * x + y * y + z * z);
+        Scalar fx = interpolate(f.host_ptr(0), ijk, f.stagger(0), Stagger(0b111),
+                          m_env.grid().dims[0], m_env.grid().dims[1]);
+        Scalar fy = interpolate(f.host_ptr(1), ijk, f.stagger(1), Stagger(0b111),
+                          m_env.grid().dims[0], m_env.grid().dims[1]);
+        Scalar fz = interpolate(f.host_ptr(2), ijk, f.stagger(2), Stagger(0b111),
+                          m_env.grid().dims[0], m_env.grid().dims[1]);
+        if ((!(m_env.params().pulsar && r < m_env.params().radius)) && x < xh &&
+            x > xl && y < yh && y > yl && z < zh && z > zl)  {
+          Wtmp += fx * fx + fy * fy + fz * fz;
+        }
+      }
+    }
+  }
+  MPI_Reduce(&Wtmp, &W, 1, m_env.scalar_type(), MPI_SUM, 0,
+             m_env.world());
+  return W;
 }
 
 }  // namespace Coffee
