@@ -79,15 +79,16 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
                  Jp * Bz[ijk]) /
                 B2;
 
+    Scalar Px, Py, Pz;
     if (dev_params.divB_clean) {
-      Scalar Px = dfdx(P, ijk);
-      Scalar Py = dfdy(P, ijk);
-      Scalar Pz = dfdz(P, ijk);
+      Px = dfdx(P, ijk);
+      Py = dfdy(P, ijk);
+      Pz = dfdz(P, ijk);
     }
     else {
-      Scalar Px = 0.0;
-      Scalar Py = 0.0;
-      Scalar Pz = 0.0;
+      Px = 0.0;
+      Py = 0.0;
+      Pz = 0.0;
     }
 
     // dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
@@ -653,7 +654,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
     if (m_env.params().clean_ep) clean_epar();
     if (m_env.params().check_egb) check_eGTb();
 
-    if (dev_params.pulsar) boundary_pulsar(time + cs[i] * m_env.params().dt);
+    if (m_env.params().pulsar) boundary_pulsar(time + cs[i] * m_env.params().dt);
     if (i == 4) boundary_absorbing();
 
     CudaSafeCall(cudaDeviceSynchronize());
@@ -672,7 +673,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
   Kreiss_Oliger();
   if (m_env.params().clean_ep) clean_epar();
   if (m_env.params().check_egb) check_eGTb();
-  if (dev_params.pulsar) boundary_pulsar(time + m_env.params().dt);
+  if (m_env.params().pulsar) boundary_pulsar(time + m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
   // m_env.send_guard_cell_array(P);

@@ -696,7 +696,7 @@ field_solver::evolve_fields(Scalar t) {
   rk_push();
   rk_update(1.0, 0.0, 1.0);
   check_eGTb();
-  if (dev_params.pulsar) boundary_pulsar(t + m_env.params().dt);
+  if (m_env.params().pulsar) boundary_pulsar(t + m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
   // RANGE_POP;
   m_env.send_guard_cells(m_data);
@@ -706,7 +706,7 @@ field_solver::evolve_fields(Scalar t) {
   rk_push();
   rk_update(0.75, 0.25, 0.25);
   check_eGTb();
-  if (dev_params.pulsar) boundary_pulsar(t + 0.5 * m_env.params().dt);
+  if (m_env.params().pulsar) boundary_pulsar(t + 0.5 * m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
   // RANGE_POP;
   m_env.send_guard_cells(m_data);
@@ -717,7 +717,7 @@ field_solver::evolve_fields(Scalar t) {
   rk_update(1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
   clean_epar();
   check_eGTb();
-  if (dev_params.pulsar) boundary_pulsar(t + m_env.params().dt);
+  if (m_env.params().pulsar) boundary_pulsar(t + m_env.params().dt);
   boundary_absorbing();
   CudaSafeCall(cudaDeviceSynchronize());
   // RANGE_POP;
@@ -821,7 +821,7 @@ field_solver::boundary_absorbing() {
 }
 
 Scalar
-field_solver_EZ::total_energy(vector_field<Scalar> &f) {
+field_solver::total_energy(vector_field<Scalar> &f) {
   f.sync_to_host();
   Scalar Wtmp = 0.0, W = 0.0;
   Scalar xh = m_env.params().lower[0] + m_env.params().size[0] -
