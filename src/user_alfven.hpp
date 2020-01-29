@@ -98,12 +98,18 @@ dA.initialize(2, [&](Scalar x, Scalar y, Scalar z) {
 for (int k = 0; k < env.grid().dims[2] - 1; ++k) {
   for (int j = 0; j < env.grid().dims[1] - 1; ++j) {
     for (int i = 0; i < env.grid().dims[0] - 1; ++i) {
-      data.B(0, i, j, k) = bx0 + dA(2, i, j + 1, k) - dA(2, i, j, k) -
-                           dA(1, i, j, k + 1) + dA(1, i, j, k);
-      data.B(1, i, j, k) = by0 + dA(0, i, j, k + 1) - dA(0, i, j, k) -
-                           dA(2, i + 1, j, k) + dA(2, i, j, k);
-      data.B(2, i, j, k) = bz0 + dA(1, i + 1, j, k) - dA(1, i, j, k) -
-                           dA(0, i, j + 1, k) + dA(0, i, j, k);
+      data.B(0, i, j, k) =
+          bx0 +
+          (dA(2, i, j + 1, k) - dA(2, i, j, k)) * env.grid().inv_delta[1] -
+          (dA(1, i, j, k + 1) - dA(1, i, j, k)) * env.grid().inv_delta[2];
+      data.B(1, i, j, k) =
+          by0 +
+          (dA(0, i, j, k + 1) - dA(0, i, j, k)) * env.grid().inv_delta[2] -
+          (dA(2, i + 1, j, k) - dA(2, i, j, k)) * env.grid().inv_delta[0];
+      data.B(2, i, j, k) =
+          bz0 +
+          (dA(1, i + 1, j, k) - dA(1, i, j, k)) * env.grid().inv_delta[0] -
+          (dA(0, i, j + 1, k) - dA(0, i, j, k)) * env.grid().inv_delta[1];
     }
   }
 }
