@@ -74,6 +74,11 @@ parse_config(const std::string& filename) {
   result.KO_geometry = config->get_as<bool>("KO_geometry")
                            .value_or(defaults.KO_geometry);
 
+  result.calc_Jp =
+      config->get_as<bool>("calc_Jp").value_or(defaults.calc_Jp);
+  result.Ep_fine =
+      config->get_as<bool>("Ep_fine").value_or(defaults.Ep_fine);
+
   result.pulsar =
       config->get_as<bool>("pulsar").value_or(defaults.pulsar);
   result.radius =

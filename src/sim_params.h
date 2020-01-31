@@ -50,6 +50,10 @@ struct sim_params {
   Scalar KOeps = 0.50; ///< Small parameter in Kreiss-Oliger dissipation (range [0-1])
   bool KO_geometry = true; ///< Whether or not to include geometric factors in KO
 
+  // Test solvers
+  bool calc_Jp = true; ///< Whether or not to include Jp in current calculation
+  bool Ep_fine = true; ///< Clean Epar at every substep
+
   // Pulsar problem
   bool pulsar = true; ///< Whether or not to use pulsar setup
   Scalar radius = 10.0; ///< Radius of the pulsar
