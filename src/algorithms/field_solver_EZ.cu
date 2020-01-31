@@ -69,7 +69,7 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
 
     Scalar Jp;
     if (dev_params.calc_Jp)
-      Scalar Jp = (Bx[ijk] * rotBx + By[ijk] * rotBy + Bz[ijk] * rotBz) -
+      Jp = (Bx[ijk] * rotBx + By[ijk] * rotBy + Bz[ijk] * rotBz) -
                   (Ex[ijk] * rotEx + Ey[ijk] * rotEy + Ez[ijk] * rotEz);
     else 
       Jp = 0.0;
