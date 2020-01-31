@@ -695,6 +695,7 @@ field_solver::evolve_fields(Scalar t) {
   // substep #1:
   rk_push();
   rk_update(1.0, 0.0, 1.0);
+  clean_epar();
   check_eGTb();
   if (m_env.params().pulsar) boundary_pulsar(t + m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
@@ -705,6 +706,7 @@ field_solver::evolve_fields(Scalar t) {
   // RANGE_PUSH("Compute", CLR_GREEN);
   rk_push();
   rk_update(0.75, 0.25, 0.25);
+  clean_epar();
   check_eGTb();
   if (m_env.params().pulsar) boundary_pulsar(t + 0.5 * m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());

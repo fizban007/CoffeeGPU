@@ -486,11 +486,15 @@ wpert_sph(Scalar t, Scalar r, Scalar th) {
   }
   Scalar mu = (th1 + th2) / 2.0;
   Scalar s = (mu - th1) / 3.0;
-  if (t >= dev_params.tp_start && t <= dev_params.tp_end && th >= th1 &&
+  Scalar t1 = dev_params.tp_start;
+  Scalar t2 = dev_params.tp_end;
+  Scalar tm = 0.5 * (t1 + t2);
+  Scalar ts = (tm - t1) / 3.0; 
+  if (t >= t1  && t <= t2 && th >= th1 &&
       th <= th2)
     return dev_params.dw0 * exp(-0.5 * square((th - mu) / s)) *
-           sin((t - dev_params.tp_start) * 2.0 * M_PI * dev_params.nT /
-               (dev_params.tp_end - dev_params.tp_start));
+           sin((t - t1) * 2.0 * M_PI * dev_params.nT /
+               (t2 - t1)) * exp(-0.5 * square((t - tm) / ts));
   else
     return 0;
 }

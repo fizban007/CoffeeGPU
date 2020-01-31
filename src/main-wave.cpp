@@ -15,7 +15,7 @@ using namespace std;
 using namespace Coffee;
 
 #define ENG
-#define EZ
+// #define EZ
 
 int main(int argc, char *argv[]) {
   timer::stamp("begin");

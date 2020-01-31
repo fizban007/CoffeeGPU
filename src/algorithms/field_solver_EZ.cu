@@ -67,8 +67,9 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
         Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] * Bz[ijk];
     if (B2 < TINY) B2 = TINY;
 
-    Scalar Jp = (Bx[ijk] * rotBx + By[ijk] * rotBy + Bz[ijk] * rotBz) -
-                (Ex[ijk] * rotEx + Ey[ijk] * rotEy + Ez[ijk] * rotEz);
+    // Scalar Jp = (Bx[ijk] * rotBx + By[ijk] * rotBy + Bz[ijk] * rotBz) -
+    //             (Ex[ijk] * rotEx + Ey[ijk] * rotEy + Ez[ijk] * rotEz);
+    Scalar Jp = 0.0;
     Scalar Jx = (divE * (Ey[ijk] * Bz[ijk] - Ez[ijk] * By[ijk]) +
                  Jp * Bx[ijk]) /
                 B2;
@@ -651,7 +652,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
       timer::show_duration_since_stamp("rk_step", "ms");
 
     timer::stamp();
-    if (m_env.params().clean_ep) clean_epar();
+    if (m_env.params().clean_ep && i == 4) clean_epar();
     if (m_env.params().check_egb) check_eGTb();
 
     if (m_env.params().pulsar) boundary_pulsar(time + cs[i] * m_env.params().dt);
