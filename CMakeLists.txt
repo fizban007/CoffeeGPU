@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.10)
 
 project (Coffee)
-enable_language(Fortran CXX)
+enable_language(CXX)
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -108,4 +108,4 @@ if (build_tests)
 endif()
 
 # Add the original Fortran code as compile target too
-add_subdirectory(original)
+#add_subdirectory(original)
