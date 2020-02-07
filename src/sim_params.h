@@ -47,6 +47,7 @@ struct sim_params {
   Scalar ch2 = 1.0; ///< Dedner wave speed (squared)
   Scalar tau = 0.02; ///< Dedner damping time
   Scalar KOeps = 0.50; ///< Small parameter in Kreiss-Oliger dissipation (range [0-1])
+  Scalar damp_gamma = 0.2;
 
   // Pulsar problem
   Scalar radius = 10.0; ///< Radius of the pulsar
