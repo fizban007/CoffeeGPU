@@ -278,14 +278,14 @@ sim_environment::send_guard_cell_z_old(sim_data& data, int dir) {
 
 void
 sim_environment::send_guard_cells(sim_data& data) {
-  RANGE_PUSH("communication", CLR_CYAN);
+  // RANGE_PUSH("communication", CLR_CYAN);
   send_guard_cell_x(data, -1);
   send_guard_cell_x(data, 1);
   send_guard_cell_y(data, -1);
   send_guard_cell_y(data, 1);
   send_guard_cell_z(data, -1);
   send_guard_cell_z(data, 1);
-  RANGE_POP;
+  // RANGE_POP;
 }
 
 void
@@ -302,7 +302,7 @@ sim_environment::sim_environment(int* argc, char*** argv) {
   int is_initialized = 0;
   MPI_Initialized(&is_initialized);
 
-  RANGE_PUSH("Initialization", CLR_BLUE);
+  // RANGE_PUSH("Initialization", CLR_BLUE);
   if (!is_initialized) {
     if (argc == nullptr && argv == nullptr) {
       MPI_Init(NULL, NULL);
@@ -350,7 +350,7 @@ sim_environment::sim_environment(int* argc, char*** argv) {
 
   // Send the grid info to the device
   init_dev_grid(m_grid);
-  RANGE_POP;
+  // RANGE_POP;
 
   m_send_buffers.resize(3);
   m_send_buffers[0] = multi_array<Scalar>(
