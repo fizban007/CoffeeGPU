@@ -62,6 +62,7 @@ parse_config(const std::string& filename) {
   result.pmllen = config->get_as<int>("pmllen").value_or(defaults.pmllen);
   result.sigpml = config->get_as<double>("sigpml").value_or(defaults.sigpml);
   result.damp_gamma = config->get_as<double>("damp_gamma").value_or(defaults.damp_gamma);
+  result.use_edotb_damping = config->get_as<bool>("use_edotb_damping").value_or(defaults.use_edotb_damping);
 
   result.ch2 = config->get_as<double>("ch2").value_or(defaults.ch2);
   result.tau = config->get_as<double>("tau").value_or(defaults.tau);

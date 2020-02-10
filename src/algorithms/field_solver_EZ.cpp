@@ -1,8 +1,8 @@
 #include "field_solver_EZ.h"
 #include "algorithms/damping_boundary.h"
-#include "utils/simd.h"
 #include "algorithms/finite_diff_simd.h"
 #include "algorithms/pulsar.h"
+#include "utils/simd.h"
 #include "utils/timer.h"
 #include <omp.h>
 
@@ -128,38 +128,42 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
         exvec.load(Ex.host_ptr() + ijk);
         eyvec.load(Ey.host_ptr() + ijk);
         ezvec.load(Ez.host_ptr() + ijk);
+
+        Vec_f_t Jx, Jy, Jz;
         // Scalar B2 =
         //     Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] *
         //     Bz[ijk];
         auto B2 = bxvec * bxvec + byvec * byvec + bzvec * bzvec;
         // if (B2 < TINY) B2 = TINY;
         B2 = max(B2, TINY);
-        auto E2 = exvec * exvec + eyvec * eyvec + ezvec * ezvec;
-        auto chi2 = B2 - E2;
-        auto EdotB = exvec * bxvec + eyvec * byvec + ezvec * bzvec;
-        auto E02 = 0.5 * (sqrt(chi2 * chi2 + 4.0 * EdotB * EdotB) - chi2) + B2;
 
-        // Scalar Jp =
-        //     (Bx[ijk] * rotBx + By[ijk] * rotBy + Bz[ijk] * rotBz) -
-        //     (Ex[ijk] * rotEx + Ey[ijk] * rotEy + Ez[ijk] * rotEz);
-        // Scalar Jx = (divE * (Ey[ijk] * Bz[ijk] - Ez[ijk] * By[ijk]) +
-        //              Jp * Bx[ijk]) /
-        //             B2;
-        // Scalar Jy = (divE * (Ez[ijk] * Bx[ijk] - Ex[ijk] * Bz[ijk]) +
-        //              Jp * By[ijk]) /
-        //             B2;
-        // Scalar Jz = (divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) +
-        //              Jp * Bz[ijk]) /
-        //             B2;
-        auto Jp = (bxvec * rotBx + byvec * rotBy + bzvec * rotBz) -
-                  (exvec * rotEx + eyvec * rotEy + ezvec * rotEz) +
-            EdotB * (params.damp_gamma / params.dt);
-        auto Jx =
-            divE * (eyvec * bzvec - ezvec * byvec) / E02 + Jp * bxvec / B2;
-        auto Jy =
-            divE * (ezvec * bxvec - exvec * bzvec) / E02 + Jp * byvec / B2;
-        auto Jz =
-            divE * (exvec * byvec - eyvec * bxvec) / E02 + Jp * bzvec / B2;
+        if (params.use_edotb_damping) {
+          auto E2 = exvec * exvec + eyvec * eyvec + ezvec * ezvec;
+          auto chi2 = B2 - E2;
+          auto EdotB = exvec * bxvec + eyvec * byvec + ezvec * bzvec;
+          auto E02 =
+              0.5 * (sqrt(chi2 * chi2 + 4.0 * EdotB * EdotB) - chi2) +
+              B2;
+
+          auto Jp = (bxvec * rotBx + byvec * rotBy + bzvec * rotBz) -
+                    (exvec * rotEx + eyvec * rotEy + ezvec * rotEz) +
+                    EdotB * (params.damp_gamma / params.dt);
+          Jx = divE * (eyvec * bzvec - ezvec * byvec) / E02 +
+               Jp * bxvec / B2;
+          Jy = divE * (ezvec * bxvec - exvec * bzvec) / E02 +
+               Jp * byvec / B2;
+          Jz = divE * (exvec * byvec - eyvec * bxvec) / E02 +
+               Jp * bzvec / B2;
+        } else {
+          auto Jp = (bxvec * rotBx + byvec * rotBy + bzvec * rotBz) -
+                    (exvec * rotEx + eyvec * rotEy + ezvec * rotEz);
+          Jx = (divE * (eyvec * bzvec - ezvec * byvec) + Jp * bxvec) /
+               B2;
+          Jy = (divE * (ezvec * bxvec - exvec * bzvec) + Jp * byvec) /
+               B2;
+          Jz = (divE * (exvec * byvec - eyvec * bxvec) + Jp * bzvec) /
+               B2;
+        }
 
         Jx.store(jx.host_ptr() + ijk);
         Jy.store(jy.host_ptr() + ijk);
