@@ -322,7 +322,7 @@ field_solver_EZ::Kreiss_Oliger() {
 
   switch (FFE_DISSIPATION_ORDER) {
     case 4:
-      KO_const = -1.0 / 16.0;
+      KO_const = 1.0 / 16.0;
       break;
     case 6:
       KO_const = -1.0 / 64.0;
