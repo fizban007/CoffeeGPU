@@ -1,23 +1,32 @@
 #include "algorithms/interpolation.h"
 #include "data/multi_array.h"
 #include "data/multi_array_impl.hpp"
+#include "utils/memory.h"
 #include <algorithm>
 #include <stdexcept>
 #include <cstring>
+#include <iostream>
+#include <cstdlib>
 
 namespace Coffee {
 
 template <typename T>
 void
 multi_array<T>::alloc_mem(size_t size) {
-  m_data_h = new T[size];
+  // m_data_h = new T[size];
+  m_data_h = (T*)(aligned_malloc(size * sizeof(T), 64));
+  // m_data_h = (T*)(std::aligned_alloc(64, size * sizeof(T)));
+  // std::cout << "size of allocation is " << size * sizeof(T) << std::endl;
+  // std::cout << "address is " << m_data_h << std::endl;
 }
 
 template <typename T>
 void
 multi_array<T>::free_mem() {
   if (m_data_h != nullptr) {
-    delete[] m_data_h;
+    // delete[] m_data_h;
+    aligned_free(m_data_h);
+    // free(m_data_h);
     m_data_h = nullptr;
   }
 }

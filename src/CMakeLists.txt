@@ -30,6 +30,7 @@ else()
     "algorithms/field_solver_EZ.cpp"
     "algorithms/pulsar.cpp"
     "algorithms/damping_boundary.cpp"
+    "utils/memory.cpp"
    )
 endif()
 

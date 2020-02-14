@@ -1,4 +1,4 @@
-#include "algorithms/finite_diff.h"
+#include "algorithms/finite_diff_simd.h"
 #include "boundary.h"
 #include "cuda/constant_mem.h"
 #include "cuda/constant_mem_func.h"
@@ -67,17 +67,41 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
         Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] * Bz[ijk];
     if (B2 < TINY) B2 = TINY;
 
-    Scalar Jp = (Bx[ijk] * rotBx + By[ijk] * rotBy + Bz[ijk] * rotBz) -
-                (Ex[ijk] * rotEx + Ey[ijk] * rotEy + Ez[ijk] * rotEz);
-    Scalar Jx = (divE * (Ey[ijk] * Bz[ijk] - Ez[ijk] * By[ijk]) +
-                 Jp * Bx[ijk]) /
-                B2;
-    Scalar Jy = (divE * (Ez[ijk] * Bx[ijk] - Ex[ijk] * Bz[ijk]) +
-                 Jp * By[ijk]) /
-                B2;
-    Scalar Jz = (divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) +
-                 Jp * Bz[ijk]) /
-                B2;
+    Scalar Jx, Jy, Jz;
+
+    if (dev_params.use_edotb_damping) {
+      Scalar E2 =
+          Ex[ijk] * Ex[ijk] + Ey[ijk] * Ey[ijk] + Ez[ijk] * Ez[ijk];
+      Scalar chi2 = B2 - E2;
+      Scalar EdotB =
+          Ex[ijk] * Bx[ijk] + Ey[ijk] * By[ijk] + Ez[ijk] * Bz[ijk];
+      Scalar E02 =
+          0.5 * (sqrt(chi2 * chi2 + 4.0 * EdotB * EdotB) - chi2);
+
+      Scalar Jp =
+          (Bx[ijk] * rotBx + By[ijk] * rotBy + Bz[ijk] * rotBz) -
+          (Ex[ijk] * rotEx + Ey[ijk] * rotEy + Ez[ijk] * rotEz) +
+          dev_params.damp_gamma * EdotB / dev_params.dt;
+      Jx = divE * (Ey[ijk] * Bz[ijk] - Ez[ijk] * By[ijk]) / (E02 + B2) +
+           Jp * Bx[ijk] / B2;
+      Jy = divE * (Ez[ijk] * Bx[ijk] - Ex[ijk] * Bz[ijk]) / (E02 + B2) +
+           Jp * By[ijk] / B2;
+      Jz = divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) / (E02 + B2) +
+           Jp * Bz[ijk] / B2;
+    } else {
+      Scalar Jp =
+          (Bx[ijk] * rotBx + By[ijk] * rotBy + Bz[ijk] * rotBz) -
+          (Ex[ijk] * rotEx + Ey[ijk] * rotEy + Ez[ijk] * rotEz);
+      Jx = (divE * (Ey[ijk] * Bz[ijk] - Ez[ijk] * By[ijk]) +
+            Jp * Bx[ijk]) /
+           B2;
+      Jy = (divE * (Ez[ijk] * Bx[ijk] - Ex[ijk] * Bz[ijk]) +
+            Jp * By[ijk]) /
+           B2;
+      Jz = (divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) +
+            Jp * Bz[ijk]) /
+           B2;
+    }
 
     Scalar Px, Py, Pz;
     if (dev_params.divB_clean) {

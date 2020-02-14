@@ -49,6 +49,8 @@ struct sim_params {
   Scalar tau = 0.02; ///< Dedner damping time
   Scalar KOeps = 0.50; ///< Small parameter in Kreiss-Oliger dissipation (range [0-1])
   bool KO_geometry = true; ///< Whether or not to include geometric factors in KO
+  bool use_edotb_damping = true;
+  Scalar damp_gamma = 0.2;
 
   // Pulsar problem
   bool pulsar = true; ///< Whether or not to use pulsar setup

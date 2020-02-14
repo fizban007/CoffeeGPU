@@ -18,11 +18,11 @@ class vector_field {
   vector_field();
   ~vector_field();
   vector_field(const Grid &grid);
-  vector_field(const self_type &field);
+  // vector_field(const self_type &field);
   vector_field(self_type &&field);
 
   // Copy assignment operator
-  self_type &operator=(const self_type &field);
+  // self_type &operator=(const self_type &field);
 
   // Move assignment operator
   self_type &operator=(self_type &&field);

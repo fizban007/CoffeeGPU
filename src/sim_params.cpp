@@ -64,6 +64,10 @@ parse_config(const std::string& filename) {
       config->get_as<int>("pmllen").value_or(defaults.pmllen);
   result.sigpml =
       config->get_as<double>("sigpml").value_or(defaults.sigpml);
+  result.damp_gamma = config->get_as<double>("damp_gamma")
+                          .value_or(defaults.damp_gamma);
+  result.use_edotb_damping = config->get_as<bool>("use_edotb_damping")
+                                 .value_or(defaults.use_edotb_damping);
 
   result.divB_clean =
       config->get_as<bool>("divB_clean").value_or(defaults.divB_clean);

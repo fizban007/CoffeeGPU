@@ -64,7 +64,6 @@ downsample(T* orig_data, float* dst_data, Extent orig_ext,
     dst_data[dst_idx] =
         interpolate(orig_data, orig_idx, st, Stagger(0b111), orig_ext.x,
                     orig_ext.y);
-
     // dst_data[dst_idx] = orig_data[orig_idx];
   }
 }
@@ -188,6 +187,6 @@ template class multi_array<unsigned long>;
 template class multi_array<unsigned long long>;
 template class multi_array<float>;
 template class multi_array<double>;
-template class multi_array<long double>;
+// template class multi_array<long double>;
 
 }  // namespace Coffee
