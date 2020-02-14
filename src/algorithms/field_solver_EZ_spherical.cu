@@ -240,31 +240,55 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     Scalar divE = div4_sph(Ex, Ey, Ez, ijk, x, y, z);
     Scalar divB = div4_sph(Bx, By, Bz, ijk, x, y, z);
 
-    if (dev_params.calc_current) {
-      Scalar B2 =
+    Scalar B2 =
           Bx[ijk] * Blx[ijk] + By[ijk] * Bly[ijk] + Bz[ijk] * Blz[ijk];
       if (B2 < TINY) B2 = TINY;
 
-      Scalar Jp =
-          (Blx[ijk] * rotBx + Bly[ijk] * rotBy + Blz[ijk] * rotBz) -
-          (Elx[ijk] * rotEx + Ely[ijk] * rotEy + Elz[ijk] * rotEz);
-      Jx =
-          (divE * (Ely[ijk] * Blz[ijk] - Elz[ijk] * Bly[ijk]) / gmsqrt +
-           Jp * Bx[ijk]) /
-          B2;
-      Jy =
-          (divE * (Elz[ijk] * Blx[ijk] - Elx[ijk] * Blz[ijk]) / gmsqrt +
-           Jp * By[ijk]) /
-          B2;
-      Jz =
-          (divE * (Elx[ijk] * Bly[ijk] - Ely[ijk] * Blx[ijk]) / gmsqrt +
-           Jp * Bz[ijk]) /
-          B2;
-    } else {
-      Jx = 0.0;
-      Jy = 0.0;
-      Jz = 0.0;
-    }
+      if (dev_params.calc_current) {
+        if (dev_params.use_edotb_damping) {
+          Scalar E2 = Ex[ijk] * Elx[ijk] + Ey[ijk] * Ely[ijk] +
+                      Ez[ijk] * Elz[ijk];
+          Scalar chi2 = B2 - E2;
+          Scalar EdotB = Ex[ijk] * Blx[ijk] + Ey[ijk] * Bly[ijk] +
+                         Ez[ijk] * Blz[ijk];
+          Scalar E02 =
+              0.5 * (sqrt(chi2 * chi2 + 4.0 * EdotB * EdotB) - chi2);
+
+          Scalar Jp =
+              (Blx[ijk] * rotBx + Bly[ijk] * rotBy + Blz[ijk] * rotBz) -
+              (Elx[ijk] * rotEx + Ely[ijk] * rotEy + Elz[ijk] * rotEz) +
+              dev_params.damp_gamma * EdotB / dev_params.dt;
+          Jx = divE * (Ely[ijk] * Blz[ijk] - Elz[ijk] * Bly[ijk]) /
+                   gmsqrt / (E02 + B2) +
+               Jp * Bx[ijk] / B2;
+          Jy = divE * (Elz[ijk] * Blx[ijk] - Elx[ijk] * Blz[ijk]) /
+                   gmsqrt / (E02 + B2) +
+               Jp * By[ijk] / B2;
+          Jz = divE * (Elx[ijk] * Bly[ijk] - Ely[ijk] * Blx[ijk]) /
+                   gmsqrt / (E02 + B2) +
+               Jp * Bz[ijk] / B2;
+        } else {
+          Scalar Jp =
+              (Blx[ijk] * rotBx + Bly[ijk] * rotBy + Blz[ijk] * rotBz) -
+              (Elx[ijk] * rotEx + Ely[ijk] * rotEy + Elz[ijk] * rotEz);
+          Jx = (divE * (Ely[ijk] * Blz[ijk] - Elz[ijk] * Bly[ijk]) /
+                    gmsqrt +
+                Jp * Bx[ijk]) /
+               B2;
+          Jy = (divE * (Elz[ijk] * Blx[ijk] - Elx[ijk] * Blz[ijk]) /
+                    gmsqrt +
+                Jp * By[ijk]) /
+               B2;
+          Jz = (divE * (Elx[ijk] * Bly[ijk] - Ely[ijk] * Blx[ijk]) /
+                    gmsqrt +
+                Jp * Bz[ijk]) /
+               B2;
+        }
+      } else {
+        Jx = 0.0;
+        Jy = 0.0;
+        Jz = 0.0;
+      }
 
     if (dev_params.divB_clean) {
       Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
