@@ -5,6 +5,7 @@
 #include "algorithms/field_solver_EZ_spherical.h"
 #include "utils/timer.h"
 #include <fstream>
+#include <iomanip>
 
 #include "algorithms/metric_sph.h"
 #include "algorithms/pulsar.h"
@@ -53,7 +54,7 @@ int main(int argc, char *argv[]) {
         Scalar Wb = solver.total_energy(data.B);
         Scalar We = solver.total_energy(data.E);
         if (env.rank() == 0) {
-          efile << Wb << " " << We << std::endl;
+          efile << std::setprecision(8) << Wb << " " << We << std::endl;
         }
 #endif
     }
