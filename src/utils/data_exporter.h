@@ -8,15 +8,7 @@
 #include <memory>
 #include <thread>
 #include <vector>
-#include "hdf5.h"
-
-namespace H5 {
-class H5File;
-}
-
-namespace HighFive {
-class File;
-}
+#include "hdf_wrapper.h"
 
 namespace Coffee {
 
@@ -41,7 +33,7 @@ class data_exporter {
   //                        const Extent& total_ext, const Index& offset,
   //                        hid_t file_id);
   void write_multi_array(const multi_array<Scalar>& array, const std::string& name,
-                         hid_t file_id);
+                         H5File& file);
 
  protected:
   // template <typename Func>
@@ -52,7 +44,7 @@ class data_exporter {
   void add_grid_output(multi_array<Scalar>& array, const std::string& name,
                        Stagger stagger,
                        // HighFive::File& file);
-                       hid_t file_id);
+                       H5File& file);
 
   // std::unique_ptr<Grid> grid;
   sim_environment& m_env;

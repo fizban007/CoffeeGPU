@@ -7,17 +7,12 @@
 #include "data/vec3.h"
 #include "sim_env.h"
 #include "sim_params.h"
+#include "hdf_wrapper_impl.hpp"
 // #include "utils/nvproftool.h"
 //#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
 //#undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <iomanip>
-
-// #define H5_USE_BOOST
-
-// #include <highfive/H5DataSet.hpp>
-// #include <highfive/H5DataSpace.hpp>
-// #include <highfive/H5File.hpp>
 
 #define ADD_GRID_OUTPUT(input, name, func, file)              \
   add_grid_output(input, name,                                \
@@ -101,7 +96,7 @@ void
 data_exporter::write_output(sim_data& data, uint32_t timestep,
                             double time) {
   // RANGE_PUSH("Data output", CLR_BLUE);
-  //if (m_thread != nullptr && m_thread->joinable()) m_thread->join();
+  // if (m_thread != nullptr && m_thread->joinable()) m_thread->join();
 
   data.sync_to_host();
 
@@ -113,7 +108,7 @@ data_exporter::write_output(sim_data& data, uint32_t timestep,
 void
 data_exporter::sync() {
   // std::cout << m_thread->joinable() << std::endl;
-  //if (m_thread != nullptr && m_thread->joinable()) m_thread->join();
+  // if (m_thread != nullptr && m_thread->joinable()) m_thread->join();
 }
 
 void
@@ -122,53 +117,66 @@ data_exporter::save_snapshot(sim_data& data, uint32_t step) {
   data.sync_to_host();
 
   // Open the snapshot file for writing
-  std::string filename =
-      outputDirectory + std::string("snapshot.h5");
-  
-  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+  std::string filename = outputDirectory + std::string("snapshot.h5");
 
-  hid_t datafile =
-      H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
-  H5Pclose(plist_id);
+  auto datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
 
   int rank = m_env.rank();
-  std::string rank_str = std::to_string(rank);
-  write_multi_array(data.E.data(0), (std::string("Ex") + rank_str).c_str(), datafile);
-  write_multi_array(data.E.data(1), (std::string("Ey") + rank_str).c_str(), datafile);
-  write_multi_array(data.E.data(2), (std::string("Ez") + rank_str).c_str(), datafile);
-  write_multi_array(data.B.data(0), (std::string("Bx") + rank_str).c_str(), datafile);
-  write_multi_array(data.B.data(1), (std::string("By") + rank_str).c_str(), datafile);
-  write_multi_array(data.B.data(2), (std::string("Bz") + rank_str).c_str(), datafile);
-  write_multi_array(data.B0.data(0), (std::string("B0x") + rank_str).c_str(), datafile);
-  write_multi_array(data.B0.data(1), (std::string("B0y") + rank_str).c_str(), datafile);
-  write_multi_array(data.B0.data(2), (std::string("B0z") + rank_str).c_str(), datafile);
-  write_multi_array(data.P, (std::string("P") + rank_str).c_str(), datafile);
-  write_multi_array(data.divB, (std::string("divB") + rank_str).c_str(), datafile);
-  write_multi_array(data.divE, (std::string("divE") + rank_str).c_str(), datafile);
+  auto& params = m_env.params();
+  auto& grid = m_env.grid();
+  Extent ext_total, ext;
+  Index idx_dst, idx_src;
+  for (int i = 0; i < grid.dim(); i++) {
+    ext_total[i] = params.N[i] + 2 * params.guard[i];
+    ext[i] = grid.reduced_dim(i);
+    idx_dst[i] = grid.offset[i];
+    idx_src[i] = 0;
+    if (idx_dst[i] > 0) {
+      idx_dst[i] += grid.guard[i];
+      idx_src[i] += grid.guard[i];
+    }
+    if (m_env.neighbor_left(i) == NEIGHBOR_NULL) {
+      ext[i] += grid.guard[i];
+    }
+    if (m_env.neighbor_right(i) == NEIGHBOR_NULL) {
+      ext[i] += grid.guard[i];
+    }
+  }
+
+  // Write to the datafile
+  datafile.write_parallel(data.E.data(0), ext_total, idx_dst, ext,
+                          idx_src, "Ex");
+  datafile.write_parallel(data.E.data(1), ext_total, idx_dst, ext,
+                          idx_src, "Ey");
+  datafile.write_parallel(data.E.data(2), ext_total, idx_dst, ext,
+                          idx_src, "Ez");
+  datafile.write_parallel(data.B.data(0), ext_total, idx_dst, ext,
+                          idx_src, "Bx");
+  datafile.write_parallel(data.B.data(1), ext_total, idx_dst, ext,
+                          idx_src, "By");
+  datafile.write_parallel(data.B.data(2), ext_total, idx_dst, ext,
+                          idx_src, "Bz");
+  datafile.write_parallel(data.B0.data(0), ext_total, idx_dst, ext,
+                          idx_src, "B0x");
+  datafile.write_parallel(data.B0.data(1), ext_total, idx_dst, ext,
+                          idx_src, "B0y");
+  datafile.write_parallel(data.B0.data(2), ext_total, idx_dst, ext,
+                          idx_src, "B0z");
+  datafile.write_parallel(data.P, ext_total, idx_dst, ext, idx_src,
+                          "P");
+  datafile.write_parallel(data.divE, ext_total, idx_dst, ext, idx_src,
+                          "divE");
+  datafile.write_parallel(data.divB, ext_total, idx_dst, ext, idx_src,
+                          "divB");
 
   if (rank == 0) {
-    hsize_t dim[1] = {1};
-    hid_t dataspace_id = H5Screate_simple(1, dim, NULL);
-    /* Create the dataset. */
-    hid_t dataset_id =
-        H5Dcreate2(datafile, "timestep", H5T_NATIVE_UINT32, dataspace_id,
-                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-    auto status = H5Dwrite(dataset_id, H5T_NATIVE_UINT32, H5S_ALL, H5S_ALL,
-                           H5P_DEFAULT, &step);
-    /* End access to the dataset and release resources used by it. */
-    status = H5Dclose(dataset_id);
-    /* Terminate access to the data space. */
-    status = H5Sclose(dataspace_id);
+    datafile.write(step, "timestep");
   }
-  H5Fclose(datafile);
+  datafile.close();
 }
 
 void
-data_exporter::load_snapshot(sim_data& data, uint32_t& step) {
-  
-}
+data_exporter::load_snapshot(sim_data& data, uint32_t& step) {}
 
 void
 data_exporter::write_field_output(sim_data& data, uint32_t timestep,
@@ -179,14 +187,15 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   std::string num = ss.str();
   std::string filename =
       outputDirectory + std::string("fld.") + num + std::string(".h5");
-  
-  hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 
-  hid_t datafile =
-      H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
-  H5Pclose(plist_id);
-  
+  auto datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
+  // hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
+  // H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+
+  // hid_t datafile =
+  //     H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+  // H5Pclose(plist_id);
+
   add_grid_output(data.E.data(0), "Ex", data.E.stagger(0), datafile);
   add_grid_output(data.E.data(1), "Ey", data.E.stagger(1), datafile);
   add_grid_output(data.E.data(2), "Ez", data.E.stagger(2), datafile);
@@ -200,8 +209,8 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   add_grid_output(data.divB, "divB", Stagger(0b111), datafile);
   add_grid_output(data.divE, "divE", Stagger(0b111), datafile);
 
-  // datafile.close();
-  H5Fclose(datafile);
+  datafile.close();
+  // H5Fclose(datafile);
 }
 
 // template <typename Func>
@@ -248,98 +257,57 @@ void
 data_exporter::add_grid_output(multi_array<Scalar>& array,
                                const std::string& name, Stagger stagger,
                                // HighFive::File& file) {
-                               hid_t file) {
+                               H5File& file) {
   int downsample = m_env.params().downsample;
   array.downsample(downsample, tmp_grid_data,
                    Index(m_env.grid().guard[0], m_env.grid().guard[1],
                          m_env.grid().guard[2]),
                    stagger, m_output.data());
   auto& grid = m_env.grid();
-  // tmp_grid_data.sync_to_host();
-  // std::cout << m_output[10][10][10] << std::endl;
-  // std::vector<size_t> dims(3);
-  hsize_t dims[3];
+  Extent dims;
+  Index offsets;
   for (int i = 0; i < grid.dim(); i++) {
-    dims[i] = m_env.params().N[grid.dim() - 1 - i];
+    dims[i] = m_env.params().N[i];
     if (dims[i] > downsample) dims[i] /= downsample;
+    offsets[i] = m_env.grid().offset[i] / downsample;
   }
-  // Actually write the temp array to hdf
-  // DataSet dataset = file.createDataSet<float>(name, DataSpace(dims));
-  auto filespace = H5Screate_simple(m_env.grid().dim(), dims, NULL);
 
-  // std::vector<size_t> out_dim(3);
-  // std::vector<size_t> offsets(3);
-  hsize_t out_dim[3];
-  hsize_t offsets[3];
-  for (int i = 0; i < grid.dim(); i++) {
-    offsets[i] = m_env.grid().offset[grid.dim() - 1 - i] / downsample;
-    out_dim[i] = tmp_grid_data.extent()[grid.dim() - 1 - i];
-  }
-  auto memspace = H5Screate_simple(m_env.grid().dim(), out_dim, NULL);
-  // dataset.select(offsets, out_dim).write(m_output);
-  auto plist_id = H5Pcreate(H5P_DATASET_CREATE);
-  H5Pset_chunk(plist_id, m_env.grid().dim(), out_dim);
-  auto dset_id =
-      H5Dcreate(file, name.c_str(), H5T_NATIVE_FLOAT, filespace,
-                H5P_DEFAULT, plist_id, H5P_DEFAULT);
-  H5Pclose(plist_id);
-  H5Sclose(filespace);
-
-  hsize_t count[3];
-  hsize_t stride[3];
-  for (int i = 0; i < 3; i++) {
-    count[i] = 1;
-    stride[i] = 1;
-  }
-  filespace = H5Dget_space(dset_id);
-  auto status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets,
-                                    stride, count, out_dim);
-
-  plist_id = H5Pcreate(H5P_DATASET_XFER);
-  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-
-  status = H5Dwrite(dset_id, H5T_NATIVE_FLOAT, memspace, filespace,
-                    plist_id, tmp_grid_data.host_ptr());
-
-  H5Dclose(dset_id);
-  H5Sclose(filespace);
-  H5Sclose(memspace);
-  H5Pclose(plist_id);
+  file.write_parallel(array, dims, offsets, array.extent(), Index(0, 0, 0), name);
 }
 
-void data_exporter::write_multi_array(const multi_array<Scalar>& array,
-                                      const std::string& name,
-                                      hid_t file_id) {
-  auto& grid = m_env.grid();
-  hsize_t dims[3];
-  for (int i = 0; i < grid.dim(); i++) {
-    dims[i] = array.extent()[grid.dim() - 1 - i];
-    // if (dims[i] > downsample) dims[i] /= downsample;
-  }
-  // Actually write the temp array to hdf
-  auto filespace = H5Screate_simple(m_env.grid().dim(), dims, NULL);
+// void
+// data_exporter::write_multi_array(const multi_array<Scalar>& array,
+//                                  const std::string& name,
+//                                  hid_t file_id) {
+//   auto& grid = m_env.grid();
+//   hsize_t dims[3];
+//   for (int i = 0; i < grid.dim(); i++) {
+//     dims[i] = array.extent()[grid.dim() - 1 - i];
+//     // if (dims[i] > downsample) dims[i] /= downsample;
+//   }
+//   // Actually write the temp array to hdf
+//   auto filespace = H5Screate_simple(m_env.grid().dim(), dims, NULL);
 
-  auto memspace = H5Screate_simple(m_env.grid().dim(), dims, NULL);
-  // dataset.select(offsets, out_dim).write(m_output);
-  auto plist_id = H5Pcreate(H5P_DATASET_CREATE);
-  H5Pset_chunk(plist_id, m_env.grid().dim(), dims);
-  auto dset_id =
-      H5Dcreate(file_id, name.c_str(), H5T_NATIVE_FLOAT, filespace,
-                H5P_DEFAULT, plist_id, H5P_DEFAULT);
-  H5Pclose(plist_id);
-  H5Sclose(filespace);
+//   auto memspace = H5Screate_simple(m_env.grid().dim(), dims, NULL);
+//   // dataset.select(offsets, out_dim).write(m_output);
+//   auto plist_id = H5Pcreate(H5P_DATASET_CREATE);
+//   H5Pset_chunk(plist_id, m_env.grid().dim(), dims);
+//   auto dset_id =
+//       H5Dcreate(file_id, name.c_str(), H5T_NATIVE_FLOAT, filespace,
+//                 H5P_DEFAULT, plist_id, H5P_DEFAULT);
+//   H5Pclose(plist_id);
+//   H5Sclose(filespace);
 
-  plist_id = H5Pcreate(H5P_DATASET_XFER);
-  H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
+//   plist_id = H5Pcreate(H5P_DATASET_XFER);
+//   H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
 
-  auto status = H5Dwrite(dset_id, H5T_NATIVE_FLOAT, memspace, H5S_ALL,
-                    plist_id, tmp_grid_data.host_ptr());
+//   auto status = H5Dwrite(dset_id, H5T_NATIVE_FLOAT, memspace, H5S_ALL,
+//                          plist_id, tmp_grid_data.host_ptr());
 
-  H5Dclose(dset_id);
-  // H5Sclose(filespace);
-  H5Sclose(memspace);
-  H5Pclose(plist_id);
-  
-}
+//   H5Dclose(dset_id);
+//   // H5Sclose(filespace);
+//   H5Sclose(memspace);
+//   H5Pclose(plist_id);
+// }
 
 }  // namespace Coffee

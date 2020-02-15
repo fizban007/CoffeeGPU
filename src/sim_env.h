@@ -41,6 +41,8 @@ class sim_environment {
 
   bool is_boundary(int n) const { return m_is_boundary[n]; }
   bool is_periodic(int n) const { return m_is_periodic[n]; }
+  int neighbor_left(int n) const { return m_neighbor_left[n]; }
+  int neighbor_right(int n) const { return m_neighbor_right[n]; }
 
   MPI_Datatype scalar_type() const { return m_scalar_type; }
 

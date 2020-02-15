@@ -40,13 +40,15 @@ int main(int argc, char *argv[])
 
   file.write_parallel(arr, total_ext, Index(10 * m_rank, 0, 0), arr.extent(), Index(0, 0, 0), "data");
   
-  file.close();
+  // file.close();
 
   multi_array<float> out(8, 8);
-  file = H5File("test_mpi_output.h5", H5OpenMode::read_parallel);
-  file.read_subset(out,
-                   "data", Index(1 + 10 * m_rank, 1, 0), Extent(8, 8), Index(0, 0, 0));
-  std::cout << "rank " << m_rank << " has value " << out(2, 2) << "\n";
+  out.assign(m_rank + 2.0);
+  file.write_parallel(out, total_ext, Index(1 + 10 * m_rank, 0, 0), out.extent(), Index(0, 0, 0), "data2");
+  // file = H5File("test_mpi_output.h5", H5OpenMode::read_parallel);
+  // file.read_subset(out,
+  //                  "data", Index(1 + 10 * m_rank, 1, 0), Extent(8, 8), Index(0, 0, 0));
+  // std::cout << "rank " << m_rank << " has value " << out(2, 2) << "\n";
   file.close();
   return 0;
 }
