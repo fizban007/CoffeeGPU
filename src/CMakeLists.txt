@@ -2,6 +2,7 @@ set(Coffee_src
   # "utils/logger.cpp"
   "utils/timer.cpp"
   "utils/data_exporter.cpp"
+  "utils/hdf_wrapper.cpp"
   "data/fields.cpp"
   "data/sim_data.cpp"
   "sim_params.cpp"

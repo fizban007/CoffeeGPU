@@ -4,6 +4,7 @@ add_executable(tests "test.cpp"
   "test_stagger.cpp"
   "test_multi_array.cpp"
   "test_interp.cpp"
+  "test_hdf5.cpp"
   # "test_algorithm.cpp"
   )
 target_link_libraries(tests Coffee)
@@ -30,3 +31,6 @@ endif()
 
 add_executable(test_mpi "test_mpi.cpp")
 target_link_libraries(test_mpi Coffee)
+
+add_executable(test_output "test_output.cpp")
+target_link_libraries(test_output Coffee)

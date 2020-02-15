@@ -196,6 +196,15 @@ struct Extent : public Vec3<int> {
   // cudaExtent cuda_ext(const T& t) const {
   //   return make_cudaExtent(x*sizeof(T), y, z);
   // }
+  HD_INLINE int dim() const {
+    if (y <= 1 && z <= 1) {
+      return 1;
+    } else if (z <= 1) {
+      return 2;
+    } else {
+      return 3;
+    }
+  }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

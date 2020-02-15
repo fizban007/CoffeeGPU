@@ -87,6 +87,9 @@ class multi_array {
   /// Downsample the multi_array to a new multi_array, and copy the result to a new host pointer
   void downsample(int d, multi_array<float>& array, Index offset, Stagger stagger, float* h_ptr);
 
+  /// Find the dimension of the array
+  int dim() const;
+
   // Returns various sizes of the array
   int width() const { return m_extent.width(); }
   int height() const { return m_extent.height(); }

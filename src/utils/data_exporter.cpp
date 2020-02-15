@@ -307,7 +307,7 @@ data_exporter::add_grid_output(multi_array<Scalar>& array,
   H5Pclose(plist_id);
 }
 
-void data_exporter::write_multi_array(multi_array<Scalar>& array,
+void data_exporter::write_multi_array(const multi_array<Scalar>& array,
                                       const std::string& name,
                                       hid_t file_id) {
   auto& grid = m_env.grid();

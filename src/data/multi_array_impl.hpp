@@ -139,6 +139,12 @@ multi_array<T>::resize(Extent extent) {
   resize(extent.width(), extent.height(), extent.depth());
 }
 
+template <typename T>
+int
+multi_array<T>::dim() const {
+  return m_extent.dim();
+}
+
 }  // namespace Coffee
 
 #endif  // _MULTI_ARRAY_IMPL_H_
