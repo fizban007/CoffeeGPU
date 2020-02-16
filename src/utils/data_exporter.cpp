@@ -5,9 +5,9 @@
 #include "data/sim_data.h"
 #include "data/typedefs.h"
 #include "data/vec3.h"
+#include "hdf_wrapper_impl.hpp"
 #include "sim_env.h"
 #include "sim_params.h"
-#include "hdf_wrapper_impl.hpp"
 // #include "utils/nvproftool.h"
 //#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
@@ -176,7 +176,51 @@ data_exporter::save_snapshot(sim_data& data, uint32_t step) {
 }
 
 void
-data_exporter::load_snapshot(sim_data& data, uint32_t& step) {}
+data_exporter::load_snapshot(sim_data& data, uint32_t& step) {
+  // Open the snapshot file for reading
+  std::string filename = outputDirectory + std::string("snapshot.h5");
+
+  H5File datafile(filename, H5OpenMode::read_parallel);
+
+  int rank = m_env.rank();
+  auto& params = m_env.params();
+  auto& grid = m_env.grid();
+  Extent ext;
+  Index idx_dst, idx_src;
+  for (int i = 0; i < grid.dim(); i++) {
+    // ext_total[i] = params.N[i] + 2 * params.guard[i];
+    ext[i] = grid.reduced_dim(i);
+    idx_src[i] = grid.offset[i];
+    idx_dst[i] = 0;
+    if (idx_dst[i] > 0) {
+      idx_src[i] += grid.guard[i];
+      idx_dst[i] += grid.guard[i];
+    }
+    if (m_env.neighbor_left(i) == NEIGHBOR_NULL) {
+      ext[i] += grid.guard[i];
+    }
+    if (m_env.neighbor_right(i) == NEIGHBOR_NULL) {
+      ext[i] += grid.guard[i];
+    }
+  }
+
+  // Write to the datafile
+  datafile.read_subset(data.E.data(0), "Ex", idx_src, ext, idx_dst);
+  datafile.read_subset(data.E.data(1), "Ey", idx_src, ext, idx_dst);
+  datafile.read_subset(data.E.data(2), "Ez", idx_src, ext, idx_dst);
+  datafile.read_subset(data.B.data(0), "Bx", idx_src, ext, idx_dst);
+  datafile.read_subset(data.B.data(1), "By", idx_src, ext, idx_dst);
+  datafile.read_subset(data.B.data(2), "Bz", idx_src, ext, idx_dst);
+  datafile.read_subset(data.B0.data(0), "B0x", idx_src, ext, idx_dst);
+  datafile.read_subset(data.B0.data(1), "B0y", idx_src, ext, idx_dst);
+  datafile.read_subset(data.B0.data(2), "B0z", idx_src, ext, idx_dst);
+  datafile.read_subset(data.P, "P", idx_src, ext, idx_dst);
+  datafile.read_subset(data.divE, "divE", idx_src, ext, idx_dst);
+  datafile.read_subset(data.divB, "divB", idx_src, ext, idx_dst);
+
+  step = datafile.read_scalar<uint32_t>("timestep");
+  datafile.close();
+}
 
 void
 data_exporter::write_field_output(sim_data& data, uint32_t timestep,
@@ -193,7 +237,8 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   // H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 
   // hid_t datafile =
-  //     H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+  //     H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT,
+  //     plist_id);
   // H5Pclose(plist_id);
 
   add_grid_output(data.E.data(0), "Ex", data.E.stagger(0), datafile);
@@ -272,7 +317,8 @@ data_exporter::add_grid_output(multi_array<Scalar>& array,
     offsets[i] = m_env.grid().offset[i] / downsample;
   }
 
-  file.write_parallel(array, dims, offsets, array.extent(), Index(0, 0, 0), name);
+  file.write_parallel(array, dims, offsets, array.extent(),
+                      Index(0, 0, 0), name);
 }
 
 // void
@@ -301,7 +347,8 @@ data_exporter::add_grid_output(multi_array<Scalar>& array,
 //   plist_id = H5Pcreate(H5P_DATASET_XFER);
 //   H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
 
-//   auto status = H5Dwrite(dset_id, H5T_NATIVE_FLOAT, memspace, H5S_ALL,
+//   auto status = H5Dwrite(dset_id, H5T_NATIVE_FLOAT, memspace,
+//   H5S_ALL,
 //                          plist_id, tmp_grid_data.host_ptr());
 
 //   H5Dclose(dset_id);
