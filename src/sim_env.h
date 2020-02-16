@@ -38,6 +38,8 @@ class sim_environment {
   int size() const { return m_size; }
   int rank() const { return m_rank; }
   MPI_Comm world() const { return m_world; }
+  bool is_restart() const { return m_is_restart; }
+  const std::string& restart_file() const { return m_restart_file; }
 
   bool is_boundary(int n) const { return m_is_boundary[n]; }
   bool is_periodic(int n) const { return m_is_periodic[n]; }
@@ -69,6 +71,8 @@ class sim_environment {
   int m_neighbor_left[3] = {NEIGHBOR_NULL};
   int m_neighbor_right[3] = {NEIGHBOR_NULL};
   multi_array<int> m_domain_map;
+  bool m_is_restart = false;
+  std::string m_restart_file = "";
 
   MPI_Comm m_world;
   MPI_Comm m_cart;
