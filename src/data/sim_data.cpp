@@ -30,4 +30,14 @@ sim_data::sync_to_host() {
   divE.sync_to_host();
 }
 
+void
+sim_data::sync_to_device() {
+  E.sync_to_device();
+  B.sync_to_device();
+  B0.sync_to_device();
+  P.sync_to_device();
+  divB.sync_to_device();
+  divE.sync_to_device();
+}
+
 }  // namespace Coffee

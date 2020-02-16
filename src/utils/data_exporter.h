@@ -25,8 +25,8 @@ class data_exporter {
   void write_field_output(sim_data& data, uint32_t timestep,
                           double time);
 
-  void save_snapshot(sim_data& data, uint32_t step);
-  void load_snapshot(sim_data& data, uint32_t& step);
+  void save_snapshot(const std::string& filename, sim_data& data, uint32_t step);
+  void load_snapshot(const std::string& filename, sim_data& data, uint32_t& step);
   void sync();
 
   // void write_multi_array(multi_array<Scalar>& array, const std::string& name,

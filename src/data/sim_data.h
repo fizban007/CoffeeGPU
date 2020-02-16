@@ -18,6 +18,7 @@ class sim_data {
   ~sim_data();
 
   void sync_to_host();
+  void sync_to_device();
 };
 
 }  // namespace Coffee
