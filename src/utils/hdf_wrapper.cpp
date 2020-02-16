@@ -40,6 +40,7 @@ H5File::open(const std::string& filename, H5OpenMode mode) {
   if (mode == H5OpenMode::rw_parallel || mode == H5OpenMode::read_parallel) {
     plist_id = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+    m_is_parallel = true;
   }
 
   m_file_id = H5Fopen(filename.c_str(), h5mode, plist_id);
@@ -70,11 +71,13 @@ hdf_create(const std::string& filename, H5CreateMode mode) {
     h5mode = H5F_ACC_EXCL;
 
   hid_t plist_id = H5P_DEFAULT;
+  bool parallel = false;
   if (mode == H5CreateMode::trunc_parallel ||
       mode == H5CreateMode::excl_parallel) {
     // Enable mpio when writing
     plist_id = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+    parallel = true;
   }
   hid_t datafile =
       H5Fcreate(filename.c_str(), h5mode, H5P_DEFAULT, plist_id);
@@ -85,6 +88,7 @@ hdf_create(const std::string& filename, H5CreateMode mode) {
   }
 
   H5File file(datafile);
+  file.set_parallel(parallel);
   return file;
 }
 

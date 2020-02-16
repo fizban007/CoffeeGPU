@@ -13,6 +13,12 @@ H5File::write(T value, const std::string& name) {
       H5Dcreate(m_file_id, name.c_str(), h5datatype<T>(), dataspace_id,
                 H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
+  if (m_is_parallel) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank != 0)
+      H5Sselect_none(dataspace_id);
+  }
   auto status = H5Dwrite(dataset_id, h5datatype<T>(), H5S_ALL, H5S_ALL,
                          H5P_DEFAULT, &value);
   H5Dclose(dataset_id);
@@ -31,6 +37,12 @@ H5File::write(const multi_array<T>& array, const std::string& name) {
       H5Dcreate2(m_file_id, name.c_str(), h5datatype<T>(), dataspace_id,
                  H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
+  if (m_is_parallel) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank != 0)
+      H5Sselect_none(dataspace_id);
+  }
   auto status = H5Dwrite(dataset_id, h5datatype<T>(), H5S_ALL, H5S_ALL,
                          H5P_DEFAULT, array.host_ptr());
   H5Dclose(dataset_id);
@@ -55,8 +67,9 @@ H5File::write_parallel(const multi_array<T>& array,
       H5Dcreate2(m_file_id, name.c_str(), h5datatype<T>(), filespace_id,
                  H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-  hsize_t offsets[3], offsets_l[3], out_dim[3], count[3], stride[3];
-  for (int i = 0; i < 3; i++) {
+  hsize_t offsets[3], offsets_l[3], out_dim[3];
+  hsize_t count[3] = {1}, stride[3] = {1};
+  for (int i = 0; i < ext_total.dim(); i++) {
     count[i] = 1;
     stride[i] = 1;
     offsets[i] = idx_dst[ext_total.dim() - i - 1];

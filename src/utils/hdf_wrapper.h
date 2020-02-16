@@ -16,6 +16,7 @@ class H5File {
  private:
   hid_t m_file_id = 0;
   bool m_is_open = false;
+  bool m_is_parallel = false;
 
  public:
   H5File();
@@ -52,6 +53,8 @@ class H5File {
   void read_subset(multi_array<T>& array, const std::string& name,
                    const Index& idx_src, const Extent& ext,
                    const Index& idx_dst);
+
+  void set_parallel(bool p) { m_is_parallel = p; }
 };
 
 H5File hdf_create(const std::string& filename,

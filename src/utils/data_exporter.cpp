@@ -172,10 +172,10 @@ data_exporter::save_snapshot(const std::string& filename,
   datafile.write_parallel(data.divB, ext_total, idx_dst, ext, idx_src,
                           "divB");
 
-  if (rank == 0) {
-    datafile.write(step, "step");
-    datafile.write(time, "time");
-  }
+  // if (rank == 0) {
+  datafile.write(step, "step");
+  datafile.write(time, "time");
+  // }
   datafile.close();
 }
 
