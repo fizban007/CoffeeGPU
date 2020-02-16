@@ -107,15 +107,21 @@ sim_environment::setup_domain() {
               << std::endl;
     for (int i = 0; i < 3; i++) dims[i] = 0;
     MPI_Dims_create(m_size, m_grid.dim(), dims);
+    std::cerr << "Created domain decomp as ";
+    for (int i = 0; i < m_grid.dim(); i++) {
+      std::cerr << dims[i];
+      if (i != m_grid.dim() - 1) std::cerr << " x ";
+    }
+    std::cerr << "\n";
   }
 
   for (int i = 0; i < 3; i++) m_mpi_dims[i] = dims[i];
 
   // Create a cartesian MPI group for communication
-  MPI_Cart_create(m_world, 3, dims, m_is_periodic, true, &m_cart);
+  MPI_Cart_create(m_world, m_grid.dim(), dims, m_is_periodic, true, &m_cart);
 
   // Obtain the mpi coordinate of the current rank
-  MPI_Cart_coords(m_cart, m_rank, 3, m_mpi_coord);
+  MPI_Cart_coords(m_cart, m_rank, m_grid.dim(), m_mpi_coord);
 
   // Figure out if the current rank is at any boundary
   int xleft, xright, yleft, yright, zleft, zright;
