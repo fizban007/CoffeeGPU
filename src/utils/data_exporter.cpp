@@ -234,6 +234,8 @@ data_exporter::load_snapshot(const std::string& filename,
   time = datafile.read_scalar<Scalar>("time");
   datafile.close();
   data.sync_to_device();
+
+  m_env.send_guard_cells(data);
 }
 
 void
