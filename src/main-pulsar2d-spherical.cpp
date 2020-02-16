@@ -47,8 +47,9 @@ main(int argc, char *argv[]) {
     exporter.load_snapshot(env.restart_file(), data, step, time);
   }
 
+  uint32_t prev_snapshot = step;
   for (; step <= env.params().max_steps; step++) {
-    if (step % env.params().snapshot_interval == 0) {
+    if (step % env.params().snapshot_interval == 0 && step != prev_snapshot) {
       timer::stamp("restart");
       exporter.save_snapshot(
           exporter.output_directory() + "snapshot.h5", data, step,
