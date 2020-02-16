@@ -12,11 +12,16 @@ namespace Coffee {
 sim_environment::sim_environment(int* argc, char*** argv) {
   // Parse options
   cxxopts::Options options("Coffee", "Computational Force-free Electrodynamics");
-  options.add_options()
-      ("r,restart-file", "Path of the restart file", cxxopts::value<std::string>())
-      ;
+  options.add_options()("r,restart-file", "Path of the restart file",
+                        cxxopts::value<std::string>())("h,help",
+                                                       "Print usage");
 
   auto result = options.parse(*argc, *argv);
+  if (result.count("help")) {
+    std::cout << options.help() << std::endl;
+    exit(0);
+  }
+
   if (result.count("restart-file")) {
     m_is_restart = true;
     m_restart_file = result["restart-file"].as<std::string>();

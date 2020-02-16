@@ -43,6 +43,7 @@ main(int argc, char *argv[]) {
   // Main simulation loop
   Scalar time = step * env.params().dt;
   if (env.is_restart()) {
+    cout << "Restarting from snapshot file " << env.restart_file() << "\n";
     exporter.load_snapshot(env.restart_file(), data, step, time);
   }
 

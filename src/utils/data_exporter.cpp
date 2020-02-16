@@ -183,10 +183,15 @@ void
 data_exporter::load_snapshot(const std::string& filename,
                              sim_data& data, uint32_t& step,
                              Scalar& time) {
-  // Open the snapshot file for reading
-  // std::string filename = outputDirectory +
-  // std::string("snapshot.h5");
+  // Check whether filename exists
+  if (!boost::filesystem::exists(filename)) {
+    std::cout
+        << "Can't find restart file, proceeding without loading it!"
+        << std::endl;
+    return;
+  }
 
+  // Open the snapshot file for reading
   H5File datafile(filename, H5OpenMode::read_parallel);
 
   int rank = m_env.rank();
