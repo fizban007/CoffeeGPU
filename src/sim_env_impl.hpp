@@ -148,7 +148,7 @@ sim_environment::setup_domain() {
   if (zright < 0) m_is_boundary[5] = true;
 
   // Adjust the grid so that it matches the local domain
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < m_grid.dim(); i++) {
     m_grid.dims[i] =
         2 * m_grid.guard[i] + m_grid.reduced_dim(i) / m_mpi_dims[i];
     m_grid.sizes[i] /= m_mpi_dims[i];
