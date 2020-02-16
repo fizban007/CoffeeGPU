@@ -204,7 +204,7 @@ data_exporter::load_snapshot(const std::string& filename,
     ext[i] = grid.reduced_dim(i);
     idx_src[i] = grid.offset[i];
     idx_dst[i] = 0;
-    if (idx_dst[i] > 0) {
+    if (idx_src[i] > 0) {
       idx_src[i] += grid.guard[i];
       idx_dst[i] += grid.guard[i];
     }

@@ -44,11 +44,22 @@ int main(int argc, char *argv[])
 
   multi_array<float> out(8, 8);
   out.assign(m_rank + 2.0);
-  file.write_parallel(out, total_ext, Index(1 + 10 * m_rank, 0, 0), out.extent(), Index(0, 0, 0), "data2");
+  file.write_parallel(out, total_ext, Index(1 + 10 * m_rank, 1, 0), out.extent(), Index(0, 0, 0), "data2");
   // file = H5File("test_mpi_output.h5", H5OpenMode::read_parallel);
   // file.read_subset(out,
   //                  "data", Index(1 + 10 * m_rank, 1, 0), Extent(8, 8), Index(0, 0, 0));
   // std::cout << "rank " << m_rank << " has value " << out(2, 2) << "\n";
   file.close();
+
+  H5File infile("test_mpi_output.h5", H5OpenMode::read_parallel);
+  infile.read_subset(arr, "data2", Index(1 + 10 * m_rank, 1, 0), Extent(8, 8, 1), Index(1, 1, 0));
+  if (m_rank == 1) {
+    for (int j = 0; j < 8; j++) {
+      for (int i = 0; i < 8; i++) {
+        std::cout << arr(i + 1, j + 1) << " ";
+      }
+      std::cout << "\n";
+    }
+  }
   return 0;
 }
