@@ -41,9 +41,10 @@ message(${Boost_LIBRARIES})
 set(CATCH_INCLUDE_DIR deps/catch/single_include/catch2)
 set(CPPTOML_INCLUDE_DIR deps/cpptoml/include)
 set(VECTORCLASS_INCLUDE_DIR deps/vectorclass)
+set(CXXOPT_INCLUDE_DIR deps/cxxopt/include)
 
 include_directories(${MPI_INCLUDE_PATH} ${CPPTOML_INCLUDE_DIR} ${CATCH_INCLUDE_DIR}
-  ${VECTORCLASS_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+  ${VECTORCLASS_INCLUDE_DIR} ${CXXOPT_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
   ${Boost_INCLUDE_DIRS} src)
 
 ######### Check for cuda support
