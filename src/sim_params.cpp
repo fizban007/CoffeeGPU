@@ -13,6 +13,8 @@ parse_config(const std::string& filename) {
                          .value_or(defaults.max_steps);
   result.data_interval = config->get_as<int>("data_interval")
                              .value_or(defaults.data_interval);
+  result.snapshot_interval = config->get_as<int>("snapshot_interval")
+                             .value_or(defaults.snapshot_interval);
   result.downsample =
       config->get_as<int>("downsample").value_or(defaults.downsample);
 

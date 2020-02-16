@@ -5,10 +5,23 @@
 #include "data/sim_data.h"
 #include "data/vec3.h"
 #include <mpi.h>
+#include "cxxopts.hpp"
 
 namespace Coffee {
 
 sim_environment::sim_environment(int* argc, char*** argv) {
+  // Parse options
+  cxxopts::Options options("Coffee", "Computational Force-free Electrodynamics");
+  options.add_options()
+      ("r,restart-file", "Path of the restart file", cxxopts::value<std::string>())
+      ;
+
+  auto result = options.parse(*argc, *argv);
+  if (result.count("restart-file")) {
+    m_is_restart = true;
+    m_restart_file = result["restart-file"].as<std::string>();
+  }
+  
   int is_initialized = 0;
   MPI_Initialized(&is_initialized);
 

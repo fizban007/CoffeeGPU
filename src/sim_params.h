@@ -16,6 +16,7 @@ struct sim_params {
   Scalar dt = 0.01;   ///< Time step size in numerical units
   uint64_t max_steps = 10000; ///< Total number of timesteps
   int data_interval = 100; ///< How many steps between data outputs
+  int snapshot_interval = 1000; ///< How many steps to take a restart snapshot
   bool periodic_boundary[3] = {false}; ///< Periodic boundary condition
   int downsample = 1; ///< How much to downsample from simulation grid to data
                       ///output grid

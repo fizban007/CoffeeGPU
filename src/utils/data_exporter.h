@@ -3,12 +3,12 @@
 
 #include "data/multi_array.h"
 #include "data/typedefs.h"
+#include "hdf_wrapper.h"
 #include <boost/multi_array.hpp>
 #include <fstream>
 #include <memory>
 #include <thread>
 #include <vector>
-#include "hdf_wrapper.h"
 
 namespace Coffee {
 
@@ -25,24 +25,32 @@ class data_exporter {
   void write_field_output(sim_data& data, uint32_t timestep,
                           double time);
 
-  void save_snapshot(const std::string& filename, sim_data& data, uint32_t step);
-  void load_snapshot(const std::string& filename, sim_data& data, uint32_t& step);
+  void save_snapshot(const std::string& filename, sim_data& data,
+                     uint32_t step, Scalar time);
+  void load_snapshot(const std::string& filename, sim_data& data,
+                     uint32_t& step, Scalar& time);
   void sync();
 
-  // void write_multi_array(multi_array<Scalar>& array, const std::string& name,
-  //                        const Extent& total_ext, const Index& offset,
-  //                        hid_t file_id);
-  void write_multi_array(const multi_array<Scalar>& array, const std::string& name,
-                         H5File& file);
+  // void write_multi_array(multi_array<Scalar>& array, const
+  // std::string& name,
+  //                        const Extent& total_ext, const Index&
+  //                        offset, hid_t file_id);
+  void write_multi_array(const multi_array<Scalar>& array,
+                         const std::string& name, H5File& file);
+
+  const std::string& output_directory() const {
+    return outputDirectory;
+  }
 
  protected:
   // template <typename Func>
-  // void add_grid_output(sim_data& data, const std::string& name, Func f,
+  // void add_grid_output(sim_data& data, const std::string& name, Func
+  // f,
   //                      // HighFive::File& file);
   //                      hid_t file_id);
 
-  void add_grid_output(multi_array<Scalar>& array, const std::string& name,
-                       Stagger stagger,
+  void add_grid_output(multi_array<Scalar>& array,
+                       const std::string& name, Stagger stagger,
                        // HighFive::File& file);
                        H5File& file);
 

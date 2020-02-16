@@ -113,12 +113,14 @@ data_exporter::sync() {
 
 void
 data_exporter::save_snapshot(const std::string& filename,
-                             sim_data& data, uint32_t step) {
+                             sim_data& data, uint32_t step,
+                             Scalar time) {
   // Do this regardless of cpu or gpu
   data.sync_to_host();
 
   // Open the snapshot file for writing
-  // std::string filename = outputDirectory + std::string("snapshot.h5");
+  // std::string filename = outputDirectory +
+  // std::string("snapshot.h5");
 
   auto datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
 
@@ -171,16 +173,19 @@ data_exporter::save_snapshot(const std::string& filename,
                           "divB");
 
   if (rank == 0) {
-    datafile.write(step, "timestep");
+    datafile.write(step, "step");
+    datafile.write(time, "time");
   }
   datafile.close();
 }
 
 void
 data_exporter::load_snapshot(const std::string& filename,
-                             sim_data& data, uint32_t& step) {
+                             sim_data& data, uint32_t& step,
+                             Scalar& time) {
   // Open the snapshot file for reading
-  // std::string filename = outputDirectory + std::string("snapshot.h5");
+  // std::string filename = outputDirectory +
+  // std::string("snapshot.h5");
 
   H5File datafile(filename, H5OpenMode::read_parallel);
 
@@ -220,7 +225,8 @@ data_exporter::load_snapshot(const std::string& filename,
   datafile.read_subset(data.divE, "divE", idx_src, ext, idx_dst);
   datafile.read_subset(data.divB, "divB", idx_src, ext, idx_dst);
 
-  step = datafile.read_scalar<uint32_t>("timestep");
+  step = datafile.read_scalar<uint32_t>("step");
+  time = datafile.read_scalar<Scalar>("time");
   datafile.close();
   data.sync_to_device();
 }
