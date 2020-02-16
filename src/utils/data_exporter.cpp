@@ -317,8 +317,8 @@ data_exporter::add_grid_output(multi_array<Scalar>& array,
     offsets[i] = m_env.grid().offset[i] / downsample;
   }
 
-  file.write_parallel(array, dims, offsets, array.extent(),
-                      Index(0, 0, 0), name);
+  file.write_parallel(tmp_grid_data, dims, offsets,
+                      tmp_grid_data.extent(), Index(0, 0, 0), name);
 }
 
 // void
