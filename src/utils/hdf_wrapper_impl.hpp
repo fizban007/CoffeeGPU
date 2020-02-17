@@ -68,7 +68,7 @@ H5File::write_parallel(const multi_array<T>& array,
                  H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   hsize_t offsets[3], offsets_l[3], out_dim[3];
-  hsize_t count[3] = {1}, stride[3] = {1};
+  hsize_t count[3], stride[3];
   for (int i = 0; i < ext_total.dim(); i++) {
     count[i] = 1;
     stride[i] = 1;
@@ -149,8 +149,11 @@ H5File::read_subset(multi_array<T>& array, const std::string& name,
 
   auto memspace = H5Screate_simple(ext.dim(), array_dims, NULL);
 
-  hsize_t offsets[3] = {1}, offsets_l[3] = {1}, out_dim[3] = {1};
-  hsize_t count[3] = {1}, stride[3] = {1};
+  hsize_t offsets[3] = {1, 1, 1};
+  hsize_t offsets_l[3] = {1, 1, 1};
+  hsize_t out_dim[3] = {1, 1, 1};
+  hsize_t count[3] = {1, 1, 1};
+  hsize_t stride[3] = {1, 1, 1};
   for (int i = 0; i < dim; i++) {
     offsets[i] = idx_src[dim - i - 1];
     offsets_l[i] = idx_dst[dim - i - 1];
