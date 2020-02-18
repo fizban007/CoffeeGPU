@@ -8,7 +8,12 @@
 
 namespace Coffee {
 
-enum class H5OpenMode { read_write, read_only, rw_parallel, read_parallel };
+enum class H5OpenMode {
+  read_write,
+  read_only,
+  rw_parallel,
+  read_parallel
+};
 
 enum class H5CreateMode { trunc, excl, trunc_parallel, excl_parallel };
 

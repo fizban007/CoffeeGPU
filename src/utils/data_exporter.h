@@ -4,7 +4,6 @@
 #include "data/multi_array.h"
 #include "data/typedefs.h"
 #include "hdf_wrapper.h"
-#include <boost/multi_array.hpp>
 #include <fstream>
 #include <memory>
 #include <thread>
@@ -29,8 +28,6 @@ class data_exporter {
                      uint32_t step, Scalar time);
   void load_snapshot(const std::string& filename, sim_data& data,
                      uint32_t& step, Scalar& time);
-  void sync();
-
   // void write_multi_array(multi_array<Scalar>& array, const
   // std::string& name,
   //                        const Extent& total_ext, const Index&
@@ -66,8 +63,6 @@ class data_exporter {
 
   multi_array<float> tmp_grid_data;  //!< This stores the temporary
                                      //!< downsampled data for output
-  boost::multi_array<float, 3> m_output;
-
   std::unique_ptr<std::thread> m_thread;
 };
 
