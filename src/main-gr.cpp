@@ -8,12 +8,13 @@
 #include "utils/timer.h"
 #include <fstream>
 
-#include "algorithms/metric.h"
+#include "algorithms/metric_cks.h"
 // #include "algorithms/interpolation.h"
 // #include "algorithms/pulsar.h"
 
 using namespace std;
 using namespace Coffee;
+using namespace CKS;
 
 // #define ENG
 #define EZ
@@ -62,7 +63,8 @@ int main(int argc, char *argv[]) {
   // Main simulation loop
   Scalar time = 0.0;
   for (step = 0; step <= env.params().max_steps; step++) {
-    std::cout << "step = " << step << std::endl;
+    if (env.rank() == 0)
+      std::cout << "step = " << step << std::endl;
     // Do stuff here
     if (step % env.params().data_interval == 0) {
       timer::stamp("output");
