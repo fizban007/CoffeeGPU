@@ -97,15 +97,11 @@ kernel_compute_E_gr(const Scalar *Dx, const Scalar *Dy,
   Scalar Ddx, Ddy, Ddz;
   Scalar x, y, z;
 
-  int i =
-      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
-  int j =
-      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  int k =
-      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
-  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
-      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
-      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  int j = threadIdx.y + blockIdx.y * blockDim.y;
+  int k = threadIdx.z + blockIdx.z * blockDim.z;
+  if (i < dev_grid.dims[0] && j < dev_grid.dims[1] &&
+      k < dev_grid.dims[2]) {
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
 
@@ -151,15 +147,11 @@ kernel_compute_H_gr(const Scalar *Dx, const Scalar *Dy,
   Scalar Bdx, Bdy, Bdz;
   Scalar x, y, z;
 
-  int i =
-      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
-  int j =
-      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  int k =
-      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
-  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
-      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
-      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+  int i = threadIdx.x + blockIdx.x * blockDim.x;
+  int j = threadIdx.y + blockIdx.y * blockDim.y;
+  int k = threadIdx.z + blockIdx.z * blockDim.z;
+  if (i < dev_grid.dims[0] && j < dev_grid.dims[1] &&
+      k < dev_grid.dims[2]) {
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
     x = dev_grid.pos(0, i, 1);
@@ -644,7 +636,11 @@ field_solver_gr_EZ::boundary_absorbing() {
 
 void
 field_solver_gr_EZ::get_Ed() {
-  kernel_compute_E_gr<<<blockGroupSize, blockSize>>>(
+  dim3 blockGroupSize1 = dim3(
+      (m_data.env.grid().dims[0] + blockSize.x - 1) / blockSize.x,
+      (m_data.env.grid().dims[1] + blockSize.y - 1) / blockSize.y, 
+      (m_data.env.grid().dims[2] + blockSize.z - 1) / blockSize.z);
+  kernel_compute_E_gr<<<blockGroupSize1, blockSize>>>(
     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       Ed.dev_ptr(0), Ed.dev_ptr(1), Ed.dev_ptr(2), m_env.params().shift_ghost);
@@ -653,7 +649,11 @@ field_solver_gr_EZ::get_Ed() {
 
 void
 field_solver_gr_EZ::get_Hd() {
-  kernel_compute_H_gr<<<blockGroupSize, blockSize>>>(
+  dim3 blockGroupSize1 = dim3(
+      (m_data.env.grid().dims[0] + blockSize.x - 1) / blockSize.x,
+      (m_data.env.grid().dims[1] + blockSize.y - 1) / blockSize.y, 
+      (m_data.env.grid().dims[2] + blockSize.z - 1) / blockSize.z);
+  kernel_compute_H_gr<<<blockGroupSize1, blockSize>>>(
     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       Hd.dev_ptr(0), Hd.dev_ptr(1), Hd.dev_ptr(2), m_env.params().shift_ghost);
