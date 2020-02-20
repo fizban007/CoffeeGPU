@@ -56,8 +56,7 @@ multi_array<T>::sync_to_device() {}
 template <typename T>
 void
 multi_array<T>::downsample(int d, multi_array<float>& array,
-                           Index offset, Stagger stagger,
-                           float* h_ptr) {
+                           Index offset, Stagger stagger) {
   auto& ext = array.extent();
   for (int k = 0; k < ext.z; k++) {
     for (int j = 0; j < ext.y; j++) {

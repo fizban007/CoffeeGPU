@@ -85,7 +85,7 @@ class multi_array {
   void sync_to_host();
 
   /// Downsample the multi_array to a new multi_array, and copy the result to a new host pointer
-  void downsample(int d, multi_array<float>& array, Index offset, Stagger stagger, float* h_ptr);
+  void downsample(int d, multi_array<float>& array, Index offset, Stagger stagger);
 
   /// Find the dimension of the array
   int dim() const;

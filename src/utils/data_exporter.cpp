@@ -13,6 +13,7 @@
 #include <boost/filesystem.hpp>
 //#undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <iomanip>
+#include <sstream>
 
 #define ADD_GRID_OUTPUT(input, name, func, file)              \
   add_grid_output(input, name,                                \
@@ -27,8 +28,7 @@ namespace Coffee {
 template <typename Func>
 void
 sample_grid_quantity2d(sim_data& data, const Grid& g, int downsample,
-                       multi_array<float>& result,
-                       boost::multi_array<float, 3>& out, Func f) {
+                       multi_array<float>& result, Func f) {
   const auto& ext = g.extent();
   for (int j = 0; j < ext.height(); j++) {
     for (int i = 0; i < ext.width(); i++) {
@@ -37,7 +37,7 @@ sample_grid_quantity2d(sim_data& data, const Grid& g, int downsample,
                      j * downsample + g.guard[1], 0);
       f(data, result, idx_data, idx_out);
 
-      out[0][j][i] = result(i, j, 0);
+      // out[0][j][i] = result(i, j, 0);
     }
   }
 }
@@ -45,8 +45,7 @@ sample_grid_quantity2d(sim_data& data, const Grid& g, int downsample,
 template <typename Func>
 void
 sample_grid_quantity3d(sim_data& data, const Grid& g, int downsample,
-                       multi_array<float>& result,
-                       boost::multi_array<float, 3>& out, Func f) {
+                       multi_array<float>& result, Func f) {
   const auto& ext = result.extent();
   for (int k = 0; k < ext.depth(); k++) {
     for (int j = 0; j < ext.height(); j++) {
@@ -58,7 +57,7 @@ sample_grid_quantity3d(sim_data& data, const Grid& g, int downsample,
         // std::cout << idx_out << ", " << idx_data << std::endl;
         f(data, result, idx_data, idx_out);
 
-        out[k][j][i] = result(i, j, k);
+        // out[k][j][i] = result(i, j, k);
       }
     }
   }
@@ -74,9 +73,9 @@ data_exporter::data_exporter(sim_environment& env, uint32_t& timestep)
   }
   tmp_grid_data =
       multi_array<float>(ext.width(), ext.height(), ext.depth());
-  m_output.resize(
-      boost::extents[tmp_grid_data.depth()][tmp_grid_data.height()]
-                    [tmp_grid_data.width()]);
+  // m_output.resize(
+  //     boost::extents[tmp_grid_data.depth()][tmp_grid_data.height()]
+  //                   [tmp_grid_data.width()]);
   outputDirectory = "./Data/";
   m_thread = nullptr;
   boost::filesystem::path outPath(outputDirectory);
@@ -103,12 +102,6 @@ data_exporter::write_output(sim_data& data, uint32_t timestep,
   write_field_output(data, timestep, time);
   // std::cout << "Output written!" << std::endl;
   // RANGE_POP;
-}
-
-void
-data_exporter::sync() {
-  // std::cout << m_thread->joinable() << std::endl;
-  // if (m_thread != nullptr && m_thread->joinable()) m_thread->join();
 }
 
 void
@@ -323,7 +316,7 @@ data_exporter::add_grid_output(multi_array<Scalar>& array,
   array.downsample(downsample, tmp_grid_data,
                    Index(m_env.grid().guard[0], m_env.grid().guard[1],
                          m_env.grid().guard[2]),
-                   stagger, m_output.data());
+                   stagger);
   auto& grid = m_env.grid();
   Extent dims;
   Index offsets;
@@ -337,40 +330,5 @@ data_exporter::add_grid_output(multi_array<Scalar>& array,
                       tmp_grid_data.extent(), Index(0, 0, 0), name);
 }
 
-// void
-// data_exporter::write_multi_array(const multi_array<Scalar>& array,
-//                                  const std::string& name,
-//                                  hid_t file_id) {
-//   auto& grid = m_env.grid();
-//   hsize_t dims[3];
-//   for (int i = 0; i < grid.dim(); i++) {
-//     dims[i] = array.extent()[grid.dim() - 1 - i];
-//     // if (dims[i] > downsample) dims[i] /= downsample;
-//   }
-//   // Actually write the temp array to hdf
-//   auto filespace = H5Screate_simple(m_env.grid().dim(), dims, NULL);
-
-//   auto memspace = H5Screate_simple(m_env.grid().dim(), dims, NULL);
-//   // dataset.select(offsets, out_dim).write(m_output);
-//   auto plist_id = H5Pcreate(H5P_DATASET_CREATE);
-//   H5Pset_chunk(plist_id, m_env.grid().dim(), dims);
-//   auto dset_id =
-//       H5Dcreate(file_id, name.c_str(), H5T_NATIVE_FLOAT, filespace,
-//                 H5P_DEFAULT, plist_id, H5P_DEFAULT);
-//   H5Pclose(plist_id);
-//   H5Sclose(filespace);
-
-//   plist_id = H5Pcreate(H5P_DATASET_XFER);
-//   H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
-
-//   auto status = H5Dwrite(dset_id, H5T_NATIVE_FLOAT, memspace,
-//   H5S_ALL,
-//                          plist_id, tmp_grid_data.host_ptr());
-
-//   H5Dclose(dset_id);
-//   // H5Sclose(filespace);
-//   H5Sclose(memspace);
-//   H5Pclose(plist_id);
-// }
 
 }  // namespace Coffee
