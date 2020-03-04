@@ -583,11 +583,11 @@ kernel_boundary_disk_vacuum(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     int s = dev_grid.dims[0] * dev_grid.dims[1];
 
     if (std::abs(z) < dev_grid.delta[2] / 4.0) {
-      for (int l = 1; l <= dev_grid.guard[2]; l++) {
+      for (int l = 1; l <= 3; l++) {
         Bx[ijk - l * s] = -Bx[ijk + l * s];
         By[ijk - l * s] = -By[ijk + l * s];
         Bz[ijk - l * s] = Bz[ijk + l * s];
-        Ex[ijk - i * s] = Ex[ijk + l * s];
+        Ex[ijk - l * s] = Ex[ijk + l * s];
         Ey[ijk - l * s] = Ey[ijk + l * s];
         Ez[ijk - l * s] = -Ez[ijk + l * s];
       }
