@@ -41,15 +41,15 @@ kernel_boundary_absorbing_thread(const Scalar *enx, const Scalar *eny,
     Scalar xh = dev_params.lower[0] + dev_params.size[0] -
                 dev_params.pml[0] * dev_grid.delta[0];
     Scalar xl =
-        dev_params.lower[0] + dev_params.pml[0] * dev_grid.delta[0];
+        dev_params.lower[0] + dev_params.pml[3] * dev_grid.delta[0];
     Scalar yh = dev_params.lower[1] + dev_params.size[1] -
                 dev_params.pml[1] * dev_grid.delta[1];
     Scalar yl =
-        dev_params.lower[1] + dev_params.pml[1] * dev_grid.delta[1];
+        dev_params.lower[1] + dev_params.pml[4] * dev_grid.delta[1];
     Scalar zh = dev_params.lower[2] + dev_params.size[2] -
                 dev_params.pml[2] * dev_grid.delta[2];
     Scalar zl =
-        dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[2];
+        dev_params.lower[2] + dev_params.pml[5] * dev_grid.delta[2];
     if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
     // if (x > xh || y < yl || y > yh) {
       sigx = pmlsigma(x, xl, xh, dev_params.pmllen * dev_grid.delta[0],
@@ -105,15 +105,15 @@ kernel_boundary_absorbing1_thread(const Scalar *enx, const Scalar *eny,
     Scalar xh = dev_params.lower[0] + dev_params.size[0] -
                 dev_params.pml[0] * dev_grid.delta[0];
     Scalar xl =
-        dev_params.lower[0] + dev_params.pml[0] * dev_grid.delta[0];
+        dev_params.lower[0] + dev_params.pml[3] * dev_grid.delta[0];
     Scalar yh = dev_params.lower[1] + dev_params.size[1] -
                 dev_params.pml[1] * dev_grid.delta[1];
     Scalar yl =
-        dev_params.lower[1] + dev_params.pml[1] * dev_grid.delta[1];
+        dev_params.lower[1] + dev_params.pml[4] * dev_grid.delta[1];
     Scalar zh = dev_params.lower[2] + dev_params.size[2] -
                 dev_params.pml[2] * dev_grid.delta[2];
     Scalar zl =
-        dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[2];
+        dev_params.lower[2] + dev_params.pml[5] * dev_grid.delta[2];
     if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
     // if (x > xh || y < yl || y > yh) {
       sigx = pmlsigma(x, xl, xh, dev_params.pmllen * dev_grid.delta[0],

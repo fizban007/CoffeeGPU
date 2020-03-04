@@ -36,11 +36,12 @@ struct sim_params {
   Scalar a = 0.99; ///<Black hole spin
 
   bool calc_current = true; ///< Whether to calculate force-free current or not
+  bool ext_current = false; ///< Whether to add external current
   bool clean_ep = true; ///< Whether to clean E_parallel or not
   bool check_egb = true; ///< Whether to clean E>B or not
 
   // Absorbing layer
-  int pml[3] = {60, 60, 60}; ///< Number of cells in absorbing layer at each boundary 
+  int pml[6] = {60, 60, 60, 60, 60, 60}; ///< Number of cells in absorbing layer at each boundary: +x, +y, +z, -x, -y, -z  
   int pmllen = 10; ///< Absorbing layer resistivety variation length scale in terms of cells
   Scalar sigpml = 0.1; ///< Parameter for the resistivity in the absorbing layer
 
@@ -84,6 +85,10 @@ struct sim_params {
 
   int skymap_Nth = 256;
   int skymap_Nph = 512;
+
+  // Disk setup
+  bool disk = false; ///< Whether or not to use the disk setup
+  Scalar rj = 4.0; ///< Disk current distribution length scale
 };
 
 /// Reads a toml config file, parses the above data structure, and returns it.

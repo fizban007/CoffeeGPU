@@ -53,6 +53,8 @@ parse_config(const std::string& filename) {
 
   result.calc_current = config->get_as<bool>("calc_current")
                             .value_or(defaults.calc_current);
+  result.ext_current = config->get_as<bool>("ext_current")
+                            .value_or(defaults.ext_current);
   result.clean_ep =
       config->get_as<bool>("clean_ep").value_or(defaults.clean_ep);
   result.check_egb =
@@ -60,7 +62,7 @@ parse_config(const std::string& filename) {
 
   auto pml = config->get_array_of<int64_t>("pml");
   if (pml)
-    for (int i = 0; i < 3; i++) result.pml[i] = (*pml)[i];
+    for (int i = 0; i < 6; i++) result.pml[i] = (*pml)[i];
 
   result.pmllen =
       config->get_as<int>("pmllen").value_or(defaults.pmllen);
@@ -114,6 +116,10 @@ parse_config(const std::string& filename) {
       config->get_as<double>("rpert2").value_or(defaults.rpert2);
   result.dw0 = config->get_as<double>("dw0").value_or(defaults.dw0);
   result.nT = config->get_as<double>("nT").value_or(defaults.nT);
+
+  result.disk =
+      config->get_as<bool>("disk").value_or(defaults.disk);
+  result.rj = config->get_as<double>("rj").value_or(defaults.rj);
 
   return result;
 }

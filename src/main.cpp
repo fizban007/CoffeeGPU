@@ -3,18 +3,18 @@
 #include "sim_env.h"
 #include "utils/data_exporter.h"
 #include "algorithms/field_solver_EZ.h"
-#include "algorithms/field_solver_gr_EZ.h"
+// #include "algorithms/field_solver_gr_EZ.h"
 #include "algorithms/field_solver.h"
 #include "utils/timer.h"
 #include <fstream>
 
-#include "algorithms/metric_cks.h"
+// #include "algorithms/metric_cks.h"
 // #include "algorithms/interpolation.h"
 // #include "algorithms/pulsar.h"
 
 using namespace std;
 using namespace Coffee;
-using namespace CKS;
+// using namespace CKS;
 
 // #define ENG
 #define EZ
@@ -26,14 +26,14 @@ int main(int argc, char *argv[]) {
 
   // Initialize all the simulation data structures
   sim_data data(env);
-  field_solver_gr_EZ solver(data, env);
+  field_solver_EZ solver(data, env);
 // #ifdef EZ
 //   field_solver_EZ solver(data, env);
 // #else
 //   field_solver solver(data, env);
 // #endif
 
-  // #include "user_init.hpp"
+  #include "user_init.hpp"
   // #include "user_emwave.hpp"
   // #include "user_alfven.hpp"
   // #include "user_alfven_EZ.hpp"
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   // Initialization for Wald problem
   // #include "user_wald.hpp" 
   // #include "user_wald1.hpp" 
-  #include "user_wald2.hpp" 
+  // #include "user_wald2.hpp" 
 
   uint32_t step = 0;
   data_exporter exporter(env, step);
