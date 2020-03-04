@@ -120,6 +120,7 @@ parse_config(const std::string& filename) {
   result.disk =
       config->get_as<bool>("disk").value_or(defaults.disk);
   result.rj = config->get_as<double>("rj").value_or(defaults.rj);
+  result.al = config->get_as<double>("al").value_or(defaults.al);
 
   return result;
 }

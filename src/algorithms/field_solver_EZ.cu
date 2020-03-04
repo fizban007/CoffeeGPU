@@ -42,7 +42,7 @@ j_ext(Scalar x, Scalar y, Scalar z, Scalar *jnew) {
   if (std::abs(z) < dev_grid.delta[2] / 4.0) {
     Scalar tmp = (r - dev_params.radius) * 2.0 * M_PI / dev_params.rj;
     if (tmp < 2.0 * M_PI && tmp > 0) {
-      Scalar iphi = dev_params.b0 * sin(tmp) / pow(r / ri, alpha);
+      Scalar iphi = dev_params.b0 * sin(tmp) / pow(r / dev_params.radius, dev_params.al);
       jnew[0] = - y / r * iphi;
       jnew[1] = x / r * iphi;
     }
@@ -83,7 +83,7 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
         Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] * Bz[ijk];
     if (B2 < TINY) B2 = TINY;
 
-    Scalar Jx, Jy, Jz, j[3] = {0.0, 0.0, 0.0};
+    Scalar Jx, Jy, Jz, jd[3] = {0.0, 0.0, 0.0};
 
     if (dev_params.calc_current) {
       if (dev_params.use_edotb_damping) {
@@ -130,10 +130,10 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
       Scalar x = dev_grid.pos(0, i, 1);
       Scalar y = dev_grid.pos(1, j, 1);
       Scalar z = dev_grid.pos(2, k, 1);
-      j_ext(x, y, z, j);
-      Jx += j[0];
-      Jy += j[1];
-      Jz += j[2];
+      j_ext(x, y, z, jd);
+      Jx += jd[0];
+      Jy += jd[1];
+      Jz += jd[2];
     }
 
     Scalar Px, Py, Pz;
@@ -802,6 +802,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
     if (m_env.params().check_egb) check_eGTb();
 
     if (m_env.params().pulsar) boundary_pulsar(time + cs[i] * m_env.params().dt);
+    if (m_env.params().disk) boundary_disk(time + cs[i] * m_env.params().dt);
     if (i == 4) boundary_absorbing();
 
     CudaSafeCall(cudaDeviceSynchronize());
@@ -821,6 +822,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
   if (m_env.params().clean_ep) clean_epar();
   if (m_env.params().check_egb) check_eGTb();
   if (m_env.params().pulsar) boundary_pulsar(time + m_env.params().dt);
+  if (m_env.params().disk) boundary_disk(time + m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
   // m_env.send_guard_cell_array(P);

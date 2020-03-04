@@ -89,6 +89,7 @@ struct sim_params {
   // Disk setup
   bool disk = false; ///< Whether or not to use the disk setup
   Scalar rj = 4.0; ///< Disk current distribution length scale
+  Scalar al = 1.0; ///< How fast the disk current decays with radius
 };
 
 /// Reads a toml config file, parses the above data structure, and returns it.
