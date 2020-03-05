@@ -598,9 +598,9 @@ kernel_boundary_disk_vacuum(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 
 __device__ Scalar omegad(Scalar R) {
   if (R < dev_params.radius)
-    return dev_params.omega;
+    return dev_params.omegad0;
   else
-    return dev_params.omega / sqrt(cube(R / dev_params.radius));
+    return dev_params.omegad0 / sqrt(cube(R / dev_params.radius));
 }
 
 __global__ void
