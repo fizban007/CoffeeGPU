@@ -622,6 +622,7 @@ kernel_boundary_disk_conductor(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Scalar x = dev_grid.pos(0, i, 1);
     Scalar y = dev_grid.pos(1, j, 1);
     Scalar z = dev_grid.pos(2, k, 1);
+    int s = dev_grid.dims[0] * dev_grid.dims[1];
 
     if (std::abs(z) < dev_grid.delta[2] / 4.0) {
       Scalar R = sqrt(x * x + y * y);
