@@ -42,8 +42,9 @@ j_ext(Scalar x, Scalar y, Scalar z, Scalar *jnew) {
   if (std::abs(z) < dev_grid.delta[2] / 4.0) {
     Scalar tmp = (r - dev_params.radius) * 2.0 * M_PI / dev_params.rj;
     if (tmp < 2.0 * M_PI && tmp > 0) {
-      Scalar iphi = dev_params.b0 * sin(tmp) / pow(r / dev_params.radius, dev_params.al);
-      jnew[0] = - y / r * iphi;
+      Scalar iphi = dev_params.b0 * sin(tmp) /
+                    pow(r / dev_params.radius, dev_params.al);
+      jnew[0] = -y / r * iphi;
       jnew[1] = x / r * iphi;
     }
   }
@@ -99,11 +100,14 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
             (Bx[ijk] * rotBx + By[ijk] * rotBy + Bz[ijk] * rotBz) -
             (Ex[ijk] * rotEx + Ey[ijk] * rotEy + Ez[ijk] * rotEz) +
             dev_params.damp_gamma * EdotB / dev_params.dt;
-        Jx = divE * (Ey[ijk] * Bz[ijk] - Ez[ijk] * By[ijk]) / (E02 + B2) +
+        Jx = divE * (Ey[ijk] * Bz[ijk] - Ez[ijk] * By[ijk]) /
+                 (E02 + B2) +
              Jp * Bx[ijk] / B2;
-        Jy = divE * (Ez[ijk] * Bx[ijk] - Ex[ijk] * Bz[ijk]) / (E02 + B2) +
+        Jy = divE * (Ez[ijk] * Bx[ijk] - Ex[ijk] * Bz[ijk]) /
+                 (E02 + B2) +
              Jp * By[ijk] / B2;
-        Jz = divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) / (E02 + B2) +
+        Jz = divE * (Ex[ijk] * By[ijk] - Ey[ijk] * Bx[ijk]) /
+                 (E02 + B2) +
              Jp * Bz[ijk] / B2;
       } else {
         Scalar Jp =
@@ -119,8 +123,7 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
               Jp * Bz[ijk]) /
              B2;
       }
-    }
-    else {
+    } else {
       Jx = 0.0;
       Jy = 0.0;
       Jz = 0.0;
@@ -141,8 +144,7 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
       Px = dfdx(P, ijk);
       Py = dfdy(P, ijk);
       Pz = dfdz(P, ijk);
-    }
-    else {
+    } else {
       Px = 0.0;
       Py = 0.0;
       Pz = 0.0;
@@ -562,9 +564,9 @@ kernel_boundary_pulsar(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 }
 
 __global__ void
-kernel_boundary_disk_vacuum(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
-                       Scalar *By, Scalar *Bz, Scalar *P, Scalar t,
-                       int shift) {
+kernel_boundary_disk_vacuum(Scalar *Ex, Scalar *Ey, Scalar *Ez,
+                            Scalar *Bx, Scalar *By, Scalar *Bz,
+                            Scalar *P, Scalar t, int shift) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -595,8 +597,8 @@ kernel_boundary_disk_vacuum(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
   }
 }
 
-
-__device__ Scalar omegad(Scalar R) {
+__device__ Scalar
+omegad(Scalar R) {
   Scalar del = 0.05;
   return dev_params.omegad0 * shape(R, dev_params.radius, del);
   // if (R < dev_params.radius)
@@ -606,9 +608,9 @@ __device__ Scalar omegad(Scalar R) {
 }
 
 __global__ void
-kernel_boundary_disk_conductor(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
-                       Scalar *By, Scalar *Bz, Scalar *P, Scalar t,
-                       int shift) {
+kernel_boundary_disk_conductor(Scalar *Ex, Scalar *Ey, Scalar *Ez,
+                               Scalar *Bx, Scalar *By, Scalar *Bz,
+                               Scalar *P, Scalar t, int shift) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -625,14 +627,24 @@ kernel_boundary_disk_conductor(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Scalar y = dev_grid.pos(1, j, 1);
     Scalar z = dev_grid.pos(2, k, 1);
     int s = dev_grid.dims[0] * dev_grid.dims[1];
+    Scalar xh = dev_params.lower[0] + dev_params.size[0] -
+                dev_params.pml[0] * dev_grid.delta[0];
+    Scalar xl =
+        dev_params.lower[0] + dev_params.pml[3] * dev_grid.delta[0];
+    Scalar yh = dev_params.lower[1] + dev_params.size[1] -
+                dev_params.pml[1] * dev_grid.delta[1];
+    Scalar yl =
+        dev_params.lower[1] + dev_params.pml[4] * dev_grid.delta[1];
 
     if (std::abs(z) < dev_grid.delta[2] / 4.0) {
-      Scalar R = sqrt(x * x + y * y);
-      Scalar w = omegad(R);
-      Scalar vx = - w * y;
-      Scalar vy = w * x;
-      Ex[ijk] = - vy * Bz[ijk];
-      Ey[ijk] = vx * Bz[ijk];
+      if (x < xh && x > xl && y < yh && y > yl) {
+        Scalar R = sqrt(x * x + y * y);
+        Scalar w = omegad(R);
+        Scalar vx = -w * y;
+        Scalar vy = w * x;
+        Ex[ijk] = -vy * Bz[ijk];
+        Ey[ijk] = vx * Bz[ijk];
+      }
       for (int l = 1; l <= 3; l++) {
         Bx[ijk - l * s] = -Bx[ijk + l * s];
         By[ijk - l * s] = -By[ijk + l * s];
@@ -758,14 +770,14 @@ void
 field_solver_EZ::boundary_disk(Scalar t) {
   if (!m_env.params().calc_current)
     kernel_boundary_disk_vacuum<<<blockGroupSize, blockSize>>>(
-      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
+        m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+        m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+        m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
   else
     kernel_boundary_disk_conductor<<<blockGroupSize, blockSize>>>(
-      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
+        m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+        m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+        m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -810,8 +822,10 @@ field_solver_EZ::evolve_fields(Scalar time) {
     if (m_env.params().clean_ep) clean_epar();
     if (m_env.params().check_egb) check_eGTb();
 
-    if (m_env.params().pulsar) boundary_pulsar(time + cs[i] * m_env.params().dt);
-    if (m_env.params().disk) boundary_disk(time + cs[i] * m_env.params().dt);
+    if (m_env.params().pulsar)
+      boundary_pulsar(time + cs[i] * m_env.params().dt);
+    if (m_env.params().disk)
+      boundary_disk(time + cs[i] * m_env.params().dt);
     if (i == 4) boundary_absorbing();
 
     CudaSafeCall(cudaDeviceSynchronize());
@@ -913,8 +927,8 @@ field_solver_EZ::total_energy(vector_field<Scalar> &f) {
         Scalar y = m_env.grid().pos(1, j, 1);
         Scalar z = m_env.grid().pos(2, k, 1);
         Scalar r = std::sqrt(x * x + y * y + z * z);
-        if ((!(m_env.params().pulsar && r < m_env.params().radius)) && x < xh &&
-            x > xl && y < yh && y > yl && z < zh && z > zl) {
+        if ((!(m_env.params().pulsar && r < m_env.params().radius)) &&
+            x < xh && x > xl && y < yh && y > yl && z < zh && z > zl) {
           Wtmp += f.data(0)[ijk] * f.data(0)[ijk] +
                   f.data(1)[ijk] * f.data(1)[ijk] +
                   f.data(2)[ijk] * f.data(2)[ijk];
