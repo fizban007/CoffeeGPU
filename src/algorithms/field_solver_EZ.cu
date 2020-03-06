@@ -637,7 +637,7 @@ kernel_boundary_disk_conductor(Scalar *Ex, Scalar *Ey, Scalar *Ez,
         dev_params.lower[1] + dev_params.pml[4] * dev_grid.delta[1];
 
     if (std::abs(z) < dev_grid.delta[2] / 4.0) {
-      if (x < xh && x > xl && y < yh && y > yl) {
+      if (x < xh - 1.0 && x > xl + 1.0 && y < yh - 1.0 && y > yl + 1.0) {
         Scalar R = sqrt(x * x + y * y);
         Scalar w = omegad(R);
         Scalar vx = -w * y;

@@ -51,7 +51,11 @@ dipole_z(Scalar x, Scalar y, Scalar z, Scalar alpha, Scalar phase) {
 
 HOST_DEVICE Scalar
 shape(Scalar r, Scalar r0, Scalar del) {
-  return 0.5 * (1.0 - tanh((r - r0) / del));
+  // return 0.5 * (1.0 - tanh((r - r0) / del));
+  Scalar x = (r - r0) / del;
+  if (x < -5.0) return 1.0;
+  else if (x > 5.0) return 0.0;
+  else return 0.5 * (1.0 - tanh(x));
 }
 
 HOST_DEVICE Scalar
