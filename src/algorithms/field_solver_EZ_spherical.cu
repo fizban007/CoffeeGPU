@@ -17,6 +17,8 @@
 
 #define FFE_DISSIPATION_ORDER 6
 
+#define ONESIDED
+
 namespace Coffee {
 
 using namespace SPH;
@@ -227,18 +229,24 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     if (gmsqrt < TINY) gmsqrt = TINY;
 
     Scalar rotBx = (dfdy(Blz, ijk) - dfdz(Bly, ijk)) / gmsqrt;
-    // Scalar rotBy = (dfdz(Blx, ijk) - dfdx1(Blz, ijk, x)) / gmsqrt;
-    // Scalar rotBz = (dfdx1(Bly, ijk, x) - dfdy(Blx, ijk)) / gmsqrt;
+    Scalar rotEx = (dfdy(Elz, ijk) - dfdz(Ely, ijk)) / gmsqrt;
+#ifdef ONESIDED
+    Scalar rotBy = (dfdz(Blx, ijk) - dfdx1(Blz, ijk, x)) / gmsqrt;
+    Scalar rotBz = (dfdx1(Bly, ijk, x) - dfdy(Blx, ijk)) / gmsqrt;
+    Scalar rotEy = (dfdz(Elx, ijk) - dfdx1(Elz, ijk, x)) / gmsqrt;
+    Scalar rotEz = (dfdx1(Ely, ijk, x) - dfdy(Elx, ijk)) / gmsqrt;
+    Scalar divE = div4_sph1(Ex, Ey, Ez, ijk, x, y, z);
+    Scalar divB = div4_sph1(Bx, By, Bz, ijk, x, y, z);
+#else
     Scalar rotBy = (dfdz(Blx, ijk) - dfdx(Blz, ijk)) / gmsqrt;
     Scalar rotBz = (dfdx(Bly, ijk) - dfdy(Blx, ijk)) / gmsqrt;
-    Scalar rotEx = (dfdy(Elz, ijk) - dfdz(Ely, ijk)) / gmsqrt;
-    // Scalar rotEy = (dfdz(Elx, ijk) - dfdx1(Elz, ijk, x)) / gmsqrt;
-    // Scalar rotEz = (dfdx1(Ely, ijk, x) - dfdy(Elx, ijk)) / gmsqrt;
     Scalar rotEy = (dfdz(Elx, ijk) - dfdx(Elz, ijk)) / gmsqrt;
     Scalar rotEz = (dfdx(Ely, ijk) - dfdy(Elx, ijk)) / gmsqrt;
-
     Scalar divE = div4_sph(Ex, Ey, Ez, ijk, x, y, z);
     Scalar divB = div4_sph(Bx, By, Bz, ijk, x, y, z);
+#endif
+
+    
 
     Scalar B2 =
           Bx[ijk] * Blx[ijk] + By[ijk] * Bly[ijk] + Bz[ijk] * Blz[ijk];
@@ -291,8 +299,12 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
       }
 
     if (dev_params.divB_clean) {
+#ifdef ONESIDED
+      Px = dfdx1(P, ijk, x) / get_gamma_d11(x, y, z);
+#else
       Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
-      // Px = dfdx1(P, ijk, x) / get_gamma_d11(x, y, z);
+#endif
+      
       Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
       Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
     }
@@ -447,6 +459,17 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       P_tmp[ijk] = KO_2d6(P, ijk, x, y, z);
     }
     else {
+#ifdef ONESIDED
+      Ex_tmp[ijk] = KO_2d1(Ex, ijk);
+      Ey_tmp[ijk] = KO_2d1(Ey, ijk);
+      Ez_tmp[ijk] = KO_2d1(Ez, ijk);
+
+      Bx_tmp[ijk] = KO_2d1(Bx, ijk);
+      By_tmp[ijk] = KO_2d1(By, ijk);
+      Bz_tmp[ijk] = KO_2d1(Bz, ijk);
+
+      P_tmp[ijk] = KO_2d1(P, ijk);
+#else
       Ex_tmp[ijk] = KO_2d0(Ex, ijk);
       Ey_tmp[ijk] = KO_2d0(Ey, ijk);
       Ez_tmp[ijk] = KO_2d0(Ez, ijk);
@@ -456,6 +479,7 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       Bz_tmp[ijk] = KO_2d0(Bz, ijk);
 
       P_tmp[ijk] = KO_2d0(P, ijk);
+#endif
     } 
   }
 }
