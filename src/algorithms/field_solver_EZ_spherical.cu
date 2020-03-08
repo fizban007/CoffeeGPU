@@ -460,15 +460,15 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     }
     else {
 #ifdef ONESIDED
-      Ex_tmp[ijk] = KO_2d1(Ex, ijk);
-      Ey_tmp[ijk] = KO_2d1(Ey, ijk);
-      Ez_tmp[ijk] = KO_2d1(Ez, ijk);
+      Ex_tmp[ijk] = KO_2d1(Ex, ijk, x);
+      Ey_tmp[ijk] = KO_2d1(Ey, ijk, x);
+      Ez_tmp[ijk] = KO_2d1(Ez, ijk, x);
 
-      Bx_tmp[ijk] = KO_2d1(Bx, ijk);
-      By_tmp[ijk] = KO_2d1(By, ijk);
-      Bz_tmp[ijk] = KO_2d1(Bz, ijk);
+      Bx_tmp[ijk] = KO_2d1(Bx, ijk, x);
+      By_tmp[ijk] = KO_2d1(By, ijk, x);
+      Bz_tmp[ijk] = KO_2d1(Bz, ijk, x);
 
-      P_tmp[ijk] = KO_2d1(P, ijk);
+      P_tmp[ijk] = KO_2d1(P, ijk, x);
 #else
       Ex_tmp[ijk] = KO_2d0(Ex, ijk);
       Ey_tmp[ijk] = KO_2d0(Ey, ijk);
