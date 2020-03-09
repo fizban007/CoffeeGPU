@@ -11,6 +11,8 @@
 #define BLOCK_SIZE_Y 2
 #define BLOCK_SIZE_Z 2
 
+#define HALF
+
 namespace Coffee {
 
 __device__ __forceinline__ Scalar
@@ -39,7 +41,7 @@ j_ext(Scalar x, Scalar y, Scalar z, Scalar *jnew) {
   jnew[0] = 0.0;
   jnew[1] = 0.0;
   jnew[2] = 0.0;
-  if (std::abs(z) < dev_grid.delta[2] / 4.0) {
+  if (std::abs(z) < dev_grid.delta[2] * (3.0 + 1.0 / 4.0)) {
     Scalar tmp = (r - dev_params.radius) * 2.0 * M_PI / dev_params.rj;
     if (tmp < 2.0 * M_PI && tmp > 0) {
       Scalar iphi = dev_params.b0 * sin(tmp) /
@@ -584,6 +586,7 @@ kernel_boundary_disk_vacuum(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar z = dev_grid.pos(2, k, 1);
     int s = dev_grid.dims[0] * dev_grid.dims[1];
 
+#ifdef HALF
     if (std::abs(z) < dev_grid.delta[2] / 4.0) {
       for (int l = 1; l <= 3; l++) {
         Bx[ijk - l * s] = -Bx[ijk + l * s];
@@ -594,6 +597,7 @@ kernel_boundary_disk_vacuum(Scalar *Ex, Scalar *Ey, Scalar *Ez,
         Ez[ijk - l * s] = -Ez[ijk + l * s];
       }
     }
+#endif
   }
 }
 
@@ -656,15 +660,19 @@ kernel_boundary_disk_conductor(Scalar *Ex, Scalar *Ey, Scalar *Ez,
           Ey[ijk] = Eynew;
         }
       }
-      // for (int l = 1; l <= 3; l++) {
-      //   Bx[ijk - l * s] = -Bx[ijk + l * s];
-      //   By[ijk - l * s] = -By[ijk + l * s];
-      //   Bz[ijk - l * s] = Bz[ijk + l * s];
-      //   Ex[ijk - l * s] = Ex[ijk + l * s];
-      //   Ey[ijk - l * s] = Ey[ijk + l * s];
-      //   Ez[ijk - l * s] = -Ez[ijk + l * s];
-      // }
     }
+#ifdef HALF
+    if (std::abs(z) < dev_grid.delta[2] / 4.0) {
+      for (int l = 1; l <= 3; l++) {
+        Bx[ijk - l * s] = -Bx[ijk + l * s];
+        By[ijk - l * s] = -By[ijk + l * s];
+        Bz[ijk - l * s] = Bz[ijk + l * s];
+        Ex[ijk - l * s] = Ex[ijk + l * s];
+        Ey[ijk - l * s] = Ey[ijk + l * s];
+        Ez[ijk - l * s] = -Ez[ijk + l * s];
+      }
+    }
+#endif
   }
 }
 
@@ -780,10 +788,10 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
 void
 field_solver_EZ::boundary_disk(Scalar t) {
   if (!m_env.params().calc_current) {
-    // kernel_boundary_disk_vacuum<<<blockGroupSize, blockSize>>>(
-    //     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-    //     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-    //     m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
+    kernel_boundary_disk_vacuum<<<blockGroupSize, blockSize>>>(
+        m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+        m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+        m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
   } else {
     kernel_boundary_disk_conductor<<<blockGroupSize, blockSize>>>(
         m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
