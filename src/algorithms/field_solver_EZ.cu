@@ -636,14 +636,25 @@ kernel_boundary_disk_conductor(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar yl =
         dev_params.lower[1] + dev_params.pml[4] * dev_grid.delta[1];
 
-    if (std::abs(z) < dev_grid.delta[2] / 4.0) {
+    Scalar Exnew, Eynew, Eznew, Bxnew, Bynew, Bznew;
+
+    if (std::abs(z) < dev_grid.delta[2] * (3.0 + 1.0/ 4.0)) {
       if (x < xh - 1.0 && x > xl + 1.0 && y < yh - 1.0 && y > yl + 1.0) {
         Scalar R = sqrt(x * x + y * y);
         Scalar w = omegad(R);
-        Scalar vx = -w * y;
+        Scalar vx = - w * y;
         Scalar vy = w * x;
-        Ex[ijk] = -vy * Bz[ijk];
-        Ey[ijk] = vx * Bz[ijk];
+        Exnew = - vy * Bz[ijk];
+        Eynew = vx * Bz[ijk];
+        Eznew = - vx * By[ijk] + vy * Bx[ijk];
+        if (std::abs(z) < dev_grid.delta[2] * (2.0 + 1.0/ 4.0)) {
+          Ex[ijk] = Exnew;
+          Ey[ijk] = Eynew;
+          Ez[ijk] = Eznew;
+        } else {
+          Ex[ijk] = Exnew;
+          Ey[ijk] = Eynew;
+        }
       }
       // for (int l = 1; l <= 3; l++) {
       //   Bx[ijk - l * s] = -Bx[ijk + l * s];
