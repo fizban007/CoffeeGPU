@@ -17,7 +17,7 @@
 
 #define FFE_DISSIPATION_ORDER 6
 
-#define ONESIDED
+// #define ONESIDED
 
 namespace Coffee {
 
