@@ -645,14 +645,14 @@ kernel_boundary_disk_conductor(Scalar *Ex, Scalar *Ey, Scalar *Ez,
         Ex[ijk] = -vy * Bz[ijk];
         Ey[ijk] = vx * Bz[ijk];
       }
-      for (int l = 1; l <= 3; l++) {
-        Bx[ijk - l * s] = -Bx[ijk + l * s];
-        By[ijk - l * s] = -By[ijk + l * s];
-        Bz[ijk - l * s] = Bz[ijk + l * s];
-        Ex[ijk - l * s] = Ex[ijk + l * s];
-        Ey[ijk - l * s] = Ey[ijk + l * s];
-        Ez[ijk - l * s] = -Ez[ijk + l * s];
-      }
+      // for (int l = 1; l <= 3; l++) {
+      //   Bx[ijk - l * s] = -Bx[ijk + l * s];
+      //   By[ijk - l * s] = -By[ijk + l * s];
+      //   Bz[ijk - l * s] = Bz[ijk + l * s];
+      //   Ex[ijk - l * s] = Ex[ijk + l * s];
+      //   Ey[ijk - l * s] = Ey[ijk + l * s];
+      //   Ez[ijk - l * s] = -Ez[ijk + l * s];
+      // }
     }
   }
 }
@@ -768,16 +768,17 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
 
 void
 field_solver_EZ::boundary_disk(Scalar t) {
-  if (!m_env.params().calc_current)
-    kernel_boundary_disk_vacuum<<<blockGroupSize, blockSize>>>(
-        m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-        m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-        m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
-  else
+  if (!m_env.params().calc_current) {
+    // kernel_boundary_disk_vacuum<<<blockGroupSize, blockSize>>>(
+    //     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+    //     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+    //     m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
+  } else {
     kernel_boundary_disk_conductor<<<blockGroupSize, blockSize>>>(
         m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
         m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
         m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
+  }
   CudaCheckError();
 }
 
