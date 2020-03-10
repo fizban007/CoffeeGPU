@@ -265,6 +265,7 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
       Jz = 0.0;
     }
 
+    
     Scalar Pxd = dfdx(P, ijk);
     Scalar Pyd = dfdy(P, ijk);
     Scalar Pzd = dfdz(P, ijk);
@@ -278,19 +279,24 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
                  get_gamma_u23(dev_params.a, x, y, z) * Pyd +
                  get_gamma_u33(dev_params.a, x, y, z) * Pzd;
 
-
-    dBx[ijk] =
-        As * dBx[ijk] +
-        dev_params.dt * (-rotEx - alpha * Pxu +
-                         get_beta_u1(dev_params.a, x, y, z) * divB);
-    dBy[ijk] =
-        As * dBy[ijk] +
-        dev_params.dt * (-rotEy - alpha * Pyu +
-                         get_beta_u2(dev_params.a, x, y, z) * divB);
-    dBz[ijk] =
-        As * dBz[ijk] +
-        dev_params.dt * (-rotEz - alpha * Pzu +
-                         get_beta_u3(dev_params.a, x, y, z) * divB);
+    if (dev_params.divB_clean) {
+      dBx[ijk] =
+          As * dBx[ijk] +
+          dev_params.dt * (-rotEx - alpha * Pxu +
+                           get_beta_u1(dev_params.a, x, y, z) * divB);
+      dBy[ijk] =
+          As * dBy[ijk] +
+          dev_params.dt * (-rotEy - alpha * Pyu +
+                           get_beta_u2(dev_params.a, x, y, z) * divB);
+      dBz[ijk] =
+          As * dBz[ijk] +
+          dev_params.dt * (-rotEz - alpha * Pzu +
+                           get_beta_u3(dev_params.a, x, y, z) * divB);
+    } else {
+      dBx[ijk] = As * dBx[ijk] - dev_params.dt * rotEx;
+      dBy[ijk] = As * dBy[ijk] - dev_params.dt * rotEy;
+      dBz[ijk] = As * dBz[ijk] - dev_params.dt * rotEz;
+    }
 
     dDx[ijk] = As * dDx[ijk] + dev_params.dt * (rotHx - Jx);
     dDy[ijk] = As * dDy[ijk] + dev_params.dt * (rotHy - Jy);
@@ -574,7 +580,7 @@ kernel_absorbing_inner(const Scalar *Dnx, const Scalar *Dny, const Scalar *Dnz,
   Scalar x, y, z;
   size_t ijk;
   Scalar rH = 1.0 + sqrt(1.0 - square(dev_params.a));
-  Scalar r1 = 0.8 * rH;
+  Scalar r1 = 0.7 * rH;
   Scalar r2 = 0.01 * rH;
   Scalar dd = 0.2 * rH;
   Scalar sig, sigx, sigy, sigz;
