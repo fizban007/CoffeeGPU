@@ -312,7 +312,7 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     jy[ijk] = Jy;
     jz[ijk] = Jz;
     DivB[ijk] = divB;
-    DivE[ijk] = divE;
+    DivE[ijk] = divD;
 
     // Inside the damping layer
     //    Scalar xh =
