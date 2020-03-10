@@ -560,6 +560,79 @@ kernel_KO_step2_gr(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
   }
 }
 
+HOST_DEVICE Scalar innersigma(Scalar a, Scalar x, Scalar y, Scalar z, Scalar r0, Scalar d, Scalar sig0) {
+  Scalar r = get_r(a, x, y, z);
+  return sig0 * cube((r0 - r) / d);
+}
+
+__global__ void
+kernel_absorbing_inner(const Scalar *Dnx, const Scalar *Dny, const Scalar *Dnz,
+                      const Scalar *Bnx, const Scalar *Bny, const Scalar *Bnz,
+                      Scalar *Dx, Scalar *Dy, Scalar *Dz, 
+                      Scalar *Bx, Scalar *By, Scalar *Bz,
+                      int shift) {
+  Scalar x, y, z;
+  size_t ijk;
+  Scalar rH = 1.0 + sqrt(1.0 - square(dev_params.a));
+  Scalar r1 = 0.8 * rH;
+  Scalar r2 = 0.01 * rH;
+  Scalar dd = 0.2 * rH;
+  Scalar sig, sigx, sigy, sigz;
+  Scalar sig0 = dev_params.sigpml;
+
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k =
+      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+    x = dev_grid.pos(0, i, 1);
+    y = dev_grid.pos(1, j, 1);
+    z = dev_grid.pos(2, k, 1);
+
+    Scalar r = get_r(dev_params.a, x, y, z);
+    if (r < r1) {
+      // Dx
+      sig = sigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
+      if (sig > TINY) Dx[ijk] = exp(- sig) * Dnx[ijk] + (1.0 - exp(- sig)) / sig * (Dx[ijk] - Dnx[ijk]); 
+      // if (sig > 0) Dx[ijk] = exp(- sig) * Dx[ijk]; 
+      // Dy
+      sig = sigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
+      if (sig > TINY) Dy[ijk] = exp(- sig) * Dny[ijk] + (1.0 - exp(- sig)) / sig * (Dy[ijk] - Dny[ijk]); 
+      // if (sig > 0) Dy[ijk] = exp(- sig) * Dy[ijk]; 
+      // Dz
+      sig = sigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
+      if (sig > TINY) Dz[ijk] = exp(- sig) * Dnz[ijk] + (1.0 - exp(- sig)) / sig * (Dz[ijk] - Dnz[ijk]);
+      // if (sig > 0) Dz[ijk] = exp(- sig) * Dz[ijk];
+      // Bx
+      sig = sigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
+      if (sig > TINY) Bx[ijk] = exp(- sig) * Bnx[ijk] + (1.0 - exp(- sig)) / sig * (Bx[ijk] - Bnx[ijk]);
+      // if (sig > 0) Bx[ijk] = exp(- sig) * Bx[ijk]; 
+      // By
+      sig = sigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
+      if (sig > TINY) By[ijk] = exp(- sig) * Bny[ijk] + (1.0 - exp(- sig)) / sig * (By[ijk] - Bny[ijk]);
+      // if (sig > 0) By[ijk] = exp(- sig) * By[ijk];
+      // Bz
+      sig = sigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
+      if (sig > TINY) Bz[ijk] = exp(- sig) * Bnz[ijk] + (1.0 - exp(- sig)) / sig * (Bz[ijk] - Bnz[ijk]);
+      // if (sig > 0) Bz[ijk] = exp(- sig) * Bz[ijk];   
+    }
+    if (r < r2) {
+      Dx[ijk] = 0.0;
+      Dy[ijk] = 0.0;
+      Dz[ijk] = 0.0;
+      Bx[ijk] = 0.0;
+      By[ijk] = 0.0;
+      Bz[ijk] = 0.0;
+    }
+  }
+}
+
 void
 field_solver_gr_EZ::rk_step(Scalar As, Scalar Bs) {
   kernel_rk_step1_gr<<<blockGroupSize, blockSize>>>(
@@ -626,6 +699,13 @@ field_solver_gr_EZ::boundary_absorbing() {
 //      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
 //      Ptmp.dev_ptr(), P.dev_ptr(), m_env.params().shift_ghost);
   kernel_boundary_absorbing_thread<<<blockGroupSize, blockSize>>>(
+      Dtmp.dev_ptr(0), Dtmp.dev_ptr(1), Dtmp.dev_ptr(2),
+      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      m_env.params().shift_ghost);
+  CudaCheckError();
+  kernel_absorbing_inner<<<blockGroupSize, blockSize>>>(
       Dtmp.dev_ptr(0), Dtmp.dev_ptr(1), Dtmp.dev_ptr(2),
       Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
