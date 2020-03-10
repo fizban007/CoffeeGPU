@@ -598,27 +598,27 @@ kernel_absorbing_inner(const Scalar *Dnx, const Scalar *Dny, const Scalar *Dnz,
     Scalar r = get_r(dev_params.a, x, y, z);
     if (r < r1) {
       // Dx
-      sig = sigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
+      sig = innersigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
       if (sig > TINY) Dx[ijk] = exp(- sig) * Dnx[ijk] + (1.0 - exp(- sig)) / sig * (Dx[ijk] - Dnx[ijk]); 
       // if (sig > 0) Dx[ijk] = exp(- sig) * Dx[ijk]; 
       // Dy
-      sig = sigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
+      sig = innersigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
       if (sig > TINY) Dy[ijk] = exp(- sig) * Dny[ijk] + (1.0 - exp(- sig)) / sig * (Dy[ijk] - Dny[ijk]); 
       // if (sig > 0) Dy[ijk] = exp(- sig) * Dy[ijk]; 
       // Dz
-      sig = sigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
+      sig = innersigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
       if (sig > TINY) Dz[ijk] = exp(- sig) * Dnz[ijk] + (1.0 - exp(- sig)) / sig * (Dz[ijk] - Dnz[ijk]);
       // if (sig > 0) Dz[ijk] = exp(- sig) * Dz[ijk];
       // Bx
-      sig = sigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
+      sig = innersigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
       if (sig > TINY) Bx[ijk] = exp(- sig) * Bnx[ijk] + (1.0 - exp(- sig)) / sig * (Bx[ijk] - Bnx[ijk]);
       // if (sig > 0) Bx[ijk] = exp(- sig) * Bx[ijk]; 
       // By
-      sig = sigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
+      sig = innersigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
       if (sig > TINY) By[ijk] = exp(- sig) * Bny[ijk] + (1.0 - exp(- sig)) / sig * (By[ijk] - Bny[ijk]);
       // if (sig > 0) By[ijk] = exp(- sig) * By[ijk];
       // Bz
-      sig = sigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
+      sig = innersigma(dev_params.a, x, y, z, r1, dd, sig0) * dev_params.dt;
       if (sig > TINY) Bz[ijk] = exp(- sig) * Bnz[ijk] + (1.0 - exp(- sig)) / sig * (Bz[ijk] - Bnz[ijk]);
       // if (sig > 0) Bz[ijk] = exp(- sig) * Bz[ijk];   
     }
