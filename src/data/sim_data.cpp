@@ -25,6 +25,7 @@ void
 sim_data::sync_to_host() {
   E.sync_to_host();
   B.sync_to_host();
+  B0.sync_to_host();
   P.sync_to_host();
   divB.sync_to_host();
   divE.sync_to_host();
