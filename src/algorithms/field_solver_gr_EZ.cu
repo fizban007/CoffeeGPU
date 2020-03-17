@@ -211,6 +211,7 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     Scalar x = dev_grid.pos(0, i, 1);
     Scalar y = dev_grid.pos(1, j, 1);
     Scalar z = dev_grid.pos(2, k, 1);
+    Scalar r = get_r(dev_params.a, x, y, z);
     Scalar gmsqrt = get_sqrt_gamma(dev_params.a, x, y, z);
     Scalar alpha = get_alpha(dev_params.a, x, y, z);
 
@@ -277,19 +278,41 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
                  get_gamma_u23(dev_params.a, x, y, z) * Pyd +
                  get_gamma_u33(dev_params.a, x, y, z) * Pzd;
 
+    Scalar r0 = 5.0;
+    Scalar del = 1.0;
+    Scalar shape = 0.5 * (1.0 - tanh((r - r0) / del));
+
     if (dev_params.divB_clean) {
+      // dBx[ijk] =
+      //     As * dBx[ijk] +
+      //     dev_params.dt * (- rotEx - alpha * Pxu +
+      //                      get_beta_u1(dev_params.a, x, y, z) * divB);
+      // dBy[ijk] =
+      //     As * dBy[ijk] +
+      //     dev_params.dt * (- rotEy - alpha * Pyu +
+      //                      get_beta_u2(dev_params.a, x, y, z) * divB);
+      // dBz[ijk] =
+      //     As * dBz[ijk] +
+      //     dev_params.dt * (- rotEz - alpha * Pzu +
+      //                      get_beta_u3(dev_params.a, x, y, z) * divB);
       dBx[ijk] =
           As * dBx[ijk] +
-          dev_params.dt * (-rotEx - alpha * Pxu +
-                           get_beta_u1(dev_params.a, x, y, z) * divB);
+          dev_params.dt *
+              (-rotEx + (-alpha * Pxu +
+                         get_beta_u1(dev_params.a, x, y, z) * divB) *
+                            shape);
       dBy[ijk] =
           As * dBy[ijk] +
-          dev_params.dt * (-rotEy - alpha * Pyu +
-                           get_beta_u2(dev_params.a, x, y, z) * divB);
+          dev_params.dt *
+              (-rotEy + (-alpha * Pyu +
+                         get_beta_u2(dev_params.a, x, y, z) * divB) *
+                            shape);
       dBz[ijk] =
           As * dBz[ijk] +
-          dev_params.dt * (-rotEz - alpha * Pzu +
-                           get_beta_u3(dev_params.a, x, y, z) * divB);
+          dev_params.dt *
+              (-rotEz + (-alpha * Pzu +
+                         get_beta_u3(dev_params.a, x, y, z) * divB) *
+                            shape);
     } else {
       dBx[ijk] = As * dBx[ijk] - dev_params.dt * rotEx;
       dBy[ijk] = As * dBy[ijk] - dev_params.dt * rotEy;
@@ -673,6 +696,55 @@ kernel_absorbing_inner(const Scalar *Dnx, const Scalar *Dny,
       Bx[ijk] = 0.0;
       By[ijk] = 0.0;
       Bz[ijk] = 0.0;
+    }
+  }
+}
+
+__global__ void
+kernel_outgoing_z(Scalar *Dx, Scalar *Dy, Scalar *Dz, Scalar *Bx,
+                  Scalar *By, Scalar *Bz, Scalar *P, int shift) {
+  size_t ijk;
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
+    int k = dev_grid.guard[2];
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+    x = dev_grid.pos(0, i, 1);
+    y = dev_grid.pos(1, j, 1);
+    z = dev_grid.pos(2, k, 1);
+    int s = dev_grid.dims[0] * dev_grid.dims[1];
+    if (std::abs(z - dev_params.lower[2]) < dev_grid.delta[2] / 2.0) {
+      for (int l = 1; l <= dev_params.guard[2]; ++l) {
+        Dx[ijk - l * s] = Dx[ijk];
+        Dy[ijk - l * s] = Dy[ijk];
+        Dz[ijk - l * s] = Dz[ijk];
+        Bx[ijk - l * s] = Bx[ijk];
+        By[ijk - l * s] = By[ijk];
+        Bz[ijk - l * s] = Bz[ijk];
+        P[ijk - l * s] = P[ijk];
+      }
+    }
+    k = dev_grid.dims[2] - dev_grid.guard[2];
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+    x = dev_grid.pos(0, i, 1);
+    y = dev_grid.pos(1, j, 1);
+    z = dev_grid.pos(2, k, 1);
+    if (std::abs(z - dev_params.lower[2] + dev_params.size[2]) <
+        dev_grid.delta[2] / 2.0) {
+      for (int l = 1; l <= dev_params.guard[2]; ++l) {
+        Dx[ijk + l * s] = Dx[ijk];
+        Dy[ijk + l * s] = Dy[ijk];
+        Dz[ijk + l * s] = Dz[ijk];
+        Bx[ijk + l * s] = Bx[ijk];
+        By[ijk + l * s] = By[ijk];
+        Bz[ijk + l * s] = Bz[ijk];
+        P[ijk + l * s] = P[ijk];
+      }
     }
   }
 }
