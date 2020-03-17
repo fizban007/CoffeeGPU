@@ -713,9 +713,9 @@ kernel_outgoing_z(Scalar *Dx, Scalar *Dy, Scalar *Dz, Scalar *Bx,
     int k = dev_grid.guard[2];
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
-    x = dev_grid.pos(0, i, 1);
-    y = dev_grid.pos(1, j, 1);
-    z = dev_grid.pos(2, k, 1);
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
     int s = dev_grid.dims[0] * dev_grid.dims[1];
     if (std::abs(z - dev_params.lower[2]) < dev_grid.delta[2] / 2.0) {
       for (int l = 1; l <= dev_params.guard[2]; ++l) {
