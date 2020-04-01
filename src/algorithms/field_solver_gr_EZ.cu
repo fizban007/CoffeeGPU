@@ -963,7 +963,7 @@ field_solver_gr_EZ::get_Hd() {
 
 void
 field_solver_gr_EZ::boundary_disk(Scalar t) {
-  if (m_env.params.calc_current) {
+  if (m_env.params().calc_current) {
     kernel_boundary_disk_conductor_gr<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
