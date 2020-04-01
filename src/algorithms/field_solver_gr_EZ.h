@@ -26,6 +26,7 @@ class field_solver_gr_EZ {
   void Kreiss_Oliger();
 
   void boundary_absorbing();
+  void boundary_disk(Scalar t);
 
   void get_Ed();
   void get_Hd();

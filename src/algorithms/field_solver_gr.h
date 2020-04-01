@@ -28,7 +28,7 @@ class field_solver_gr {
   void compute_H_gr();
 
   void absorbing_boundary();
-  void boundary_disk(Scalar t);
+  
 };
 
 }  // namespace Coffee

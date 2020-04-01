@@ -779,7 +779,8 @@ kernel_outgoing_z(Scalar *Dx, Scalar *Dy, Scalar *Dz, Scalar *Bx,
 __device__ Scalar
 omegad_gr(Scalar r, Scalar rmax) {
   Scalar del = 0.2;
-  Scalar shape = 0.5 * (1.0 - tanh((r - rmax) / del)) return 1.0 /
+  Scalar shape = 0.5 * (1.0 - tanh((r - rmax) / del));
+  return 1.0 /
                  (dev_params.a + sqrt(cube(r))) * shape;
 }
 
@@ -963,7 +964,7 @@ field_solver_gr_EZ::get_Hd() {
 void
 field_solver_gr_EZ::boundary_disk(Scalar t) {
   if (m_env.params.calc_current) {
-    kernel_boundary_disk_conductor_gr<<<blockGroupSize1, blockSize>>>(
+    kernel_boundary_disk_conductor_gr<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
