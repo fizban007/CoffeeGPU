@@ -186,7 +186,7 @@ kernel_compute_H_gr(const Scalar *Dx, const Scalar *Dy,
 }
 
 __device__ void
-j_ext(Scalar x, Scalar y, Scalar z, Scalar *jnew) {
+j_ext_gr(Scalar x, Scalar y, Scalar z, Scalar *jnew) {
   Scalar r = get_r(dev_params.a, x, y, z);
   jnew[0] = 0.0;
   jnew[1] = 0.0;
@@ -286,7 +286,7 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
       Scalar x = dev_grid.pos(0, i, 1);
       Scalar y = dev_grid.pos(1, j, 1);
       Scalar z = dev_grid.pos(2, k, 1);
-      j_ext(x, y, z, jd);
+      j_ext_gr(x, y, z, jd);
       Jx += jd[0];
       Jy += jd[1];
       Jz += jd[2];
