@@ -2,15 +2,11 @@
 #include "data/sim_data.h"
 #include "sim_env.h"
 #include "utils/data_exporter.h"
-#include "algorithms/field_solver_EZ.h"
 #include "algorithms/field_solver_gr_EZ.h"
-#include "algorithms/field_solver.h"
 #include "utils/timer.h"
 #include <fstream>
 
 #include "algorithms/metric_cks.h"
-// #include "algorithms/interpolation.h"
-// #include "algorithms/pulsar.h"
 
 using namespace std;
 using namespace Coffee;
@@ -61,10 +57,24 @@ int main(int argc, char *argv[]) {
 #endif
   
   // Main simulation loop
-  Scalar time = 0.0;
-  for (step = 0; step <= env.params().max_steps; step++) {
-    if (env.rank() == 0)
-      std::cout << "step = " << step << std::endl;
+  Scalar time = step * env.params().dt;
+  if (env.is_restart()) {
+    cout << "Restarting from snapshot file " << env.restart_file() << "\n";
+    exporter.load_snapshot(env.restart_file(), data, step, time);
+  }
+
+  uint32_t prev_snapshot = step;
+  for (; step <= env.params().max_steps; step++) {
+    if (step % env.params().snapshot_interval == 0 && step != prev_snapshot) {
+      timer::stamp("restart");
+      exporter.save_snapshot(
+          exporter.output_directory() + "snapshot.h5", data, step,
+          time);
+      if (env.rank() == 0)
+        timer::show_duration_since_stamp("writing a restart file", "s",
+                                         "restart");
+    }
+    std::cout << "step = " << step << std::endl;
     // Do stuff here
     if (step % env.params().data_interval == 0) {
       timer::stamp("output");
