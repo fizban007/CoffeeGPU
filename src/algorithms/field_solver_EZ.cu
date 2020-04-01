@@ -42,10 +42,10 @@ j_ext(Scalar x, Scalar y, Scalar z, Scalar *jnew) {
   jnew[1] = 0.0;
   jnew[2] = 0.0;
   if (std::abs(z) < dev_grid.delta[2] * (3.0 + 1.0 / 4.0)) {
-    Scalar tmp = (r - dev_params.radius) * 2.0 * M_PI / dev_params.rj;
+    Scalar tmp = (r - dev_params.rin) * 2.0 * M_PI / dev_params.rj;
     if (tmp < 2.0 * M_PI && tmp > 0) {
       Scalar iphi = dev_params.b0 * sin(tmp) /
-                    pow(r / dev_params.radius, dev_params.al);
+                    pow(r / dev_params.rin, dev_params.al);
       jnew[0] = -y / r * iphi;
       jnew[1] = x / r * iphi;
     }
@@ -604,11 +604,11 @@ kernel_boundary_disk_vacuum(Scalar *Ex, Scalar *Ey, Scalar *Ez,
 __device__ Scalar
 omegad(Scalar R) {
   Scalar del = 0.05;
-  return dev_params.omegad0 * shape(R, dev_params.radius, del);
-  // if (R < dev_params.radius)
+  return dev_params.omegad0 * shape(R, dev_params.rin, del);
+  // if (R < dev_params.rin)
   //   return dev_params.omegad0;
   // else
-  //   return dev_params.omegad0 / sqrt(cube(R / dev_params.radius));
+  //   return dev_params.omegad0 / sqrt(cube(R / dev_params.rin));
 }
 
 __global__ void

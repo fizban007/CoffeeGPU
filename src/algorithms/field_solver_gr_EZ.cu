@@ -185,6 +185,23 @@ kernel_compute_H_gr(const Scalar *Dx, const Scalar *Dy,
   }
 }
 
+__device__ void
+j_ext(Scalar x, Scalar y, Scalar z, Scalar *jnew) {
+  Scalar r = get_r(dev_params.a, x, y, z);
+  jnew[0] = 0.0;
+  jnew[1] = 0.0;
+  jnew[2] = 0.0;
+  if (std::abs(z) < dev_grid.delta[2] * (3.0 + 1.0 / 4.0)) {
+    Scalar tmp = (r - dev_params.rin) * 2.0 * M_PI / dev_params.rj;
+    if (tmp < 2.0 * M_PI && tmp > 0) {
+      Scalar iphi = dev_params.b0 * sin(tmp) /
+                    pow(r / dev_params.rin, dev_params.al);
+      jnew[0] = -y / r * iphi;
+      jnew[1] = x / r * iphi;
+    }
+  }
+}
+
 __global__ void
 kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
                    const Scalar *Hx, const Scalar *Hy, const Scalar *Hz,
@@ -195,7 +212,7 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
                    Scalar *jz, Scalar *DivB, Scalar *DivE,
                    const Scalar *P, Scalar *dP, int shift, Scalar As) {
   size_t ijk;
-  Scalar Jx, Jy, Jz, Jp;
+  Scalar Jx, Jy, Jz, Jp, jd[3] = {0.0, 0.0, 0.0};
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
   int j =
@@ -263,6 +280,16 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
       Jx = 0.0;
       Jy = 0.0;
       Jz = 0.0;
+    }
+
+    if (dev_params.ext_current) {
+      Scalar x = dev_grid.pos(0, i, 1);
+      Scalar y = dev_grid.pos(1, j, 1);
+      Scalar z = dev_grid.pos(2, k, 1);
+      j_ext(x, y, z, jd);
+      Jx += jd[0];
+      Jy += jd[1];
+      Jz += jd[2];
     }
 
     Scalar Pxd = dfdx(P, ijk);
@@ -749,6 +776,80 @@ kernel_outgoing_z(Scalar *Dx, Scalar *Dy, Scalar *Dz, Scalar *Bx,
   }
 }
 
+__device__ Scalar
+omegad_gr(Scalar r, Scalar rmax) {
+  Scalar del = 0.2;
+  Scalar shape = 0.5 * (1.0 - tanh((r - rmax) / del)) return 1.0 /
+                 (dev_params.a + sqrt(cube(r))) * shape;
+}
+
+__global__ void
+kernel_boundary_disk_conductor_gr(Scalar *Dx, Scalar *Dy, Scalar *Dz,
+                                  Scalar *Bx, Scalar *By, Scalar *Bz,
+                                  Scalar *P, Scalar t, int shift) {
+  size_t ijk;
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k =
+      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
+    Scalar r = get_r(dev_params.a, x, y, z);
+    int s = dev_grid.dims[0] * dev_grid.dims[1];
+    Scalar xh = dev_params.lower[0] + dev_params.size[0] -
+                dev_params.pml[0] * dev_grid.delta[0];
+    Scalar xl =
+        dev_params.lower[0] + dev_params.pml[3] * dev_grid.delta[0];
+    Scalar yh = dev_params.lower[1] + dev_params.size[1] -
+                dev_params.pml[1] * dev_grid.delta[1];
+    Scalar yl =
+        dev_params.lower[1] + dev_params.pml[4] * dev_grid.delta[1];
+    Scalar rmax = get_r(dev_params.a, xh, 0.0, 0.0);
+    Scalar alpha = get_alpha(dev_params.a, x, y, z);
+    Scalar gmsqrt = get_sqrt_gamma(dev_params.a, x, y, z);
+
+    Scalar Ddx, Ddy, Ddz, Dux, Duy, Duz;
+
+    if (std::abs(z) < dev_grid.delta[2] * (3.0 + 1.0 / 4.0)) {
+      if (r < rmax) {
+        Scalar w = omegad_gr(r, rmax);
+        Scalar vx =
+            (get_beta_u1(dev_params.a, x, y, z) - w * y) / alpha;
+        Scalar vy =
+            (get_beta_u2(dev_params.a, x, y, z) + w * x) / alpha;
+        Ddx = -gmsqrt * vy * Bz[ijk];
+        Ddy = gmsqrt * vx * Bz[ijk];
+        Ddz = gmsqrt * (-vx * By[ijk] + vy * Bx[ijk]);
+        Dux = get_gamma_u11(dev_params.a, x, y, z) * Ddx +
+              get_gamma_u12(dev_params.a, x, y, z) * Ddy +
+              get_gamma_u13(dev_params.a, x, y, z) * Ddz;
+        Duy = get_gamma_u12(dev_params.a, x, y, z) * Ddx +
+              get_gamma_u22(dev_params.a, x, y, z) * Ddy +
+              get_gamma_u23(dev_params.a, x, y, z) * Ddz;
+        Duz = get_gamma_u13(dev_params.a, x, y, z) * Ddx +
+              get_gamma_u23(dev_params.a, x, y, z) * Ddy +
+              get_gamma_u33(dev_params.a, x, y, z) * Ddz;
+        if (std::abs(z) < dev_grid.delta[2] * (2.0 + 1.0 / 4.0)) {
+          Dx[ijk] = Dux;
+          Dy[ijk] = Duy;
+          Dz[ijk] = Duz;
+        } else {
+          Dx[ijk] = Dux;
+          Dy[ijk] = Duy;
+        }
+      }
+    }
+  }
+}
+
 void
 field_solver_gr_EZ::rk_step(Scalar As, Scalar Bs) {
   kernel_rk_step1_gr<<<blockGroupSize, blockSize>>>(
@@ -860,6 +961,17 @@ field_solver_gr_EZ::get_Hd() {
 }
 
 void
+field_solver_gr_EZ::boundary_disk(Scalar t) {
+  if (m_env.params.calc_current) {
+    kernel_boundary_disk_conductor_gr<<<blockGroupSize1, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
+    CudaCheckError();
+  }
+}
+
+void
 field_solver_gr_EZ::evolve_fields(Scalar time) {
   Scalar As[5] = {0, -0.4178904745, -1.192151694643, -1.697784692471,
                   -1.514183444257};
@@ -885,6 +997,8 @@ field_solver_gr_EZ::evolve_fields(Scalar time) {
     if (m_env.params().clean_ep) clean_epar();
     if (m_env.params().check_egb) check_eGTb();
 
+    if (m_env.params().disk)
+      boundary_disk(time + cs[i] * m_env.params().dt);
     if (i == 4) boundary_absorbing();
 
     CudaSafeCall(cudaDeviceSynchronize());
@@ -902,7 +1016,7 @@ field_solver_gr_EZ::evolve_fields(Scalar time) {
   Kreiss_Oliger();
   if (m_env.params().clean_ep) clean_epar();
   if (m_env.params().check_egb) check_eGTb();
-  // boundary_pulsar(time + m_env.params().dt);
+  if (m_env.params().disk) boundary_disk(time + m_env.params().dt);
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
   if (m_env.rank() == 0)

@@ -119,6 +119,7 @@ parse_config(const std::string& filename) {
 
   result.disk =
       config->get_as<bool>("disk").value_or(defaults.disk);
+  result.rin = config->get_as<double>("rin").value_or(defaults.rin);
   result.rj = config->get_as<double>("rj").value_or(defaults.rj);
   result.al = config->get_as<double>("al").value_or(defaults.al);
   result.omegad0 = config->get_as<double>("omegad0").value_or(defaults.omegad0);

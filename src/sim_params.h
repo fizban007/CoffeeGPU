@@ -88,6 +88,7 @@ struct sim_params {
 
   // Disk setup
   bool disk = false; ///< Whether or not to use the disk setup
+  Scalar rin = 1.0; ///< Inner radius of the disk
   Scalar rj = 4.0; ///< Disk current distribution length scale
   Scalar al = 1.0; ///< How fast the disk current decays with radius
   Scalar omegad0 = 0.5; ///< Angular velocity of inner disk

@@ -3,7 +3,7 @@
 #include "sim_env.h"
 #include "utils/data_exporter.h"
 #include "algorithms/field_solver_EZ.h"
-// #include "algorithms/field_solver_gr_EZ.h"
+#include "algorithms/field_solver_gr_EZ.h"
 #include "algorithms/field_solver.h"
 #include "utils/timer.h"
 #include <fstream>
@@ -12,12 +12,17 @@
 // #include "algorithms/interpolation.h"
 // #include "algorithms/pulsar.h"
 
+#define GR
+
 using namespace std;
 using namespace Coffee;
-// using namespace CKS;
+#ifdef GR
+using namespace CKS;
+#endif
 
 // #define ENG
 #define EZ
+
 
 int main(int argc, char *argv[]) {
   timer::stamp("begin");
@@ -26,27 +31,15 @@ int main(int argc, char *argv[]) {
 
   // Initialize all the simulation data structures
   sim_data data(env);
+#ifdef GR
+  field_solver_gr_EZ solver(data, env);
+#else
   field_solver_EZ solver(data, env);
-// #ifdef EZ
-//   field_solver_EZ solver(data, env);
-// #else
-//   field_solver solver(data, env);
-// #endif
+#endif
 
-  #include "user_init.hpp"
-  // #include "user_emwave.hpp"
-  // #include "user_alfven.hpp"
-  // #include "user_alfven_EZ.hpp"
-// #ifdef EZ
-//   #include "user_pulsar3d_EZ.hpp"
-// #else
-//   #include "user_pulsar3d.hpp"
-// #endif
 
-  // Initialization for Wald problem
-  // #include "user_wald.hpp" 
-  // #include "user_wald1.hpp" 
-  // #include "user_wald2.hpp" 
+  #include "user_init_EZ.hpp"
+
 
   uint32_t step = 0;
   data_exporter exporter(env, step);
