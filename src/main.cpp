@@ -8,7 +8,7 @@
 #include "utils/timer.h"
 #include <fstream>
 
-// #include "algorithms/metric_cks.h"
+#include "algorithms/metric_cks.h"
 // #include "algorithms/interpolation.h"
 // #include "algorithms/pulsar.h"
 
