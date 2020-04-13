@@ -1,0 +1,20 @@
+{
+  "C_Cpp.autocomplete": "Disabled",
+  "C_Cpp.errorSquiggles": "Disabled",
+  "C_Cpp.formatting": "Disabled",
+  "C_Cpp.intelliSenseEngine": "Disabled",
+  "ccls.completion.caseSensitivity": 1,
+  "ccls.completion.detailedLabel": true,
+  "ccls.diagnostics.blacklist": ["\\?"],
+  "ccls.highlight.function.face": ["enabled"],
+  "ccls.highlight.type.face": ["enabled"],
+  "ccls.highlight.variable.face": ["enabled"],
+  "ccls.launch.args": [
+    "--init={\"capabilities\": {\"foldingRangeProvider\": false}}"
+  ],
+  "clangd.arguments": ["-clang-tidy"],
+  "clangd.semanticHighlighting": false,
+  "files.associations": {
+    "*.cu": "cpp"
+  }
+}
