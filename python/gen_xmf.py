@@ -2,7 +2,8 @@
 
 import h5py
 import numpy as np
-import pytoml
+#import pytoml
+import toml
 from pathlib import Path
 import sys
 import os
@@ -10,9 +11,11 @@ import re
 
 def load_conf(path):
   conf_path = os.path.join(path, "config.toml")
-  with open(conf_path, "rb") as f:
-    conf = pytoml.load(f)
-    return conf
+  return toml.load(conf_path)
+  #with open(conf_path, "rb") as f:
+    #conf = pytoml.load(f)
+    #conf = toml.load(f)
+    #return conf
 
 def xmf_head():
   return """<?xml version="1.0" ?>
@@ -69,7 +72,7 @@ lower_x = conf['lower'][0]
 lower_y = conf['lower'][1]
 
 # Generate a grid hdf5 file
-f_grid = h5py.File(os.path.join(path, "grid.h5"), "w", swmr=True)
+f_grid = h5py.File(os.path.join(path, "grid.h5"), "w")
 x1 = np.array((ny, nx))
 x2 = np.array((ny, nx))
 r = np.exp(np.linspace(0.0, conf['size'][0], nx) + lower_x)
@@ -96,7 +99,7 @@ fld_steps.sort()
 # print(xmf_step_close())
 # print(xmf_tail())
 if len(fld_steps) > 0:
-  f_fld = h5py.File(os.path.join(path, f"fld.{fld_steps[0]:05d}.h5"), "r", swmr=True)
+  f_fld = h5py.File(os.path.join(path, f"fld.{fld_steps[0]:05d}.h5"), "r")
   fld_keys = list(f_fld.keys())
   f_fld.close()
   print(fld_keys)
