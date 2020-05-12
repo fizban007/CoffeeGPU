@@ -115,6 +115,19 @@ parse_config(const std::string& filename) {
   result.dw0 = config->get_as<double>("dw0").value_or(defaults.dw0);
   result.nT = config->get_as<double>("nT").value_or(defaults.nT);
 
+
+  result.tp_start1 =
+      config->get_as<double>("tp_start1").value_or(defaults.tp_start1);
+  result.tp_end1 =
+      config->get_as<double>("tp_end1").value_or(defaults.tp_end1);
+  result.rpert11 =
+      config->get_as<double>("rpert11").value_or(defaults.rpert11);
+  result.rpert21 =
+      config->get_as<double>("rpert21").value_or(defaults.rpert21);
+  result.dw1 = config->get_as<double>("dw1").value_or(defaults.dw1);
+  result.nT1 = config->get_as<double>("nT1").value_or(defaults.nT1);
+
+
   return result;
 }
 

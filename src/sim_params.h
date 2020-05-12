@@ -40,7 +40,7 @@ struct sim_params {
   bool check_egb = true; ///< Whether to clean E>B or not
 
   // Absorbing layer
-  int pml[3] = {60, 60, 60}; ///< Number of cells in absorbing layer at each boundary 
+  int pml[3] = {60, 60, 60}; ///< Number of cells in absorbing layer at each boundary
   int pmllen = 10; ///< Absorbing layer resistivety variation length scale in terms of cells
   Scalar sigpml = 0.1; ///< Parameter for the resistivity in the absorbing layer
 
@@ -75,12 +75,20 @@ struct sim_params {
 
 
   // Pulsar with Alfven wave perturbation
+  // first perturbation
   Scalar tp_start = 0.0; ///< Time for the perturbation to start
   Scalar tp_end = 0.5; ///< Time for the perturbation to end
   Scalar rpert1 = 5.0; ///< Perturbation range
   Scalar rpert2 = 10.0; ///< Perturbation range
   Scalar dw0 = 0.001; ///< Amplitude of the angular velocity perturbation
   Scalar nT = 1.0; ///< Number of periods in the perturbation
+  // parameters for the second perturbation
+  Scalar tp_start1 = 1.0; ///< Time for the perturbation to start
+  Scalar tp_end1 = 1.5; ///< Time for the perturbation to end
+  Scalar rpert11 = 5.0; ///< Perturbation range
+  Scalar rpert21 = 10.0; ///< Perturbation range
+  Scalar dw1 = 0.0; ///< Amplitude of the angular velocity perturbation
+  Scalar nT1 = 1.0; ///< Number of periods in the perturbation
 
   int skymap_Nth = 256;
   int skymap_Nph = 512;

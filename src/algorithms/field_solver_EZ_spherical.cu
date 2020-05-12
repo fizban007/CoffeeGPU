@@ -246,7 +246,7 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     Scalar divB = div4_sph(Bx, By, Bz, ijk, x, y, z);
 #endif
 
-    
+
 
     Scalar B2 =
           Bx[ijk] * Blx[ijk] + By[ijk] * Bly[ijk] + Bz[ijk] * Blz[ijk];
@@ -304,7 +304,7 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
 #else
       Px = dfdx(P, ijk) / get_gamma_d11(x, y, z);
 #endif
-      
+
       Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
       Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
     }
@@ -480,7 +480,7 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 
       P_tmp[ijk] = KO_2d0(P, ijk);
 #endif
-    } 
+    }
   }
 }
 
@@ -524,9 +524,10 @@ kernel_KO_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 }
 
 __device__ Scalar
-wpert_sph(Scalar t, Scalar r, Scalar th) {
-  Scalar th1 = acos(std::sqrt(1.0 - 1.0 / dev_params.rpert1));
-  Scalar th2 = acos(std::sqrt(1.0 - 1.0 / dev_params.rpert2));
+wpert_sph(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
+          Scalar dw0, Scalar nT, Scalar rpert1, Scalar rpert2) {
+  Scalar th1 = acos(std::sqrt(1.0 - 1.0 / rpert1));
+  Scalar th2 = acos(std::sqrt(1.0 - 1.0 / rpert2));
   if (th1 > th2) {
     Scalar tmp = th1;
     th1 = th2;
@@ -534,11 +535,9 @@ wpert_sph(Scalar t, Scalar r, Scalar th) {
   }
   Scalar mu = (th1 + th2) / 2.0;
   Scalar s = (mu - th1) / 3.0;
-  if (t >= dev_params.tp_start && t <= dev_params.tp_end && th >= th1 &&
-      th <= th2)
-    return dev_params.dw0 * exp(-0.5 * square((th - mu) / s)) *
-           sin((t - dev_params.tp_start) * 2.0 * M_PI * dev_params.nT /
-               (dev_params.tp_end - dev_params.tp_start));
+  if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2)
+    return dw0 * exp(-0.5 * square((th - mu) / s)) *
+           sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
   else
     return 0;
 }
@@ -561,7 +560,15 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar z = 0.0;
     Scalar r = get_r(x, y, z);
     Scalar th = get_th(x, y, z);
-    Scalar w = dev_params.omega + wpert_sph(t, r, th);
+    Scalar wpert0 =
+        wpert_sph(t, r, th, dev_params.tp_start, dev_params.tp_end,
+                  dev_params.dw0, dev_params.nT, dev_params.rpert1,
+                  dev_params.rpert2);
+    Scalar wpert1 =
+        wpert_sph(t, r, th, dev_params.tp_start1, dev_params.tp_end1,
+                  dev_params.dw1, dev_params.nT1, dev_params.rpert11,
+                  dev_params.rpert21);
+    Scalar w = dev_params.omega + wpert0 + wpert1;
     Scalar bxn, byn, bzn, exn, eyn, ezn, v3n;
     Scalar g11sqrt, g22sqrt, g33sqrt;
 

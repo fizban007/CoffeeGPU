@@ -12,5 +12,5 @@ clang++
 -Ideps/cxxopt/include
 -Ideps/catch/single_include
 -Iinclude
--I/opt/cuda-9.0/include
+-I/usr/local/cuda/include
 -I/usr/include
