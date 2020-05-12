@@ -38,7 +38,7 @@ class Data:
     self._fld_keys = list(f_fld.keys()) + ["B", "EdotB", "flux", "J", "JdotB", "Br", "Bth", "Bph",
                                            "Er", "Eth", "Eph", "dBr", "dBth", "dBph", "dEr",
                                            "dEth", "dEph", "Br0", "Bth0", "Bph0", "Er0", "Eth0", "Eph0",
-                                           "Jr", "Jth", "Jph"]
+                                           "Jr", "Jth", "Jph", "B2", "E2", "U"]
     self._Bx0 = f_fld['Bx'][()]
     self._By0 = f_fld['By'][()]
     self._Bz0 = f_fld['Bz'][()]
@@ -93,7 +93,7 @@ class Data:
 
   def _load_fld(self, key):
     path = os.path.join(self._path, f"fld.{self._current_fld_step:05d}.h5")
-    data = h5py.File(path, "r", swmr=True)
+    data = h5py.File(path, "r")
     if key == "flux":
       self._load_mesh()
       dtheta = (
@@ -153,6 +153,12 @@ class Data:
       self._Jth = self._rv * self.Jy
     elif key == "Jph":
       self._Jph = self._rv * np.sin(self._thetav) * self.Jz
+    elif key == "B2":
+      self._B2 = self.Br**2 + self.Bth**2 + self.Bph**2
+    elif key == "E2":
+      self._E2 = self.Er**2 + self.Eth**2 + self.Eph**2
+    elif key == "U":
+      self._U = (self.B2 + self.E2)/2.0
       # elif key == "EdotB":
       #     setattr(self, "_" + key, data["EdotBavg"][()])
     else:
@@ -162,7 +168,7 @@ class Data:
   def _load_mesh(self):
     if self._mesh_loaded:
       return
-    meshfile = h5py.File(self._meshfile, "r", swmr=True)
+    meshfile = h5py.File(self._meshfile, "r")
 
     self._x1 = meshfile["x1"][()]
     self._x2 = meshfile["x2"][()]
