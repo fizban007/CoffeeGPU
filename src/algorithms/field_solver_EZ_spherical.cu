@@ -437,7 +437,7 @@ kernel_EgtB_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
 
     Scalar u1 = gm_d11 * Ex[ijk] * Ex[ijk] +
                 gm_d22 * Ey[ijk] * Ey[ijk] + gm_d33 * Ez[ijk] * Ez[ijk];
-    dU_Epar[ijk] += u1 - u0;
+    dU_EgtB[ijk] += u1 - u0;
   }
 }
 
