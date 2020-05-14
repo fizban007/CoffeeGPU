@@ -262,6 +262,9 @@ data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   add_grid_output(data.P, "P", Stagger(0b111), datafile);
   add_grid_output(data.divB, "divB", Stagger(0b111), datafile);
   add_grid_output(data.divE, "divE", Stagger(0b111), datafile);
+  add_grid_output(data.dU_EgtB, "dU_EgtB", Stagger(0b111), datafile);
+  add_grid_output(data.dU_Epar, "dU_Epar", Stagger(0b111), datafile);
+  add_grid_output(data.dU_KO, "dU_KO", Stagger(0b111), datafile);
 
   datafile.close();
   // H5Fclose(datafile);

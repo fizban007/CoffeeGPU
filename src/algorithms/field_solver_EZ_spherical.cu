@@ -246,57 +246,55 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     Scalar divB = div4_sph(Bx, By, Bz, ijk, x, y, z);
 #endif
 
-
-
     Scalar B2 =
-          Bx[ijk] * Blx[ijk] + By[ijk] * Bly[ijk] + Bz[ijk] * Blz[ijk];
-      if (B2 < TINY) B2 = TINY;
+        Bx[ijk] * Blx[ijk] + By[ijk] * Bly[ijk] + Bz[ijk] * Blz[ijk];
+    if (B2 < TINY) B2 = TINY;
 
-      if (dev_params.calc_current) {
-        if (dev_params.use_edotb_damping) {
-          Scalar E2 = Ex[ijk] * Elx[ijk] + Ey[ijk] * Ely[ijk] +
-                      Ez[ijk] * Elz[ijk];
-          Scalar chi2 = B2 - E2;
-          Scalar EdotB = Ex[ijk] * Blx[ijk] + Ey[ijk] * Bly[ijk] +
-                         Ez[ijk] * Blz[ijk];
-          Scalar E02 =
-              0.5 * (sqrt(chi2 * chi2 + 4.0 * EdotB * EdotB) - chi2);
+    if (dev_params.calc_current) {
+      if (dev_params.use_edotb_damping) {
+        Scalar E2 = Ex[ijk] * Elx[ijk] + Ey[ijk] * Ely[ijk] +
+                    Ez[ijk] * Elz[ijk];
+        Scalar chi2 = B2 - E2;
+        Scalar EdotB = Ex[ijk] * Blx[ijk] + Ey[ijk] * Bly[ijk] +
+                       Ez[ijk] * Blz[ijk];
+        Scalar E02 =
+            0.5 * (sqrt(chi2 * chi2 + 4.0 * EdotB * EdotB) - chi2);
 
-          Scalar Jp =
-              (Blx[ijk] * rotBx + Bly[ijk] * rotBy + Blz[ijk] * rotBz) -
-              (Elx[ijk] * rotEx + Ely[ijk] * rotEy + Elz[ijk] * rotEz) +
-              dev_params.damp_gamma * EdotB / dev_params.dt;
-          Jx = divE * (Ely[ijk] * Blz[ijk] - Elz[ijk] * Bly[ijk]) /
-                   gmsqrt / (E02 + B2) +
-               Jp * Bx[ijk] / B2;
-          Jy = divE * (Elz[ijk] * Blx[ijk] - Elx[ijk] * Blz[ijk]) /
-                   gmsqrt / (E02 + B2) +
-               Jp * By[ijk] / B2;
-          Jz = divE * (Elx[ijk] * Bly[ijk] - Ely[ijk] * Blx[ijk]) /
-                   gmsqrt / (E02 + B2) +
-               Jp * Bz[ijk] / B2;
-        } else {
-          Scalar Jp =
-              (Blx[ijk] * rotBx + Bly[ijk] * rotBy + Blz[ijk] * rotBz) -
-              (Elx[ijk] * rotEx + Ely[ijk] * rotEy + Elz[ijk] * rotEz);
-          Jx = (divE * (Ely[ijk] * Blz[ijk] - Elz[ijk] * Bly[ijk]) /
-                    gmsqrt +
-                Jp * Bx[ijk]) /
-               B2;
-          Jy = (divE * (Elz[ijk] * Blx[ijk] - Elx[ijk] * Blz[ijk]) /
-                    gmsqrt +
-                Jp * By[ijk]) /
-               B2;
-          Jz = (divE * (Elx[ijk] * Bly[ijk] - Ely[ijk] * Blx[ijk]) /
-                    gmsqrt +
-                Jp * Bz[ijk]) /
-               B2;
-        }
+        Scalar Jp =
+            (Blx[ijk] * rotBx + Bly[ijk] * rotBy + Blz[ijk] * rotBz) -
+            (Elx[ijk] * rotEx + Ely[ijk] * rotEy + Elz[ijk] * rotEz) +
+            dev_params.damp_gamma * EdotB / dev_params.dt;
+        Jx = divE * (Ely[ijk] * Blz[ijk] - Elz[ijk] * Bly[ijk]) /
+                 gmsqrt / (E02 + B2) +
+             Jp * Bx[ijk] / B2;
+        Jy = divE * (Elz[ijk] * Blx[ijk] - Elx[ijk] * Blz[ijk]) /
+                 gmsqrt / (E02 + B2) +
+             Jp * By[ijk] / B2;
+        Jz = divE * (Elx[ijk] * Bly[ijk] - Ely[ijk] * Blx[ijk]) /
+                 gmsqrt / (E02 + B2) +
+             Jp * Bz[ijk] / B2;
       } else {
-        Jx = 0.0;
-        Jy = 0.0;
-        Jz = 0.0;
+        Scalar Jp =
+            (Blx[ijk] * rotBx + Bly[ijk] * rotBy + Blz[ijk] * rotBz) -
+            (Elx[ijk] * rotEx + Ely[ijk] * rotEy + Elz[ijk] * rotEz);
+        Jx = (divE * (Ely[ijk] * Blz[ijk] - Elz[ijk] * Bly[ijk]) /
+                  gmsqrt +
+              Jp * Bx[ijk]) /
+             B2;
+        Jy = (divE * (Elz[ijk] * Blx[ijk] - Elx[ijk] * Blz[ijk]) /
+                  gmsqrt +
+              Jp * By[ijk]) /
+             B2;
+        Jz = (divE * (Elx[ijk] * Bly[ijk] - Ely[ijk] * Blx[ijk]) /
+                  gmsqrt +
+              Jp * Bz[ijk]) /
+             B2;
       }
+    } else {
+      Jx = 0.0;
+      Jy = 0.0;
+      Jz = 0.0;
+    }
 
     if (dev_params.divB_clean) {
 #ifdef ONESIDED
@@ -307,8 +305,7 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
 
       Py = dfdy(P, ijk) / get_gamma_d22(x, y, z);
       Pz = dfdz(P, ijk) / get_gamma_d33(x, y, z);
-    }
-    else {
+    } else {
       Px = 0.0;
       Py = 0.0;
       Pz = 0.0;
@@ -363,7 +360,8 @@ kernel_rk_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 
 __global__ void
 kernel_Epar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
-                const Scalar *By, const Scalar *Bz, int shift) {
+                const Scalar *By, const Scalar *Bz, Scalar *dU_Epar,
+                int shift) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -377,24 +375,33 @@ kernel_Epar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
     Scalar x = dev_grid.pos(0, i, 1);
     Scalar y = dev_grid.pos(1, j, 1);
     Scalar z = 0.0;
+    Scalar gm_d11 = get_gamma_d11(x, y, z);
+    Scalar gm_d22 = get_gamma_d22(x, y, z);
+    Scalar gm_d33 = get_gamma_d33(x, y, z);
 
-    Scalar B2 = get_gamma_d11(x, y, z) * Bx[ijk] * Bx[ijk] +
-                get_gamma_d22(x, y, z) * By[ijk] * By[ijk] +
-                get_gamma_d33(x, y, z) * Bz[ijk] * Bz[ijk];
+    Scalar u0 = gm_d11 * Ex[ijk] * Ex[ijk] +
+                gm_d22 * Ey[ijk] * Ey[ijk] + gm_d33 * Ez[ijk] * Ez[ijk];
+
+    Scalar B2 = gm_d11 * Bx[ijk] * Bx[ijk] +
+                gm_d22 * By[ijk] * By[ijk] + gm_d33 * Bz[ijk] * Bz[ijk];
     if (B2 < TINY) B2 = TINY;
-    Scalar EB = get_gamma_d11(x, y, z) * Ex[ijk] * Bx[ijk] +
-                get_gamma_d22(x, y, z) * Ey[ijk] * By[ijk] +
-                get_gamma_d33(x, y, z) * Ez[ijk] * Bz[ijk];
+    Scalar EB = gm_d11 * Ex[ijk] * Bx[ijk] +
+                gm_d22 * Ey[ijk] * By[ijk] + gm_d33 * Ez[ijk] * Bz[ijk];
 
     Ex[ijk] = Ex[ijk] - EB / B2 * Bx[ijk];
     Ey[ijk] = Ey[ijk] - EB / B2 * By[ijk];
     Ez[ijk] = Ez[ijk] - EB / B2 * Bz[ijk];
+
+    Scalar u1 = gm_d11 * Ex[ijk] * Ex[ijk] +
+                gm_d22 * Ey[ijk] * Ey[ijk] + gm_d33 * Ez[ijk] * Ez[ijk];
+    dU_Epar[ijk] += u1 - u0;
   }
 }
 
 __global__ void
 kernel_EgtB_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
-                const Scalar *By, const Scalar *Bz, int shift) {
+                const Scalar *By, const Scalar *Bz, Scalar *dU_EgtB,
+                int shift) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -408,14 +415,18 @@ kernel_EgtB_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
     Scalar x = dev_grid.pos(0, i, 1);
     Scalar y = dev_grid.pos(1, j, 1);
     Scalar z = 0.0;
+    Scalar gm_d11 = get_gamma_d11(x, y, z);
+    Scalar gm_d22 = get_gamma_d22(x, y, z);
+    Scalar gm_d33 = get_gamma_d33(x, y, z);
 
-    Scalar B2 = get_gamma_d11(x, y, z) * Bx[ijk] * Bx[ijk] +
-                get_gamma_d22(x, y, z) * By[ijk] * By[ijk] +
-                get_gamma_d33(x, y, z) * Bz[ijk] * Bz[ijk];
+    Scalar u0 = gm_d11 * Ex[ijk] * Ex[ijk] +
+                gm_d22 * Ey[ijk] * Ey[ijk] + gm_d33 * Ez[ijk] * Ez[ijk];
+
+    Scalar B2 = gm_d11 * Bx[ijk] * Bx[ijk] +
+                gm_d22 * By[ijk] * By[ijk] + gm_d33 * Bz[ijk] * Bz[ijk];
     if (B2 < TINY) B2 = TINY;
-    Scalar E2 = get_gamma_d11(x, y, z) * Ex[ijk] * Ex[ijk] +
-                get_gamma_d22(x, y, z) * Ey[ijk] * Ey[ijk] +
-                get_gamma_d33(x, y, z) * Ez[ijk] * Ez[ijk];
+    Scalar E2 = gm_d11 * Ex[ijk] * Ex[ijk] +
+                gm_d22 * Ey[ijk] * Ey[ijk] + gm_d33 * Ez[ijk] * Ez[ijk];
 
     if (E2 > B2) {
       Scalar s = sqrt(B2 / E2);
@@ -423,6 +434,10 @@ kernel_EgtB_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
       Ey[ijk] *= s;
       Ez[ijk] *= s;
     }
+
+    Scalar u1 = gm_d11 * Ex[ijk] * Ex[ijk] +
+                gm_d22 * Ey[ijk] * Ey[ijk] + gm_d33 * Ez[ijk] * Ez[ijk];
+    dU_Epar[ijk] += u1 - u0;
   }
 }
 
@@ -457,8 +472,7 @@ kernel_KO_step1_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
       Bz_tmp[ijk] = KO_2d6(Bz, ijk, x, y, z);
 
       P_tmp[ijk] = KO_2d6(P, ijk, x, y, z);
-    }
-    else {
+    } else {
 #ifdef ONESIDED
       Ex_tmp[ijk] = KO_2d1(Ex, ijk, x);
       Ey_tmp[ijk] = KO_2d1(Ey, ijk, x);
@@ -489,7 +503,7 @@ kernel_KO_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                     Scalar *By, Scalar *Bz, Scalar *Ex_tmp,
                     Scalar *Ey_tmp, Scalar *Ez_tmp, Scalar *Bx_tmp,
                     Scalar *By_tmp, Scalar *Bz_tmp, Scalar *P,
-                    Scalar *P_tmp, int shift) {
+                    Scalar *P_tmp, Scalar *dU_KO, int shift) {
   Scalar KO_const = 0.0;
 
   switch (FFE_DISSIPATION_ORDER) {
@@ -510,6 +524,17 @@ kernel_KO_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
   if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
       j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
     ijk = i + j * dev_grid.dims[0];
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = 0.0;
+    Scalar gm_d11 = get_gamma_d11(x, y, z);
+    Scalar gm_d22 = get_gamma_d22(x, y, z);
+    Scalar gm_d33 = get_gamma_d33(x, y, z);
+
+    Scalar u0 =
+        gm_d11 * Ex[ijk] * Ex[ijk] + gm_d22 * Ey[ijk] * Ey[ijk] +
+        gm_d33 * Ez[ijk] * Ez[ijk] + gm_d11 * Bx[ijk] * Bx[ijk] +
+        gm_d22 * By[ijk] * By[ijk] + gm_d33 * Bz[ijk] * Bz[ijk];
 
     Ex[ijk] -= dev_params.KOeps * KO_const * Ex_tmp[ijk];
     Ey[ijk] -= dev_params.KOeps * KO_const * Ey_tmp[ijk];
@@ -520,6 +545,12 @@ kernel_KO_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Bz[ijk] -= dev_params.KOeps * KO_const * Bz_tmp[ijk];
 
     P[ijk] -= dev_params.KOeps * KO_const * P_tmp[ijk];
+
+    Scalar u1 =
+        gm_d11 * Ex[ijk] * Ex[ijk] + gm_d22 * Ey[ijk] * Ey[ijk] +
+        gm_d33 * Ez[ijk] * Ez[ijk] + gm_d11 * Bx[ijk] * Bx[ijk] +
+        gm_d22 * By[ijk] * By[ijk] + gm_d33 * Bz[ijk] * Bz[ijk];
+    dU_KO[ijk] += u1 - u0;
   }
 }
 
@@ -812,7 +843,8 @@ field_solver_EZ_spherical::Kreiss_Oliger() {
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
       Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
-      m_data.P.dev_ptr(), Ptmp.dev_ptr(), m_env.params().shift_ghost);
+      m_data.P.dev_ptr(), Ptmp.dev_ptr(), m_data.dU_KO.dev_ptr(),
+      m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -821,7 +853,7 @@ field_solver_EZ_spherical::check_eGTb() {
   kernel_EgtB_sph<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      m_env.params().shift_ghost);
+      m_data.dU_EgtB.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -830,7 +862,7 @@ field_solver_EZ_spherical::clean_epar() {
   kernel_Epar_sph<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      m_env.params().shift_ghost);
+      m_data.dU_Epar.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -879,6 +911,9 @@ field_solver_EZ_spherical::evolve_fields(Scalar time) {
   Etmp.copy_from(m_data.E);
   Btmp.copy_from(m_data.B);
   Ptmp.copy_from(m_data.P);
+  m_data.dU_EgtB.assign_dev(0.0);
+  m_data.dU_Epar.assign_dev(0.0);
+  m_data.dU_KO.assign_dev(0.0);
 
   for (int i = 0; i < 5; ++i) {
     timer::stamp();
