@@ -80,7 +80,7 @@ struct sim_params {
   Scalar tp_end = 0.5; ///< Time for the perturbation to end
   Scalar rpert1 = 5.0; ///< Perturbation range
   Scalar rpert2 = 10.0; ///< Perturbation range
-  Scalar dw0 = 0.001; ///< Amplitude of the angular velocity perturbation
+  Scalar dw0 = 0.0; ///< Amplitude of the angular velocity perturbation
   Scalar nT = 1.0; ///< Number of periods in the perturbation
   // parameters for the second perturbation
   Scalar tp_start1 = 1.0; ///< Time for the perturbation to start
