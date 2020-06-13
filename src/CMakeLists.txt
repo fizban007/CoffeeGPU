@@ -43,6 +43,7 @@ target_link_libraries(Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIE
 # add_cuda_target(Coffee_cuda ${Coffee_cuda_src})
 # target_link_libraries(Coffee_cuda ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES} Coffee)
 
+if(use_cuda)
 add_executable(coffee "main.cpp")
 target_link_libraries(coffee Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 
@@ -52,15 +53,15 @@ target_link_libraries(coffee-2d-cylindrical Coffee ${MPI_LIBRARIES} ${HDF5_LIBRA
 add_executable(coffee-2d-spherical "main-pulsar2d-spherical.cpp")
 target_link_libraries(coffee-2d-spherical Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 
-add_executable(coffee-3d "main-pulsar3d.cpp")
-target_link_libraries(coffee-3d Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
-
-add_executable(coffee-alfven3d "main-alfven3d.cpp")
-target_link_libraries(coffee-alfven3d Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
-
 add_executable(coffee-gr "main-gr.cpp")
 target_link_libraries(coffee-gr Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(coffee-wave "main-wave.cpp")
 target_link_libraries(coffee-wave Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+endif()
 
+add_executable(coffee-3d "main-pulsar3d.cpp")
+target_link_libraries(coffee-3d Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable(coffee-alfven3d "main-alfven3d.cpp")
+target_link_libraries(coffee-alfven3d Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
