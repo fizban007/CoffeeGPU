@@ -64,7 +64,6 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
   // If damp to zero
   // Bbg.initialize();
 
-
   // P = multi_array<Scalar>(m_data.env.grid().extent());
   // P.assign(0.0);
   dP = multi_array<Scalar>(m_data.env.grid().extent());
@@ -543,8 +542,9 @@ field_solver_EZ::boundary_absorbing() {
                    params.shift_ghost, grid, params);
 }
 
-Scalar wpert(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
-          Scalar dw0, Scalar nT, Scalar rpert1, Scalar rpert2) {
+Scalar
+wpert(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
+      Scalar dw0, Scalar nT, Scalar rpert1, Scalar rpert2) {
   Scalar th1 = acos(std::sqrt(1.0 - 1.0 / rpert1));
   Scalar th2 = acos(std::sqrt(1.0 - 1.0 / rpert2));
   if (th1 > th2) {
@@ -583,7 +583,7 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
   Scalar d1 = 4.0 * grid.delta[0];
   Scalar d0 = 0;
   Scalar phase = params.omega * t;
-  
+
   Scalar Bxnew, Bynew, Bznew, Exnew, Eynew, Eznew;
 
   for (int k = grid.guard[2] - shift;
@@ -603,15 +603,15 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
         Scalar r = std::sqrt(r2);
         Scalar th = acos(z / r);
 
-        Scalar wpert0 =
-            wpert(t, r, th, params.tp_start, params.tp_end, params.dw0,
-                      params.nT, params.rpert1, params.rpert2);
-        Scalar wpert1 =
-            wpert(t, r, th, params.tp_start1, params.tp_end1, params.dw1,
-                      params.nT1, params.rpert11, params.rpert21);
-        Scalar w = params.omega + wpert0 + wpert1;
-
         if (r < rl) {
+          Scalar wpert0 =
+              wpert(t, r, th, params.tp_start, params.tp_end, params.dw0,
+                    params.nT, params.rpert1, params.rpert2);
+          Scalar wpert1 = wpert(t, r, th, params.tp_start1,
+                                params.tp_end1, params.dw1, params.nT1,
+                                params.rpert11, params.rpert21);
+          Scalar w = params.omega + wpert0 + wpert1;
+
           // Scalar bxn = params.b0 * cube(params.radius) *
           //              dipole_x(x, y, z, params.alpha, phase);
           // Scalar byn = params.b0 * cube(params.radius) *
@@ -620,51 +620,44 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
           //              dipole_z(x, y, z, params.alpha, phase);
           Scalar bxn =
               params.b0 *
-              quadru_dipole(x, y, z, params.p1, params.p2, params.p3,
-                            params.q11, params.q12, params.q13,
-                            params.q22, params.q23, params.q_offset_x,
-                            params.q_offset_y, params.q_offset_z, phase,
-                            0);
+              // quadru_dipole(x, y, z, params.p1, params.p2, params.p3,
+              //               params.q11, params.q12, params.q13,
+              //               params.q22, params.q23,
+              //               params.q_offset_x, params.q_offset_y,
+              //               params.q_offset_z, phase, 0);
+              dipole2(x, y, z, params.p1, params.p2, params.p3, phase,
+                      0);
           Scalar byn =
               params.b0 *
-              quadru_dipole(x, y, z, params.p1, params.p2, params.p3,
-                            params.q11, params.q12, params.q13,
-                            params.q22, params.q23, params.q_offset_x,
-                            params.q_offset_y, params.q_offset_z, phase,
-                            1);
+              // quadru_dipole(x, y, z, params.p1, params.p2, params.p3,
+              //               params.q11, params.q12, params.q13,
+              //               params.q22, params.q23,
+              //               params.q_offset_x, params.q_offset_y,
+              //               params.q_offset_z, phase, 1);
+              dipole2(x, y, z, params.p1, params.p2, params.p3, phase,
+                      1);
           Scalar bzn =
               params.b0 *
-              quadru_dipole(x, y, z, params.p1, params.p2, params.p3,
-                            params.q11, params.q12, params.q13,
-                            params.q22, params.q23, params.q_offset_x,
-                            params.q_offset_y, params.q_offset_z, phase,
-                            2);
+              // quadru_dipole(x, y, z, params.p1, params.p2, params.p3,
+              //               params.q11, params.q12, params.q13,
+              //               params.q22, params.q23,
+              //               params.q_offset_x, params.q_offset_y,
+              //               params.q_offset_z, phase, 2);
+              dipole2(x, y, z, params.p1, params.p2, params.p3, phase,
+                      1);
           Scalar s = shape(r, params.radius - d1, scaleBperp);
-          Bxnew = (bxn * x + byn * y + bzn * z) * x / r2 * s +
-                  (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * x / r2 *
-                      (1 - s);
-          Bynew = (bxn * x + byn * y + bzn * z) * y / r2 * s +
-                  (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * y / r2 *
-                      (1 - s);
-          Bznew = (bxn * x + byn * y + bzn * z) * z / r2 * s +
-                  (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * z / r2 *
-                      (1 - s);
+          Scalar bn_dot_r = bxn * x + byn * y + bzn * z;
+          Scalar B_dot_r = Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z;
+          Bxnew = bn_dot_r * x / r2 * s + B_dot_r * x / r2 * (1 - s);
+          Bynew = bn_dot_r * y / r2 * s + B_dot_r * y / r2 * (1 - s);
+          Bznew = bn_dot_r * z / r2 * s + B_dot_r * z / r2 * (1 - s);
           s = shape(r, params.radius - d1, scaleBpar);
-          Bxnew +=
-              (bxn - (bxn * x + byn * y + bzn * z) * x / r2) * s +
-              (Bx[ijk] -
-               (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * x / r2) *
-                  (1 - s);
-          Bynew +=
-              (byn - (bxn * x + byn * y + bzn * z) * y / r2) * s +
-              (By[ijk] -
-               (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * y / r2) *
-                  (1 - s);
-          Bznew +=
-              (bzn - (bxn * x + byn * y + bzn * z) * z / r2) * s +
-              (Bz[ijk] -
-               (Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z) * z / r2) *
-                  (1 - s);
+          Bxnew += (bxn - bn_dot_r * x / r2) * s +
+                   (Bx[ijk] - B_dot_r * x / r2) * (1 - s);
+          Bynew += (byn - bn_dot_r * y / r2) * s +
+                   (By[ijk] - B_dot_r * y / r2) * (1 - s);
+          Bznew += (bzn - bn_dot_r * z / r2) * s +
+                   (Bz[ijk] - B_dot_r * z / r2) * (1 - s);
 
           Bx[ijk] = Bxnew;
           By[ijk] = Bynew;
@@ -675,32 +668,19 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
           Scalar exn = -vy * Bz[ijk];
           Scalar eyn = vx * Bz[ijk];
           Scalar ezn = -vx * By[ijk] + vy * Bx[ijk];
+          Scalar en_dot_r = (exn * x + eyn * y + ezn * z);
+          Scalar E_dot_r = (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z);
           s = shape(r, params.radius - d0, scaleEperp);
-          Exnew = (exn * x + eyn * y + ezn * z) * x / r2 * s +
-                  (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * x / r2 *
-                      (1 - s);
-          Eynew = (exn * x + eyn * y + ezn * z) * y / r2 * s +
-                  (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * y / r2 *
-                      (1 - s);
-          Eznew = (exn * x + eyn * y + ezn * z) * z / r2 * s +
-                  (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * z / r2 *
-                      (1 - s);
+          Exnew = en_dot_r * x / r2 * s + E_dot_r * x / r2 * (1 - s);
+          Eynew = en_dot_r * y / r2 * s + E_dot_r * y / r2 * (1 - s);
+          Eznew = en_dot_r * z / r2 * s + E_dot_r * z / r2 * (1 - s);
           s = shape(r, params.radius - d0, scaleEpar);
-          Exnew +=
-              (exn - (exn * x + eyn * y + ezn * z) * x / r2) * s +
-              (Ex[ijk] -
-               (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * x / r2) *
-                  (1 - s);
-          Eynew +=
-              (eyn - (exn * x + eyn * y + ezn * z) * y / r2) * s +
-              (Ey[ijk] -
-               (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * y / r2) *
-                  (1 - s);
-          Eznew +=
-              (ezn - (exn * x + eyn * y + ezn * z) * z / r2) * s +
-              (Ez[ijk] -
-               (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z) * z / r2) *
-                  (1 - s);
+          Exnew += (exn - en_dot_r * x / r2) * s +
+                   (Ex[ijk] - E_dot_r * x / r2) * (1 - s);
+          Eynew += (eyn - en_dot_r * y / r2) * s +
+                   (Ey[ijk] - E_dot_r * y / r2) * (1 - s);
+          Eznew += (ezn - en_dot_r * z / r2) * s +
+                   (Ez[ijk] - E_dot_r * z / r2) * (1 - s);
           // Bx[ijk] = Bxnew;
           // By[ijk] = Bynew;
           // Bz[ijk] = Bznew;

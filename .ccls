@@ -5,6 +5,7 @@ clang++
 %cu -std=c++14
 %cu --cuda-gpu-arch=sm_61
 %cu -nocudalib
+-DUSE_SIMD
 -Isrc/
 -Ideps/fmt/
 -Ideps/vectorclass/

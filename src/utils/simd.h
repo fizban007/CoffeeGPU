@@ -13,6 +13,7 @@ namespace simd {
 #if !defined(USE_DOUBLE) && \
     (defined(__AVX512F__) || defined(__AVX512__))
 #define USE_SIMD
+#pragma message "using AVX512 with float"
 typedef Vec16ui Vec_ui_t;
 typedef Vec16i Vec_i_t;
 typedef Vec16ib Vec_ib_t;
@@ -21,6 +22,7 @@ constexpr int vec_width = 16;
 #elif defined(USE_DOUBLE) && \
     (defined(__AVX512F__) || defined(__AVX512__))
 #define USE_SIMD
+#pragma message "using AVX512 with double"
 typedef Vec8uq Vec_ui_t;
 typedef Vec8q Vec_i_t;
 typedef Vec8qb Vec_ib_t;
@@ -28,6 +30,7 @@ typedef Vec8d Vec_f_t;
 constexpr int vec_width = 8;
 #elif !defined(USE_DOUBLE) && defined(__AVX2__)
 #define USE_SIMD
+#pragma message "using AVX2 with float"
 typedef Vec8ui Vec_idx_t;
 typedef Vec8ui Vec_ui_t;
 typedef Vec8i Vec_i_t;
@@ -36,6 +39,7 @@ typedef Vec8f Vec_f_t;
 constexpr int vec_width = 8;
 #elif defined(USE_DOUBLE) && defined(__AVX2__)
 #define USE_SIMD
+#pragma message "using AVX2 with double"
 typedef Vec8ui Vec_idx_t;
 typedef Vec4uq Vec_ui_t;
 typedef Vec4q Vec_i_t;
