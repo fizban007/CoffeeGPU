@@ -604,10 +604,10 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
         Scalar th = acos(z / r);
 
         Scalar wpert0 =
-            wpert_sph(t, r, th, params.tp_start, params.tp_end, params.dw0,
+            wpert(t, r, th, params.tp_start, params.tp_end, params.dw0,
                       params.nT, params.rpert1, params.rpert2);
         Scalar wpert1 =
-            wpert_sph(t, r, th, params.tp_start1, params.tp_end1, params.dw1,
+            wpert(t, r, th, params.tp_start1, params.tp_end1, params.dw1,
                       params.nT1, params.rpert11, params.rpert21);
         Scalar w = params.omega + wpert0 + wpert1;
 
