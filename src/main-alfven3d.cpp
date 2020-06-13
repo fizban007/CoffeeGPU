@@ -67,7 +67,8 @@ int main(int argc, char *argv[]) {
         timer::show_duration_since_stamp("writing a restart file", "s",
                                          "restart");
     }
-    std::cout << "step = " << step << std::endl;
+    if (env.rank() == 0)
+      std::cout << "step = " << step << std::endl;
     // Do stuff here
     if (step % env.params().data_interval == 0) {
       timer::stamp("output");
