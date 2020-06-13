@@ -747,12 +747,15 @@ field_solver_EZ::evolve_fields(Scalar time) {
     // if (m_env.params().check_egb)
     //   check_eGTb();
     clean_epar_check_eGTb();
+    if (m_env.rank() == 0)
+      timer::show_duration_since_stamp("clean/check", "ms");
 
+    timer::stamp();
     boundary_pulsar(time + cs[i] * m_env.params().dt);
     if (i == 4) boundary_absorbing();
 
     if (m_env.rank() == 0)
-      timer::show_duration_since_stamp("clean/check/boundary", "ms");
+      timer::show_duration_since_stamp("boundary", "ms");
 
     timer::stamp();
     m_env.send_guard_cells(m_data);
