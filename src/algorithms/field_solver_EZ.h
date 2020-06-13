@@ -5,7 +5,7 @@ namespace Coffee {
 
 class field_solver_EZ {
  public:
-  vector_field<Scalar> Etmp, Btmp, dE, dB;
+  vector_field<Scalar> Etmp, Btmp, dE, dB, Bbg;
   multi_array<Scalar> dP, Ptmp;
   multi_array<Scalar> skymap;
 

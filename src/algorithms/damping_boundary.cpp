@@ -5,6 +5,7 @@ namespace Coffee {
 void
 damping_boundary(const vector_field<Scalar>& En,
                  const vector_field<Scalar>& Bn,
+                 const vector_field<Scalar>& Bbg,
                  vector_field<Scalar>& E, vector_field<Scalar>& B,
                  multi_array<Scalar>& Pn, multi_array<Scalar>& P,
                  int shift, const Grid& grid,
@@ -21,6 +22,9 @@ damping_boundary(const vector_field<Scalar>& En,
   auto& bnx = Bn.data(0);
   auto& bny = Bn.data(1);
   auto& bnz = Bn.data(2);
+  auto& b0x = Bbg.data(0);
+  auto& b0y = Bbg.data(1);
+  auto& b0z = Bbg.data(2);
   Scalar x, y, z;
   Scalar sigx = 0.0, sigy = 0.0, sigz = 0.0, sig = 0.0;
   size_t ijk = 0;
@@ -63,11 +67,11 @@ damping_boundary(const vector_field<Scalar>& En,
                       (1.0 - exp(-sig)) / sig * (ey[ijk] - eny[ijk]);
             ez[ijk] = exp(-sig) * enz[ijk] +
                       (1.0 - exp(-sig)) / sig * (ez[ijk] - enz[ijk]);
-            bx[ijk] = exp(-sig) * bnx[ijk] +
+            bx[ijk] = b0x[ijk] + exp(-sig) * (bnx[ijk] - b0x[ijk]) +
                       (1.0 - exp(-sig)) / sig * (bx[ijk] - bnx[ijk]);
-            by[ijk] = exp(-sig) * bny[ijk] +
+            by[ijk] = b0y[ijk] + exp(-sig) * (bny[ijk] - b0y[ijk]) +
                       (1.0 - exp(-sig)) / sig * (by[ijk] - bny[ijk]);
-            bz[ijk] = exp(-sig) * bnz[ijk] +
+            bz[ijk] = b0z[ijk] + exp(-sig) * (bnz[ijk] - b0z[ijk]) +
                       (1.0 - exp(-sig)) / sig * (bz[ijk] - bnz[ijk]);
             // P[ijk] = exp(-sig) * Pn[ijk] +
             //          (1.0 - exp(-sig)) / sig * (P[ijk] - Pn[ijk]);

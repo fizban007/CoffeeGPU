@@ -23,6 +23,7 @@ pmlsigma(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Scalar sig0) {
 
 void damping_boundary(const vector_field<Scalar>& En,
                       const vector_field<Scalar>& Bn,
+                      const vector_field<Scalar>& Bbg,
                       vector_field<Scalar>& E, vector_field<Scalar>& B,
                       multi_array<Scalar>& Pn, multi_array<Scalar>& P,
                       int shift, const Grid& grid,

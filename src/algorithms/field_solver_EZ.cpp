@@ -57,6 +57,14 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
   dB.initialize();
   Btmp.copy_from(m_data.B);
 
+  Bbg = vector_field<Scalar>(m_data.env.grid());
+  Bbg.copy_stagger(m_data.B);
+  // If damp to vacuum background field
+  Bbg.copy_from(m_data.B);
+  // If damp to zero
+  // Bbg.initialize();
+
+
   // P = multi_array<Scalar>(m_data.env.grid().extent());
   // P.assign(0.0);
   dP = multi_array<Scalar>(m_data.env.grid().extent());
@@ -531,8 +539,26 @@ void
 field_solver_EZ::boundary_absorbing() {
   auto &params = m_env.params();
   auto &grid = m_env.grid();
-  damping_boundary(Etmp, Btmp, m_data.E, m_data.B, Ptmp, m_data.P,
+  damping_boundary(Etmp, Btmp, Bbg, m_data.E, m_data.B, Ptmp, m_data.P,
                    params.shift_ghost, grid, params);
+}
+
+Scalar wpert(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
+          Scalar dw0, Scalar nT, Scalar rpert1, Scalar rpert2) {
+  Scalar th1 = acos(std::sqrt(1.0 - 1.0 / rpert1));
+  Scalar th2 = acos(std::sqrt(1.0 - 1.0 / rpert2));
+  if (th1 > th2) {
+    Scalar tmp = th1;
+    th1 = th2;
+    th2 = tmp;
+  }
+  Scalar mu = (th1 + th2) / 2.0;
+  Scalar s = (mu - th1) / 3.0;
+  if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2)
+    return dw0 * exp(-0.5 * square((th - mu) / s)) *
+           sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
+  else
+    return 0;
 }
 
 void
@@ -557,7 +583,7 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
   Scalar d1 = 4.0 * grid.delta[0];
   Scalar d0 = 0;
   Scalar phase = params.omega * t;
-  Scalar w = params.omega;
+  
   Scalar Bxnew, Bynew, Bznew, Exnew, Eynew, Eznew;
 
   for (int k = grid.guard[2] - shift;
@@ -575,6 +601,15 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
         Scalar r2 = x * x + y * y + z * z;
         if (r2 < TINY) r2 = TINY;
         Scalar r = std::sqrt(r2);
+        Scalar th = acos(z / r);
+
+        Scalar wpert0 =
+            wpert_sph(t, r, th, params.tp_start, params.tp_end, params.dw0,
+                      params.nT, params.rpert1, params.rpert2);
+        Scalar wpert1 =
+            wpert_sph(t, r, th, params.tp_start1, params.tp_end1, params.dw1,
+                      params.nT1, params.rpert11, params.rpert21);
+        Scalar w = params.omega + wpert0 + wpert1;
 
         if (r < rl) {
           // Scalar bxn = params.b0 * cube(params.radius) *
