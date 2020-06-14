@@ -7,7 +7,7 @@
 *.un~
 *~
 \#*
-build
+build*
 bin
 python
 ninja
