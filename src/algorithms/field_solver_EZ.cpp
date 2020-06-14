@@ -629,7 +629,7 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
 
         if (r < rl) {
           Scalar th = acos(z / r);
-          Scalar ph = atan(y, x);
+          Scalar ph = atan2(y, x);
           // Scalar wpert0 =
           //     wpert(t, r, th, params.tp_start, params.tp_end, params.dw0,
           //           params.nT, params.rpert1, params.rpert2);
