@@ -627,7 +627,7 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
         if (r2 < TINY) r2 = TINY;
         Scalar r = std::sqrt(r2);
         Scalar th = acos(z / r);
-        Scalar ph = acos(x / std::sqrt(x * x + y * y));
+        Scalar ph = atan(y, x);
 
         if (r < rl) {
           // Scalar wpert0 =
