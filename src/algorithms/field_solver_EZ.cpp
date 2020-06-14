@@ -644,7 +644,7 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
               //               params.q_offset_x, params.q_offset_y,
               //               params.q_offset_z, phase, 2);
               dipole2(x, y, z, params.p1, params.p2, params.p3, phase,
-                      1);
+                      2);
           Scalar s = shape(r, params.radius - d1, scaleBperp);
           Scalar bn_dot_r = bxn * x + byn * y + bzn * z;
           Scalar B_dot_r = Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z;
