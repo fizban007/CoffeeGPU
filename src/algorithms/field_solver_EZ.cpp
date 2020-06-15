@@ -561,6 +561,31 @@ wpert(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
     return 0;
 }
 
+Scalar wpert3d(Scalar t, Scalar r, Scalar th, Scalar ph, Scalar tp_start,
+               Scalar tp_end, Scalar dw0, Scalar nT, Scalar rpert1,
+               Scalar rpert2) {
+  Scalar th1 = acos(std::sqrt(1.0 - 1.0 / rpert1));
+  Scalar th2 = acos(std::sqrt(1.0 - 1.0 / rpert2));
+  if (th1 > th2) {
+    Scalar tmp = th1;
+    th1 = th2;
+    th2 = tmp;
+  }
+  Scalar mu = (th1 + th2) / 2.0;
+  Scalar s = (mu - th1) / 3.0;
+  Scalar ph1 = M_PI / 16.0;
+  Scalar ph2 = M_PI * 7.0 / 16.0;
+  Scalar phm = (ph1 + ph2) / 2.0;
+  Scalar phs = (phm - ph1) / 3.0;
+  if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2 && ph >= ph1 &&
+      ph <= ph2)
+    return dw0 *
+           exp(-0.5 * square((th - mu) / s) - 0.5 * square((ph - phm) / phs)) *
+           sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
+  else
+    return 0;
+}
+
 void
 field_solver_EZ::boundary_pulsar(Scalar t) {
   int shift = m_env.params().shift_ghost;
@@ -601,15 +626,22 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
         Scalar r2 = x * x + y * y + z * z;
         if (r2 < TINY) r2 = TINY;
         Scalar r = std::sqrt(r2);
-        Scalar th = acos(z / r);
 
         if (r < rl) {
+          Scalar th = acos(z / r);
+          Scalar ph = atan2(y, x);
+          // Scalar wpert0 =
+          //     wpert(t, r, th, params.tp_start, params.tp_end, params.dw0,
+          //           params.nT, params.rpert1, params.rpert2);
+          // Scalar wpert1 =
+          //     wpert(t, r, th, params.tp_start1, params.tp_end1, params.dw1,
+          //           params.nT1, params.rpert11, params.rpert21);
           Scalar wpert0 =
-              wpert(t, r, th, params.tp_start, params.tp_end, params.dw0,
-                    params.nT, params.rpert1, params.rpert2);
-          Scalar wpert1 = wpert(t, r, th, params.tp_start1,
-                                params.tp_end1, params.dw1, params.nT1,
-                                params.rpert11, params.rpert21);
+              wpert3d(t, r, th, ph, params.tp_start, params.tp_end, params.dw0,
+                      params.nT, params.rpert1, params.rpert2);
+          Scalar wpert1 =
+              wpert3d(t, r, th, ph, params.tp_start1, params.tp_end1,
+                      params.dw1, params.nT1, params.rpert11, params.rpert21);
           Scalar w = params.omega + wpert0 + wpert1;
 
           // Scalar bxn = params.b0 * cube(params.radius) *
@@ -644,7 +676,7 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
               //               params.q_offset_x, params.q_offset_y,
               //               params.q_offset_z, phase, 2);
               dipole2(x, y, z, params.p1, params.p2, params.p3, phase,
-                      1);
+                      2);
           Scalar s = shape(r, params.radius - d1, scaleBperp);
           Scalar bn_dot_r = bxn * x + byn * y + bzn * z;
           Scalar B_dot_r = Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z;
