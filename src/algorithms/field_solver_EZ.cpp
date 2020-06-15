@@ -579,8 +579,11 @@ Scalar wpert3d(Scalar t, Scalar r, Scalar th, Scalar ph, Scalar tp_start,
   Scalar phs = (phm - ph1) / 3.0;
   if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2 && ph >= ph1 &&
       ph <= ph2)
+    // return dw0 *
+    //        exp(-0.5 * square((th - mu) / s) - 0.5 * square((ph - phm) / phs)) *
+    //        sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
     return dw0 *
-           exp(-0.5 * square((th - mu) / s) - 0.5 * square((ph - phm) / phs)) *
+           exp(-0.5 * square((th - mu) / s)) *
            sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
   else
     return 0;
