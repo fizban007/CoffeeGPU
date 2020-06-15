@@ -25,22 +25,19 @@ def xmf_head():
 <Grid Name="Aperture" GridType="Collection" CollectionType="Temporal" >
   """
 
-def xmf_step_header(nz, ny, nx, t):
+def xmf_step_header(nx, ny, t):
   return """<Grid Name="quadmesh" Type="Uniform">
-  <Time Type="Single" Value="{3}"/>
-  <Topology Type="3DSMesh" NumberOfElements="{0} {1} {2}"/>
+  <Time Type="Single" Value="{2}"/>
+  <Topology Type="2DSMesh" NumberOfElements="{0} {1}"/>
   <Geometry GeometryType="X_Y">
-    <DataItem Dimensions="{0} {1} {2}" NumberType="Float" Precision="4" Format="HDF">
+    <DataItem Dimensions="{0} {1}" NumberType="Float" Precision="4" Format="HDF">
       grid.h5:x1
     </DataItem>
-    <DataItem Dimensions="{0} {1} {2}" NumberType="Float" Precision="4" Format="HDF">
+    <DataItem Dimensions="{0} {1}" NumberType="Float" Precision="4" Format="HDF">
       grid.h5:x2
     </DataItem>
-    <DataItem Dimensions="{0} {1} {2}" NumberType="Float" Precision="4" Format="HDF">
-      grid.h5:x3
-    </DataItem>
   </Geometry>
-  """.format(nz, ny, nx, t)
+  """.format(nx, ny, t)
 
 def xmf_step_close():
   return """</Grid>
@@ -52,13 +49,13 @@ def xmf_tail():
 </Xdmf>
 """
 
-def xmf_field_entry(name, step, nz, ny, nx):
+def xmf_field_entry(name, step, nx, ny):
   return """<Attribute Name="{0}" Center="Node" AttributeType="Scalar">
-    <DataItem Dimensions="{2} {3} {4}" NumberType="Float" Precision="4" Format="HDF">
+    <DataItem Dimensions="{2} {3}" NumberType="Float" Precision="4" Format="HDF">
       fld.{1:05d}.h5:{0}
     </DataItem>
   </Attribute>
-  """.format(name, step, nz, ny, nx)
+  """.format(name, step, nx, ny)
 
 if len(sys.argv) < 2:
   print("Please specify path of the data!")
@@ -69,29 +66,23 @@ conf = load_conf(path)
 print(conf['dt'])
 nx = conf['N'][0] // conf['downsample']
 ny = conf['N'][1] // conf['downsample']
-nz = conf['N'][2] // conf['downsample']
 dx = conf['size'][0] / nx
 dy = conf['size'][1] / ny
-dz = conf['size'][2] / nz
 lower_x = conf['lower'][0]
 lower_y = conf['lower'][1]
-lower_z = conf['lower'][2]
 
 # Generate a grid hdf5 file
 f_grid = h5py.File(os.path.join(path, "grid.h5"), "w")
-x1 = np.array((nz, ny, nx))
-x2 = np.array((nz, ny, nx))
-x3 = np.array((nz, ny, nx))
-lx1 = np.linspace(0.0, conf['size'][0], nx) + lower_x
-lx2 = np.linspace(0.0, conf['size'][1], ny) + lower_y
-lx3 = np.linspace(0.0, conf['size'][2], nz) + lower_z
-# r = np.exp(np.linspace(0.0, conf['size'][0], nx) + lower_x)
-# th = np.linspace(0.0, conf['size'][1], ny) + lower_y
-x1, x2, x3 = np.meshgrid(lx1, lx2, lx3)
+x1 = np.array((ny, nx))
+x2 = np.array((ny, nx))
+r = np.exp(np.linspace(0.0, conf['size'][0], nx) + lower_x)
+th = np.linspace(0.0, conf['size'][1], ny) + lower_y
+rgrid, thgrid = np.meshgrid(r, th)
+x1 = rgrid * np.sin(thgrid)
+x2 = rgrid * np.cos(thgrid)
 f_grid['x1'] = x1
 f_grid['x2'] = x2
-f_grid['x3'] = x3
-print(x1.shape)
+print(rgrid.shape)
 f_grid.close()
 
 # Generate a xmf file
@@ -118,8 +109,8 @@ if len(fld_steps) > 0:
       step = fld_steps[n]
       time = step * conf['data_interval'] * conf['dt']
 
-      output.write(xmf_step_header(nz, ny, nx, time))
+      output.write(xmf_step_header(ny, nx, time))
       for k in fld_keys:
-        output.write(xmf_field_entry(k, step, nz, ny, nx))
+        output.write(xmf_field_entry(k, step, ny, nx))
       output.write(xmf_step_close())
     output.write(xmf_tail())
