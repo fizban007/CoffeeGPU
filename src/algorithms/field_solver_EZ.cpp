@@ -629,22 +629,26 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
         Scalar r2 = x * x + y * y + z * z;
         if (r2 < TINY) r2 = TINY;
         Scalar r = std::sqrt(r2);
+        Scalar wpert0, wpert1;
 
         if (r < rl) {
           Scalar th = acos(z / r);
           Scalar ph = atan2(y, x);
-          // Scalar wpert0 =
-          //     wpert(t, r, th, params.tp_start, params.tp_end, params.dw0,
-          //           params.nT, params.rpert1, params.rpert2);
-          // Scalar wpert1 =
-          //     wpert(t, r, th, params.tp_start1, params.tp_end1, params.dw1,
-          //           params.nT1, params.rpert11, params.rpert21);
-          Scalar wpert0 =
-              wpert3d(t, r, th, ph, params.tp_start, params.tp_end, params.dw0,
-                      params.nT, params.rpert1, params.rpert2);
-          Scalar wpert1 =
-              wpert3d(t, r, th, ph, params.tp_start1, params.tp_end1,
-                      params.dw1, params.nT1, params.rpert11, params.rpert21);
+          if (params.pert2d) {
+            wpert0 = wpert(t, r, th, params.tp_start, params.tp_end, params.dw0,
+                           params.nT, params.rpert1, params.rpert2);
+            wpert1 =
+                wpert(t, r, th, params.tp_start1, params.tp_end1, params.dw1,
+                      params.nT1, params.rpert11, params.rpert21);
+          } else {
+            wpert0 =
+                wpert3d(t, r, th, ph, params.tp_start, params.tp_end,
+                        params.dw0, params.nT, params.rpert1, params.rpert2);
+            wpert1 =
+                wpert3d(t, r, th, ph, params.tp_start1, params.tp_end1,
+                        params.dw1, params.nT1, params.rpert11, params.rpert21);
+          }
+
           Scalar w = params.omega + wpert0 + wpert1;
 
           // Scalar bxn = params.b0 * cube(params.radius) *
