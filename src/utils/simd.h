@@ -3,7 +3,7 @@
 
 // #include <immintrin.h>
 #include "data/typedefs.h"
-#define MAX_VECTOR_SIZE 256
+#define MAX_VECTOR_SIZE 512
 #include "vectorclass.h"
 
 namespace Coffee {

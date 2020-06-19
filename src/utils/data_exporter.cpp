@@ -10,10 +10,11 @@
 #include "sim_params.h"
 // #include "utils/nvproftool.h"
 //#define BOOST_NO_CXX11_SCOPED_ENUMS
-#include <boost/filesystem.hpp>
+// #include <boost/filesystem.hpp>
 //#undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <iomanip>
 #include <sstream>
+#include <filesystem>
 
 #define ADD_GRID_OUTPUT(input, name, func, file)              \
   add_grid_output(input, name,                                \
@@ -78,15 +79,15 @@ data_exporter::data_exporter(sim_environment& env, uint32_t& timestep)
   //                   [tmp_grid_data.width()]);
   outputDirectory = "./Data/";
   m_thread = nullptr;
-  boost::filesystem::path outPath(outputDirectory);
+  std::filesystem::path outPath(outputDirectory);
 
-  boost::system::error_code returnedError;
-  boost::filesystem::create_directories(outPath, returnedError);
+  std::error_code returnedError;
+  std::filesystem::create_directories(outPath, returnedError);
 
   std::string path = outputDirectory + "config.toml";
-  boost::filesystem::copy_file(
+  std::filesystem::copy_file(
       "config.toml", path,
-      boost::filesystem::copy_option::overwrite_if_exists);
+      std::filesystem::copy_options::overwrite_existing);
 }
 
 data_exporter::~data_exporter() {}
@@ -177,7 +178,7 @@ data_exporter::load_snapshot(const std::string& filename,
                              sim_data& data, uint32_t& step,
                              Scalar& time) {
   // Check whether filename exists
-  if (!boost::filesystem::exists(filename)) {
+  if (!std::filesystem::exists(filename)) {
     std::cout
         << "Can't find restart file, proceeding without loading it!"
         << std::endl;
