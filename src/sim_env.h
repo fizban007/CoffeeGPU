@@ -37,6 +37,9 @@ class sim_environment {
 
   int size() const { return m_size; }
   int rank() const { return m_rank; }
+  int mpi_dims(int n) const { return m_mpi_dims[n]; }
+  int mpi_coord(int n) const { return m_mpi_coord[n]; }
+
   MPI_Comm world() const { return m_world; }
   bool is_restart() const { return m_is_restart; }
   const std::string& restart_file() const { return m_restart_file; }
