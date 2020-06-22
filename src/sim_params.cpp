@@ -127,6 +127,9 @@ parse_config(const std::string& filename) {
   result.dw1 = config->get_as<double>("dw1").value_or(defaults.dw1);
   result.nT1 = config->get_as<double>("nT1").value_or(defaults.nT1);
 
+  result.pert2d =
+      config->get_as<bool>("pert2d").value_or(defaults.pert2d);
+
 
   return result;
 }

@@ -89,6 +89,7 @@ struct sim_params {
   Scalar rpert21 = 10.0; ///< Perturbation range
   Scalar dw1 = 0.0; ///< Amplitude of the angular velocity perturbation
   Scalar nT1 = 1.0; ///< Number of periods in the perturbation
+  bool pert2d = true; ///< Whether perturbation is 2d or 3d
 
   int skymap_Nth = 256;
   int skymap_Nph = 512;

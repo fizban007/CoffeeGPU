@@ -36,7 +36,7 @@ else()
 endif()
 
 add_library(Coffee ${Coffee_src})
-target_link_libraries(Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES} stdc++fs)
 
 
 
