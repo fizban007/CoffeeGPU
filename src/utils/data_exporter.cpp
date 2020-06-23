@@ -372,6 +372,9 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
   int mpi_coord_z = m_env.mpi_coord(2);
   int g_dim_y = m_env.params().N[1] / d;
   int g_dim_z = m_env.params().N[2] / d;
+  int dim_x = grid.reduced_dim(0) / d;
+  int dim_y = grid.reduced_dim(1) / d;
+  int dim_z = grid.reduced_dim(2) / d;
 
   Scalar xl = grid.lower[0];
   Scalar xh = grid.lower[0] + grid.sizes[0];
@@ -392,8 +395,7 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
                                    (grid.reduced_dim(0) * grid.delta[0])));
     for (int k = 0; k < mpi_dims_z; k++) {
       for (int j = 0; j < mpi_dims_y; j++) {
-        int s = k * mpi_dims_z * grid.reduced_dim(2) * g_dim_y +
-                j * mpi_dims_y * grid.reduced_dim(1);
+        int s = k * mpi_dims_z * dim_z * g_dim_y + j * mpi_dims_y * dim_y;
         int mpi_coords[3] = {i, j, k};
         int sender;
         MPI_Cart_rank(comm, mpi_coords, &sender);
