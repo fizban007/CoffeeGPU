@@ -5,8 +5,11 @@ using namespace Coffee;
 
 int
 main(int argc, char *argv[]) {
-  multi_array<float> arr(10, 10, 10);
-  multi_array<float> arr2(20, 20);
+  int size = 4;
+  int p = 4;
+  int size1 = size * p;
+  multi_array<float> arr(size, size, size);
+  multi_array<float> arr2(size1, size1);
 
   MPI_Init(&argc, &argv);
 
@@ -20,39 +23,42 @@ main(int argc, char *argv[]) {
 
 
   MPI_Datatype x_send, x_temp;
-  MPI_Type_vector(10, 1, 10,
+  MPI_Type_vector(size, 1, size,
                   MPI_FLOAT, &x_temp);
   MPI_Type_commit(&x_temp);
   MPI_Type_create_hvector(
-      10, 1,
-      sizeof(float) * 10 * 10, x_temp, &x_send);
+      size, 1,
+      sizeof(float) * size * size, x_temp, &x_send);
   MPI_Type_commit(&x_send);
 
   MPI_Datatype x_receive;
-  MPI_Type_vector(10, 10, 20, MPI_FLOAT, &x_receive);
+  MPI_Type_vector(size, size, size1, MPI_FLOAT, &x_receive);
   MPI_Type_commit(&x_receive);
 
   if (m_rank == 1) {
-    for (int k = 0; k < 10; k++) {
-      for (int j = 0; j < 10; j++) {
-        std::cout << arr(9, j, k) << " ";
+    for (int k = 0; k < size; k++) {
+      for (int j = 0; j < size; j++) {
+        std::cout << arr(size - 1, j, k) << " ";
       }
       std::cout << std::endl;
     }
   }
+
+  MPI_Send(arr.host_ptr(), 1, x_send, 0, m_rank, m_world);
   if (m_rank == 0) {
-    MPI_Send(arr.host_ptr() + 1, 1, x_send, 1, 0, m_world);
-  } else if (m_rank == 1) {
     MPI_Status status;
-    MPI_Recv(arr2.host_ptr(), 1, x_receive, 0, 0, m_world, &status);
+    for (int i = 0; i < p * p; i++){
+      offset = i / p * size * size1 + (i % p) * size;
+      MPI_Recv(arr2.host_ptr() + offset, 1, x_receive, i, i, m_world, &status);
+    }
   }
 
   arr.sync_to_host();
   arr2.sync_to_host();
 
-  if (m_rank == 1) {
-    for (int k = 0; k < 20; k++) {
-      for (int j = 0; j < 20; j++) {
+  if (m_rank == 0) {
+    for (int k = 0; k < size1; k++) {
+      for (int j = 0; j < size1; j++) {
         std::cout << arr2(j, k) << " ";
       }
       std::cout << std::endl;
