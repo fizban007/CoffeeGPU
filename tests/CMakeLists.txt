@@ -32,5 +32,8 @@ endif()
 add_executable(test_mpi "test_mpi.cpp")
 target_link_libraries(test_mpi Coffee)
 
+add_executable(test_mpi2 "test_mpi2.cpp")
+target_link_libraries(test_mpi2 Coffee)
+
 add_executable(test_output "test_output.cpp")
 target_link_libraries(test_output Coffee)
