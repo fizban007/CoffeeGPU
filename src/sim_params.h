@@ -20,6 +20,9 @@ struct sim_params {
   bool periodic_boundary[3] = {false}; ///< Periodic boundary condition
   int downsample = 1; ///< How much to downsample from simulation grid to data
                       ///output grid
+  bool slice_x = false; ///< Whether or not to write 2d slice output perpendicular to x
+  int slice_interval = 100; ///< Time steps between 2d slice output
+  int downsample_2d = 1; ///< Downsample of 2d slice output
 
   // Grid parameters
   int N[3] = {1};  ///< Number of cells in each direction (excluding guard cells)

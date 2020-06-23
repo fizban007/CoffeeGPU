@@ -41,6 +41,7 @@ class sim_environment {
   int mpi_coord(int n) const { return m_mpi_coord[n]; }
 
   MPI_Comm world() const { return m_world; }
+  MPI_Comm cart() const { return m_cart; }
   bool is_restart() const { return m_is_restart; }
   const std::string& restart_file() const { return m_restart_file; }
 

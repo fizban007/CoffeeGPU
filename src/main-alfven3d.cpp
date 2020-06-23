@@ -46,7 +46,6 @@ int main(int argc, char *argv[]) {
 
 #ifdef ENG
   ofstream efile;
-  efile.open("Data/energy.txt", ios::out | ios::app);
 #endif
   
   // Main simulation loop
@@ -76,11 +75,19 @@ int main(int argc, char *argv[]) {
       if (env.rank() == 0)
         timer::show_duration_since_stamp("output", "ms", "output");
 
+    if (step % env.params().slice_interval == 0) {
+      timer::stamp("slice output");
+      exporter.write_slice_output(data, step, 0.0);
+      if (env.rank() == 0)
+        timer::show_duration_since_stamp("slice output", "ms", "slice output");
+
 #ifdef ENG
         Scalar Wb = solver.total_energy(data.B);
         Scalar We = solver.total_energy(data.E);
         if (env.rank() == 0) {
+          efile.open("Data/energy.txt", ios::out | ios::app);
           efile << Wb << " " << We << std::endl;
+          efile.close();
         }
 #endif
     }
@@ -92,9 +99,6 @@ int main(int argc, char *argv[]) {
     time += env.params().dt;
   }
 
-#ifdef ENG
-  efile.close();
-#endif
 
   timer::show_duration_since_stamp("the whole program", "s", "begin");
 
