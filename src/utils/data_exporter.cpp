@@ -342,16 +342,16 @@ void data_exporter::setup_type() {
   int dim_y = grid.reduced_dim(1) / d;
   int dim_z = grid.reduced_dim(2) / d;
   // x data for sending
-  MPI_Type_vector(dim_y, 1, dim_x, m_env.scalar_type(), &x_temp1);
+  MPI_Type_vector(dim_y, 1, dim_x, MPI_FLOAT, &x_temp1);
   MPI_Type_commit(&x_temp1);
-  MPI_Type_create_hvector(dim_z, 1, sizeof(Scalar) * dim_x * dim_y, x_temp1,
+  MPI_Type_create_hvector(dim_z, 1, sizeof(float) * dim_x * dim_y, x_temp1,
                           &x_send);
   MPI_Type_commit(&x_send);
 
   int g_dim_y = m_env.params().N[1] / d;
   int g_dim_z = m_env.params().N[2] / d;
   // x data for receiving
-  MPI_Type_vector(dim_z, dim_y, g_dim_y, m_env.scalar_type(), &x_receive);
+  MPI_Type_vector(dim_z, dim_y, g_dim_y, MPI_FLOAT, &x_receive);
   MPI_Type_commit(&x_receive);
 }
 
