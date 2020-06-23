@@ -367,6 +367,7 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
   int mpi_dims_x = m_env.mpi_dims(0);
   int mpi_dims_y = m_env.mpi_dims(1);
   int mpi_dims_z = m_env.mpi_dims(2);
+  int mpi_coord_x = m_env.mpi_coord(0);
   int mpi_coord_y = m_env.mpi_coord(1);
   int mpi_coord_z = m_env.mpi_coord(2);
   int g_dim_y = m_env.params().N[1] / d;
@@ -382,19 +383,24 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
     int q = static_cast<int>(round((0 - xl) * grid.inv_delta[0] / d));
     MPI_Send(&tmp_slice_data[q], 1, x_send, 0,
              mpi_coord_z * mpi_dims_y + mpi_coord_y, comm);
+    std::cout << "rank" << rank << "coords" << mpi_coord_x << mpi_coord_y
+              << mpi_coord_z << "completed sending slice data." << std::endl;
   }
 
   if (rank == 0) {
-    int i = static_cast<int>(
-        floor((0 - m_env.params().lower[0]) / (grid.reduced_dim(0) * grid.delta[0])));
+    int i = static_cast<int>(floor((0 - m_env.params().lower[0]) /
+                                   (grid.reduced_dim(0) * grid.delta[0])));
     for (int k = 0; k < mpi_dims_z; k++) {
       for (int j = 0; j < mpi_dims_y; j++) {
-        int s = k * mpi_dims_z * g_dim_y + j * mpi_dims_y;
+        int s = k * mpi_dims_z * grid.reduced_dim(2) * g_dim_y +
+                j * mpi_dims_y * grid.reduced_dim(1);
         int mpi_coords[3] = {i, j, k};
         int sender;
         MPI_Cart_rank(comm, mpi_coords, &sender);
-        MPI_Recv(&tmp_slice_x[s], 1, x_receive, sender, k * mpi_dims_y + j, comm,
-                 &status);
+        MPI_Recv(&tmp_slice_x[s], 1, x_receive, sender, k * mpi_dims_y + j,
+                 comm, &status);
+        std::cout << "rank" << rank << "completed receiving slice data"
+                  << "from coords" << i << j << k << std::endl;
       }
     }
     file.write(tmp_slice_x, name);
