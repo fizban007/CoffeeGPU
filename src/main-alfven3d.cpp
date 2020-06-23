@@ -86,13 +86,13 @@ int main(int argc, char *argv[]) {
 #endif
       }
 
-      if (step % env.params().slice_interval == 0) {
+      if (env.params().slice_x && (step % env.params().slice_interval == 0)) {
       timer::stamp("slice output");
       exporter.write_slice_output(data, step, 0.0);
       if (env.rank() == 0)
         timer::show_duration_since_stamp("slice output", "ms", "slice output");
     }
-    
+
     timer::stamp("step");
     // solver.evolve_fields_gr();
     solver.evolve_fields(time);
