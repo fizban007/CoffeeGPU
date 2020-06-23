@@ -341,7 +341,7 @@ void data_exporter::setup_type() {
   int dim_y = grid.dims[1] / d;
   int dim_z = grid.dims[2] / d;
   // x data for sending
-  MPI_Type_vector(dim_y, 1, dim_x, m_scalar_type, &x_temp1);
+  MPI_Type_vector(dim_y, 1, dim_x, m_env.scalar_type(), &x_temp1);
   MPI_Type_commit(&x_temp1);
   MPI_Type_create_hvector(dim_z, 1, sizeof(Scalar) * dim_x * dim_y, x_temp1,
                           &x_send);
