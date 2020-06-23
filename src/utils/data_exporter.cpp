@@ -338,9 +338,9 @@ void data_exporter::setup_type() {
   auto& grid = m_env.grid();
   MPI_Datatype x_temp1;
   int d = m_env.params().downsample_2d;
-  int dim_x = grid.dims[0] / d;
-  int dim_y = grid.dims[1] / d;
-  int dim_z = grid.dims[2] / d;
+  int dim_x = grid.reduced_dim(0) / d;
+  int dim_y = grid.reduced_dim(1) / d;
+  int dim_z = grid.reduced_dim(2) / d;
   // x data for sending
   MPI_Type_vector(dim_y, 1, dim_x, m_env.scalar_type(), &x_temp1);
   MPI_Type_commit(&x_temp1);
@@ -379,14 +379,14 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
   MPI_Status status;
 
   if (xl <= 0 && xh > 0) {
-    int q = static_cast<int>(round((0 - xl) * grid.inv_delta[0]));
+    int q = static_cast<int>(round((0 - xl) * grid.inv_delta[0] / d));
     MPI_Send(&tmp_slice_data[q], 1, x_send, 0,
              mpi_coord_z * mpi_dims_y + mpi_coord_y, comm);
   }
 
   if (rank == 0) {
     int i = static_cast<int>(
-        floor((0 - m_env.params().lower[0]) / (mpi_dims_x * grid.delta[0])));
+        floor((0 - m_env.params().lower[0]) / (grid.reduced_dim(0) * grid.delta[0])));
     for (int k = 0; k < mpi_dims_z; k++) {
       for (int j = 0; j < mpi_dims_y; j++) {
         int s = k * mpi_dims_z * g_dim_y + j * mpi_dims_y;
