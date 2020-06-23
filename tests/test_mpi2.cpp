@@ -48,7 +48,7 @@ main(int argc, char *argv[]) {
   if (m_rank == 0) {
     MPI_Status status;
     for (int i = 0; i < p * p; i++){
-      offset = i / p * size * size1 + (i % p) * size;
+      int offset = i / p * size * size1 + (i % p) * size;
       MPI_Recv(arr2.host_ptr() + offset, 1, x_receive, i, i, m_world, &status);
     }
   }
