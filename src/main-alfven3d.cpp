@@ -75,12 +75,6 @@ int main(int argc, char *argv[]) {
       if (env.rank() == 0)
         timer::show_duration_since_stamp("output", "ms", "output");
 
-    if (step % env.params().slice_interval == 0) {
-      timer::stamp("slice output");
-      exporter.write_slice_output(data, step, 0.0);
-      if (env.rank() == 0)
-        timer::show_duration_since_stamp("slice output", "ms", "slice output");
-
 #ifdef ENG
         Scalar Wb = solver.total_energy(data.B);
         Scalar We = solver.total_energy(data.E);
@@ -90,7 +84,15 @@ int main(int argc, char *argv[]) {
           efile.close();
         }
 #endif
+      }
+
+      if (step % env.params().slice_interval == 0) {
+      timer::stamp("slice output");
+      exporter.write_slice_output(data, step, 0.0);
+      if (env.rank() == 0)
+        timer::show_duration_since_stamp("slice output", "ms", "slice output");
     }
+    
     timer::stamp("step");
     // solver.evolve_fields_gr();
     solver.evolve_fields(time);
