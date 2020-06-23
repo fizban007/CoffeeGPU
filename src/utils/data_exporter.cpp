@@ -359,10 +359,7 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
                                 const std::string& name, Stagger stagger,
                                 H5File& file) {
   int d = m_env.params().downsample_2d;
-  array.downsample(d, tmp_slice_data,
-                   Index(m_env.grid().guard[0], m_env.grid().guard[1],
-                         m_env.grid().guard[2]),
-                   stagger);
+
   auto& grid = m_env.grid();
   int mpi_dims_x = m_env.mpi_dims(0);
   int mpi_dims_y = m_env.mpi_dims(1);
@@ -383,6 +380,14 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
   MPI_Status status;
 
   if (xl <= 0 && xh > 0) {
+    array.downsample(d, tmp_slice_data,
+                     Index(m_env.grid().guard[0], m_env.grid().guard[1],
+                           m_env.grid().guard[2]),
+                     stagger);
+    std::cout << "rank" << rank << "coords" << mpi_coord_x << mpi_coord_y
+              << mpi_coord_z << "completed downsample for slice output."
+              << std::endl;
+
     int q = static_cast<int>(round((0 - xl) * grid.inv_delta[0] / d));
     MPI_Send(&tmp_slice_data[q], 1, x_send, 0,
              mpi_coord_z * mpi_dims_y + mpi_coord_y, comm);
@@ -399,6 +404,9 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
         int mpi_coords[3] = {i, j, k};
         int sender;
         MPI_Cart_rank(comm, mpi_coords, &sender);
+        std::cout << "rank" << rank << "obtained sender rank"
+                  << i << j << k << std::endl;
+
         MPI_Recv(&tmp_slice_x[s], 1, x_receive, sender, k * mpi_dims_y + j,
                  comm, &status);
         std::cout << "rank" << rank << "completed receiving slice data"
