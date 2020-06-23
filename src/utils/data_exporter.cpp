@@ -372,14 +372,14 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
   int g_dim_z = m_env.params().N[2] / d;
 
   Scalar xl = grid.lower[0];
-  Scalar xh = grid.lower[0] + grid.size[0];
+  Scalar xh = grid.lower[0] + grid.sizes[0];
   int rank = m_env.rank();
   MPI_Comm comm = m_env.cart();
   MPI_Status status;
 
   if (xl <= 0 && xh > 0) {
     int q = static_cast<int>(round((0 - xl) * grid.inv_delta[0]));
-    MPI_Send(tmp_slice_data[q], 1, x_send, 0,
+    MPI_Send(&tmp_slice_data[q], 1, x_send, 0,
              mpi_coord_z * mpi_dims_y + mpi_coord_y, comm);
   }
 
@@ -392,7 +392,7 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
         int mpi_coords[3] = {i, j, k};
         int sender;
         MPI_Cart_rank(comm, mpi_coords, &sender);
-        MPI_Recv(tmp_slice_x[s], 1, x_receive, sender, k * mpi_dims_y + j, comm,
+        MPI_Recv(&tmp_slice_x[s], 1, x_receive, sender, k * mpi_dims_y + j, comm,
                  &status);
       }
     }
