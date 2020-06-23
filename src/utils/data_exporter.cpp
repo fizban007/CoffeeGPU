@@ -350,7 +350,7 @@ void data_exporter::setup_type() {
   int g_dim_y = m_env.params().N[1] / d;
   int g_dim_z = m_env.params().N[2] / d;
   // x data for receiving
-  MPI_Type_vector(dim_z, dim_y, g_dim_y, m_scalar_type, &x_receive);
+  MPI_Type_vector(dim_z, dim_y, g_dim_y, m_env.scalar_type(), &x_receive);
   MPI_Type_commit(&x_receive);
 }
 
@@ -403,7 +403,7 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
 void data_exporter::write_slice_output(sim_data& data, uint32_t timestep,
                                        double time) {
   data.sync_to_host();
-  
+
   std::stringstream ss;
   ss << std::setw(5) << std::setfill('0')
      << timestep / m_env.params().slice_interval;
