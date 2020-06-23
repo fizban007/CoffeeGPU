@@ -413,8 +413,9 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
                   << "from coords" << i << j << k << std::endl;
       }
     }
-    file.write(tmp_slice_x, name);
   }
+
+  file.write(tmp_slice_x, name);
 }
 
 void data_exporter::write_slice_output(sim_data& data, uint32_t timestep,
