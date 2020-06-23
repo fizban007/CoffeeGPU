@@ -95,6 +95,7 @@ data_exporter::data_exporter(sim_environment& env, uint32_t& timestep)
   std::string path = outputDirectory + "config.toml";
   std::filesystem::copy_file("config.toml", path,
                              std::filesystem::copy_options::overwrite_existing);
+  setup_type();
 }
 
 data_exporter::~data_exporter() {}
