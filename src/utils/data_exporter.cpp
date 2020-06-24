@@ -384,15 +384,17 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
                      Index(m_env.grid().guard[0], m_env.grid().guard[1],
                            m_env.grid().guard[2]),
                      stagger);
-    std::cout << "rank" << rank << "coords" << mpi_coord_x << mpi_coord_y
-              << mpi_coord_z << "completed downsample for slice output."
+    std::cout << "rank " << rank << " coords " << mpi_coord_x << mpi_coord_y
+              << mpi_coord_z << " completed downsample for slice output."
               << std::endl;
 
     int q = static_cast<int>(round((0 - xl) * grid.inv_delta[0] / d));
+    std::cout << "rank " << rank << " coords " << mpi_coord_x << mpi_coord_y
+              << mpi_coord_z << " send offset " << q << std::endl;
     MPI_Send(&tmp_slice_data[q], 1, x_send, 0,
              mpi_coord_z * mpi_dims_y + mpi_coord_y, comm);
-    std::cout << "rank" << rank << "coords" << mpi_coord_x << mpi_coord_y
-              << mpi_coord_z << "completed sending slice data." << std::endl;
+    std::cout << "rank " << rank << " coords " << mpi_coord_x << mpi_coord_y
+              << mpi_coord_z << " completed sending slice data." << std::endl;
   }
 
   if (rank == 0) {
@@ -404,13 +406,13 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
         int mpi_coords[3] = {i, j, k};
         int sender;
         MPI_Cart_rank(comm, mpi_coords, &sender);
-        std::cout << "rank" << rank << "obtained sender rank"
-                  << i << j << k << std::endl;
-
+        std::cout << "rank " << rank << " obtained sender rank " << i << j << k
+                  << " offset " << s << std::endl;
         MPI_Recv(&tmp_slice_x[s], 1, x_receive, sender, k * mpi_dims_y + j,
                  comm, &status);
-        std::cout << "rank" << rank << "completed receiving slice data"
-                  << "from coords" << i << j << k << std::endl;
+        std::cout << "rank " << rank
+                  << " completed receiving slice data from coords " << i << j
+                  << k << std::endl;
       }
     }
   }
