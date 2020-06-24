@@ -418,7 +418,7 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
     std::cout << name << " slice value at (100,100) " << tmp_slice_x(100, 100)
               << std::endl;
   }
-
+  MPI_Barrier(comm);
   file.write(tmp_slice_x, name);
 }
 
