@@ -434,8 +434,10 @@ void data_exporter::write_slice_output(sim_data& data, uint32_t timestep,
   std::string filename =
       outputDirectory + std::string("slice.") + num + std::string(".h5");
 
+  H5File datafile;
   // auto datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
-  auto datafile = hdf_create(filename, H5CreateMode::trunc);
+  if (m_env.rank() == 0)
+    datafile = hdf_create(filename, H5CreateMode::trunc);
   // hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   // H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 
@@ -454,7 +456,8 @@ void data_exporter::write_slice_output(sim_data& data, uint32_t timestep,
   add_slice_x(data.B0.data(1), "Jy", data.B0.stagger(1), datafile);
   add_slice_x(data.B0.data(2), "Jz", data.B0.stagger(2), datafile);
 
-  datafile.close();
+  if (m_env.rank() == 0)
+    datafile.close();
   // H5Fclose(datafile);
 }
 
