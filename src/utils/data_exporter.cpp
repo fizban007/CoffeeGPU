@@ -417,9 +417,10 @@ void data_exporter::add_slice_x(multi_array<Scalar>& array,
     }
     std::cout << name << " slice value at (100,100) " << tmp_slice_x(100, 100)
               << std::endl;
+    file.write(tmp_slice_x, name);
   }
   MPI_Barrier(comm);
-  file.write(tmp_slice_x, name);
+  // file.write(tmp_slice_x, name);
 }
 
 void data_exporter::write_slice_output(sim_data& data, uint32_t timestep,
@@ -433,7 +434,8 @@ void data_exporter::write_slice_output(sim_data& data, uint32_t timestep,
   std::string filename =
       outputDirectory + std::string("slice.") + num + std::string(".h5");
 
-  auto datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
+  // auto datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
+  auto datafile = hdf_create(filename, H5CreateMode::trunc);
   // hid_t plist_id = H5Pcreate(H5P_FILE_ACCESS);
   // H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
 
