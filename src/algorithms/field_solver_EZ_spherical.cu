@@ -573,6 +573,26 @@ wpert_sph(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
     return 0;
 }
 
+__device__ Scalar
+wpert_sph_shear(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
+          Scalar dw0, Scalar nT, Scalar rpert1, Scalar rpert2, Scalar shear) {
+  Scalar th1 = acos(std::sqrt(1.0 - 1.0 / rpert1));
+  Scalar th2 = acos(std::sqrt(1.0 - 1.0 / rpert2));
+  if (th1 > th2) {
+    Scalar tmp = th1;
+    th1 = th2;
+    th2 = tmp;
+  }
+  Scalar mu = (th1 + th2) / 2.0;
+  Scalar s = (mu - th1) / 3.0;
+  Scalar t1 = t - shear * (th2 - th) / (th2 - th1);
+  if (t1 >= tp_start && t1 <= tp_end && th >= th1 && th <= th2)
+    return dw0 * exp(-0.5 * square((th - mu) / s)) *
+           sin((t1 - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
+  else
+    return 0;
+}
+
 __global__ void
 kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
                            Scalar *Bx, Scalar *By, Scalar *Bz,
@@ -591,14 +611,22 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar z = 0.0;
     Scalar r = get_r(x, y, z);
     Scalar th = get_th(x, y, z);
+    // Scalar wpert0 =
+    //     wpert_sph(t, r, th, dev_params.tp_start, dev_params.tp_end,
+    //               dev_params.dw0, dev_params.nT, dev_params.rpert1,
+    //               dev_params.rpert2);
+    // Scalar wpert1 =
+    //     wpert_sph(t, r, th, dev_params.tp_start1, dev_params.tp_end1,
+    //               dev_params.dw1, dev_params.nT1, dev_params.rpert11,
+    //               dev_params.rpert21);
     Scalar wpert0 =
-        wpert_sph(t, r, th, dev_params.tp_start, dev_params.tp_end,
+        wpert_sph_shear(t, r, th, dev_params.tp_start, dev_params.tp_end,
                   dev_params.dw0, dev_params.nT, dev_params.rpert1,
-                  dev_params.rpert2);
+                  dev_params.rpert2, dev_params.shear);
     Scalar wpert1 =
-        wpert_sph(t, r, th, dev_params.tp_start1, dev_params.tp_end1,
+        wpert_sph_shear(t, r, th, dev_params.tp_start1, dev_params.tp_end1,
                   dev_params.dw1, dev_params.nT1, dev_params.rpert11,
-                  dev_params.rpert21);
+                  dev_params.rpert21, dev_params.shear1);
     Scalar w = dev_params.omega + wpert0 + wpert1;
     Scalar bxn, byn, bzn, exn, eyn, ezn, v3n;
     Scalar g11sqrt, g22sqrt, g33sqrt;

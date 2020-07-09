@@ -110,6 +110,7 @@ sim_params parse_config(const std::string& filename) {
   result.rpert2 = config->get_as<double>("rpert2").value_or(defaults.rpert2);
   result.dw0 = config->get_as<double>("dw0").value_or(defaults.dw0);
   result.nT = config->get_as<double>("nT").value_or(defaults.nT);
+  result.shear = config->get_as<double>("shear").value_or(defaults.shear);
 
   result.tp_start1 =
       config->get_as<double>("tp_start1").value_or(defaults.tp_start1);
@@ -118,6 +119,7 @@ sim_params parse_config(const std::string& filename) {
   result.rpert21 = config->get_as<double>("rpert21").value_or(defaults.rpert21);
   result.dw1 = config->get_as<double>("dw1").value_or(defaults.dw1);
   result.nT1 = config->get_as<double>("nT1").value_or(defaults.nT1);
+  result.shear1 = config->get_as<double>("shear1").value_or(defaults.shear1);
 
   result.pert2d = config->get_as<bool>("pert2d").value_or(defaults.pert2d);
 
