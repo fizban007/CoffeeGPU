@@ -577,20 +577,27 @@ Scalar wpert3d(Scalar t, Scalar r, Scalar th, Scalar ph, Scalar tp_start,
   Scalar ph2 = M_PI * 7.0 / 16.0;
   Scalar phm = (ph1 + ph2) / 2.0;
   Scalar phs = (phm - ph1) / 3.0;
-  if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2 && ph >= ph1 &&
-      ph <= ph2)
-    // return dw0 *
-    //        exp(-0.5 * square((th - mu) / s) - 0.5 * square((ph - phm) / phs)) *
-    //        sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
-    return dw0 *
-           exp(-0.5 * square((th - mu) / s)) *
-           sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
+  Scalar dph = m_PI / 64.0;
+  // if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2 && ph >= ph1 &&
+  //     ph <= ph2)
+  //   // return dw0 *
+  //   //        exp(-0.5 * square((th - mu) / s) - 0.5 * square((ph - phm) /
+  //   phs)) *
+  //   //        sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
+  //   return dw0 *
+  //          exp(-0.5 * square((th - mu) / s)) *
+  //          sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
+  // else
+  //   return 0;
+  if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2)
+    return dw0 * exp(-0.5 * square((th - mu) / s)) *
+           sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start)) *
+           shape(ph, ph2, dph) * (1.0 - shape(ph, ph1, dph));
   else
     return 0;
 }
 
-void
-field_solver_EZ::boundary_pulsar(Scalar t) {
+void field_solver_EZ::boundary_pulsar(Scalar t) {
   int shift = m_env.params().shift_ghost;
   auto &grid = m_env.grid();
   auto &params = m_env.params();
