@@ -577,7 +577,7 @@ Scalar wpert3d(Scalar t, Scalar r, Scalar th, Scalar ph, Scalar tp_start,
   Scalar ph2 = M_PI * 7.0 / 16.0;
   Scalar phm = (ph1 + ph2) / 2.0;
   Scalar phs = (phm - ph1) / 3.0;
-  Scalar dph = m_PI / 64.0;
+  Scalar dph = M_PI / 64.0;
   // if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2 && ph >= ph1 &&
   //     ph <= ph2)
   //   // return dw0 *
