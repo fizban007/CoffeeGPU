@@ -21,6 +21,12 @@ struct sim_params {
   int downsample = 1; ///< How much to downsample from simulation grid to data
                       ///output grid
   bool slice_x = false; ///< Whether or not to write 2d slice output perpendicular to x
+  Scalar slice_x_pos = 0.0;
+  bool slice_y = false; ///< Whether or not to write 2d slice output perpendicular to y
+  Scalar slice_y_pos = 0.0;
+  bool slice_z = false; ///< Whether or not to write 2d slice output perpendicular to z
+  Scalar slice_z_pos = 0.0;
+  bool slice_xy = false; ///< Whether or not to write 2d slice output along the xy diagonal
   int slice_interval = 100; ///< Time steps between 2d slice output
   int downsample_2d = 1; ///< Downsample of 2d slice output
 

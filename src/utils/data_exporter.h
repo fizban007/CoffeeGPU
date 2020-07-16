@@ -53,7 +53,7 @@ class data_exporter {
 
   void setup_type();
 
-  void add_slice_x(multi_array<Scalar>& array, const std::string& name,
+  void add_slice(multi_array<Scalar>& array, const std::string& name,
                    Stagger stagger, H5File& file);
 
   // std::unique_ptr<Grid> grid;
@@ -68,9 +68,15 @@ class data_exporter {
   multi_array<float> tmp_grid_data;   //!< This stores the temporary
                                       //!< downsampled data for output
   multi_array<float> tmp_slice_data;  //!< This stores the temporary
-                                      //!< downsampled data for slice output
+                                      //!< downsampled 3d data for slice output
   multi_array<float> tmp_slice_x;     //!< This stores the full temporary
-                                      //!< downsampled data for slice output
+                                      //!< downsampled 2d slice data for slice output
+  multi_array<float> tmp_slice_y;     //!< This stores the full temporary
+                                      //!< downsampled 2d slice data for slice output
+  multi_array<float> tmp_slice_z;     //!< This stores the full temporary
+                                      //!< downsampled 2d slice data for slice output
+  multi_array<float> tmp_slice_xy;     //!< This stores the full temporary
+                                      //!< downsampled 2d slice data for slice output
   std::unique_ptr<std::thread> m_thread;
 };
 

@@ -19,6 +19,12 @@ sim_params parse_config(const std::string& filename) {
       config->get_as<int>("downsample").value_or(defaults.downsample);
 
   result.slice_x = config->get_as<bool>("slice_x").value_or(defaults.slice_x);
+  result.slice_y = config->get_as<bool>("slice_y").value_or(defaults.slice_y);
+  result.slice_z = config->get_as<bool>("slice_z").value_or(defaults.slice_z);
+  result.slice_xy = config->get_as<bool>("slice_xy").value_or(defaults.slice_xy);
+  result.slice_x_pos = config->get_as<double>("slice_x_pos").value_or(defaults.slice_x_pos);
+  result.slice_y_pos = config->get_as<double>("slice_y_pos").value_or(defaults.slice_y_pos);
+  result.slice_z_pos = config->get_as<double>("slice_z_pos").value_or(defaults.slice_z_pos);
   result.slice_interval =
       config->get_as<int>("slice_interval").value_or(defaults.slice_interval);
   result.downsample_2d =
