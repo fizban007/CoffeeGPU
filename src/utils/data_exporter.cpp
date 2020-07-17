@@ -437,6 +437,7 @@ void data_exporter::add_slice(multi_array<Scalar>& array,
   int rank = m_env.rank();
   MPI_Comm comm = m_env.cart();
   MPI_Status status;
+  MPI_Request request;
 
   array.downsample(d, tmp_slice_data,
                    Index(m_env.grid().guard[0], m_env.grid().guard[1],
@@ -454,8 +455,10 @@ void data_exporter::add_slice(multi_array<Scalar>& array,
       // std::cout << "rank " << rank << " coords " << mpi_coord_x <<
       // mpi_coord_y
       //           << mpi_coord_z << " send offset " << q << std::endl;
-      MPI_Send(&tmp_slice_data[q], 1, x_send, 0,
-               mpi_coord_z * mpi_dims_y + mpi_coord_y, comm);
+      // MPI_Send(&tmp_slice_data[q], 1, x_send, 0,
+      //          mpi_coord_z * mpi_dims_y + mpi_coord_y, comm);
+      MPI_Isend(&tmp_slice_data[q], 1, x_send, 0,
+               mpi_coord_z * mpi_dims_y + mpi_coord_y, comm, &request);
       // std::cout << "rank " << rank << " coords " << mpi_coord_x <<
       // mpi_coord_y
       //           << mpi_coord_z << " completed sending slice data." <<
@@ -499,8 +502,10 @@ void data_exporter::add_slice(multi_array<Scalar>& array,
       // std::cout << "rank " << rank << " coords " << mpi_coord_x <<
       // mpi_coord_y
       //           << mpi_coord_z << " send offset " << q << std::endl;
-      MPI_Send(&tmp_slice_data[q * dim_x], 1, y_send, 0,
-               mpi_coord_z * mpi_dims_x + mpi_coord_x, comm);
+      // MPI_Send(&tmp_slice_data[q * dim_x], 1, y_send, 0,
+      //          mpi_coord_z * mpi_dims_x + mpi_coord_x, comm);
+      MPI_Isend(&tmp_slice_data[q * dim_x], 1, y_send, 0,
+               mpi_coord_z * mpi_dims_x + mpi_coord_x, comm, &request);
       // std::cout << "rank " << rank << " coords " << mpi_coord_x <<
       // mpi_coord_y
       //           << mpi_coord_z << " completed sending slice data." <<
@@ -544,8 +549,10 @@ void data_exporter::add_slice(multi_array<Scalar>& array,
       // std::cout << "rank " << rank << " coords " << mpi_coord_x <<
       // mpi_coord_y
       //           << mpi_coord_z << " send offset " << q << std::endl;
-      MPI_Send(&tmp_slice_data[q * dim_x * dim_y], dim_x * dim_y, MPI_FLOAT, 0,
-               mpi_coord_y * mpi_dims_x + mpi_coord_x, comm);
+      // MPI_Send(&tmp_slice_data[q * dim_x * dim_y], dim_x * dim_y, MPI_FLOAT, 0,
+      //          mpi_coord_y * mpi_dims_x + mpi_coord_x, comm);
+      MPI_Isend(&tmp_slice_data[q * dim_x * dim_y], dim_x * dim_y, MPI_FLOAT, 0,
+               mpi_coord_y * mpi_dims_x + mpi_coord_x, comm, &request);
       // std::cout << "rank " << rank << " coords " << mpi_coord_x <<
       // mpi_coord_y
       //           << mpi_coord_z << " completed sending slice data." <<
@@ -584,8 +591,10 @@ void data_exporter::add_slice(multi_array<Scalar>& array,
   // Output xy diagonal slice
   if (m_env.params().slice_xy) {
     if (mpi_coord_x == mpi_coord_y) {
-      MPI_Send(&tmp_slice_data[0], 1, xy_send, 0,
-               mpi_coord_z * mpi_dims_y + mpi_coord_y, comm);
+      // MPI_Send(&tmp_slice_data[0], 1, xy_send, 0,
+      //          mpi_coord_z * mpi_dims_y + mpi_coord_y, comm);
+      MPI_Isend(&tmp_slice_data[0], 1, xy_send, 0,
+               mpi_coord_z * mpi_dims_y + mpi_coord_y, comm, &request);
       // std::cout << "rank " << rank << " coords " << mpi_coord_x <<
       // mpi_coord_y
       //           << mpi_coord_z << " completed sending slice data." <<
