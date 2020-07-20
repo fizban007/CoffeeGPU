@@ -2,6 +2,7 @@
 #define _SIM_PARAMS_H_
 
 #include <string>
+#include <cmath>
 #include "data/typedefs.h"
 
 namespace Coffee {
