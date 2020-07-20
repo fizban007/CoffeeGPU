@@ -563,7 +563,7 @@ wpert(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
 
 Scalar wpert3d(Scalar t, Scalar r, Scalar th, Scalar ph, Scalar tp_start,
                Scalar tp_end, Scalar dw0, Scalar nT, Scalar rpert1,
-               Scalar rpert2) {
+               Scalar rpert2, Scalar ph1, Scalar ph2, Scalar dph) {
   Scalar th1 = acos(std::sqrt(1.0 - 1.0 / rpert1));
   Scalar th2 = acos(std::sqrt(1.0 - 1.0 / rpert2));
   if (th1 > th2) {
@@ -573,22 +573,7 @@ Scalar wpert3d(Scalar t, Scalar r, Scalar th, Scalar ph, Scalar tp_start,
   }
   Scalar mu = (th1 + th2) / 2.0;
   Scalar s = (mu - th1) / 3.0;
-  Scalar ph1 = M_PI / 16.0;
-  Scalar ph2 = M_PI * 7.0 / 16.0;
-  Scalar phm = (ph1 + ph2) / 2.0;
-  Scalar phs = (phm - ph1) / 3.0;
-  Scalar dph = M_PI / 64.0;
-  // if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2 && ph >= ph1 &&
-  //     ph <= ph2)
-  //   // return dw0 *
-  //   //        exp(-0.5 * square((th - mu) / s) - 0.5 * square((ph - phm) /
-  //   phs)) *
-  //   //        sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
-  //   return dw0 *
-  //          exp(-0.5 * square((th - mu) / s)) *
-  //          sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
-  // else
-  //   return 0;
+  
   if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2)
     return dw0 * exp(-0.5 * square((th - mu) / s)) *
            sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start)) *
@@ -648,12 +633,13 @@ void field_solver_EZ::boundary_pulsar(Scalar t) {
                 wpert(t, r, th, params.tp_start1, params.tp_end1, params.dw1,
                       params.nT1, params.rpert11, params.rpert21);
           } else {
-            wpert0 =
-                wpert3d(t, r, th, ph, params.tp_start, params.tp_end,
-                        params.dw0, params.nT, params.rpert1, params.rpert2);
+            wpert0 = wpert3d(t, r, th, ph, params.tp_start, params.tp_end,
+                             params.dw0, params.nT, params.rpert1,
+                             params.rpert2, params.ph1, params.ph2, params.dph);
             wpert1 =
                 wpert3d(t, r, th, ph, params.tp_start1, params.tp_end1,
-                        params.dw1, params.nT1, params.rpert11, params.rpert21);
+                        params.dw1, params.nT1, params.rpert11, params.rpert21,
+                        params.ph11, params.ph21, params.dph1);
           }
 
           Scalar w = params.omega + wpert0 + wpert1;

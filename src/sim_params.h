@@ -92,6 +92,9 @@ struct sim_params {
   Scalar dw0 = 0.0; ///< Amplitude of the angular velocity perturbation
   Scalar nT = 1.0; ///< Number of periods in the perturbation
   Scalar shear = 0.0; ///< lateral phase shift
+  Scalar ph1 = 3.0 * M_PI / 16.0; 
+  Scalar ph2 = 5.0 * M_PI / 16.0;
+  Scalar dph = M_PI / 64.0;
   // parameters for the second perturbation
   Scalar tp_start1 = 1.0; ///< Time for the perturbation to start
   Scalar tp_end1 = 1.5; ///< Time for the perturbation to end
@@ -100,6 +103,9 @@ struct sim_params {
   Scalar dw1 = 0.0; ///< Amplitude of the angular velocity perturbation
   Scalar nT1 = 1.0; ///< Number of periods in the perturbation
   Scalar shear1 = 0.0; ///< lateral phase shift
+  Scalar ph11 = 3.0 * M_PI / 16.0; 
+  Scalar ph21 = 5.0 * M_PI / 16.0;
+  Scalar dph1 = M_PI / 64.0;
   bool pert2d = true; ///< Whether perturbation is 2d or 3d
 
   int skymap_Nth = 256;

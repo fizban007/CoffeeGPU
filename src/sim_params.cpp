@@ -117,6 +117,9 @@ sim_params parse_config(const std::string& filename) {
   result.dw0 = config->get_as<double>("dw0").value_or(defaults.dw0);
   result.nT = config->get_as<double>("nT").value_or(defaults.nT);
   result.shear = config->get_as<double>("shear").value_or(defaults.shear);
+  result.ph1 = config->get_as<double>("ph1").value_or(defaults.ph1);
+  result.ph2 = config->get_as<double>("ph2").value_or(defaults.ph2);
+  result.dph = config->get_as<double>("dph").value_or(defaults.dph);
 
   result.tp_start1 =
       config->get_as<double>("tp_start1").value_or(defaults.tp_start1);
@@ -126,6 +129,9 @@ sim_params parse_config(const std::string& filename) {
   result.dw1 = config->get_as<double>("dw1").value_or(defaults.dw1);
   result.nT1 = config->get_as<double>("nT1").value_or(defaults.nT1);
   result.shear1 = config->get_as<double>("shear1").value_or(defaults.shear1);
+  result.ph11 = config->get_as<double>("ph11").value_or(defaults.ph11);
+  result.ph21 = config->get_as<double>("ph21").value_or(defaults.ph21);
+  result.dph1 = config->get_as<double>("dph1").value_or(defaults.dph1);
 
   result.pert2d = config->get_as<bool>("pert2d").value_or(defaults.pert2d);
 
