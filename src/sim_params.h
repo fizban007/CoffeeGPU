@@ -93,9 +93,9 @@ struct sim_params {
   Scalar dw0 = 0.0; ///< Amplitude of the angular velocity perturbation
   Scalar nT = 1.0; ///< Number of periods in the perturbation
   Scalar shear = 0.0; ///< lateral phase shift
-  Scalar ph1 = 3.0 * M_PI / 16.0; 
-  Scalar ph2 = 5.0 * M_PI / 16.0;
-  Scalar dph = M_PI / 64.0;
+  Scalar ph1 = 3.0 / 16.0; ///< phi range in units of pi
+  Scalar ph2 = 5.0 / 16.0; ///< phi range in units of pi
+  Scalar dph = 1.0 / 64.0; ///< phi scale in units of pi
   // parameters for the second perturbation
   Scalar tp_start1 = 1.0; ///< Time for the perturbation to start
   Scalar tp_end1 = 1.5; ///< Time for the perturbation to end
