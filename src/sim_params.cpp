@@ -120,6 +120,8 @@ sim_params parse_config(const std::string& filename) {
   result.ph1 = config->get_as<double>("ph1").value_or(defaults.ph1);
   result.ph2 = config->get_as<double>("ph2").value_or(defaults.ph2);
   result.dph = config->get_as<double>("dph").value_or(defaults.dph);
+  result.theta0 = config->get_as<double>("theta0").value_or(defaults.theta0);
+  result.drpert = config->get_as<double>("drpert").value_or(defaults.drpert);
 
   result.tp_start1 =
       config->get_as<double>("tp_start1").value_or(defaults.tp_start1);
@@ -133,7 +135,7 @@ sim_params parse_config(const std::string& filename) {
   result.ph21 = config->get_as<double>("ph21").value_or(defaults.ph21);
   result.dph1 = config->get_as<double>("dph1").value_or(defaults.dph1);
 
-  result.pert2d = config->get_as<bool>("pert2d").value_or(defaults.pert2d);
+  result.pert_type = config->get_as<int>("pert_type").value_or(defaults.pert_type);
 
   return result;
 }

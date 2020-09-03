@@ -96,6 +96,8 @@ struct sim_params {
   Scalar ph1 = 3.0 / 16.0; ///< phi range in units of pi
   Scalar ph2 = 5.0 / 16.0; ///< phi range in units of pi
   Scalar dph = 1.0 / 64.0; ///< phi scale in units of pi
+  Scalar theta0 = 0.2; ///< center for the twisting perturbation
+  Scalar drpert = 0.1; ///< size of the twisting region
   // parameters for the second perturbation
   Scalar tp_start1 = 1.0; ///< Time for the perturbation to start
   Scalar tp_end1 = 1.5; ///< Time for the perturbation to end
@@ -107,7 +109,7 @@ struct sim_params {
   Scalar ph11 = 3.0 * M_PI / 16.0; 
   Scalar ph21 = 5.0 * M_PI / 16.0;
   Scalar dph1 = M_PI / 64.0;
-  bool pert2d = true; ///< Whether perturbation is 2d or 3d
+  int pert_type = 0; ///< perturbation type
 
   int skymap_Nth = 256;
   int skymap_Nph = 512;

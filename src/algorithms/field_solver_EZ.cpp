@@ -1,10 +1,12 @@
 #include "field_solver_EZ.h"
+
+#include <omp.h>
+
 #include "algorithms/damping_boundary.h"
 #include "algorithms/finite_diff_simd.h"
 #include "algorithms/pulsar.h"
 #include "utils/simd.h"
 #include "utils/timer.h"
-#include <omp.h>
 
 namespace Coffee {
 
@@ -12,31 +14,25 @@ using namespace simd;
 
 const Grid *l_grid;
 
-Vec_f_t
-dfdx(const multi_array<Scalar> &f, int ijk) {
+Vec_f_t dfdx(const multi_array<Scalar> &f, int ijk) {
   return df1_simd(f.host_ptr(), ijk, 1, l_grid->inv_delta[0]);
 }
 
-Vec_f_t
-dfdy(const multi_array<Scalar> &f, int ijk) {
-  return df1_simd(f.host_ptr(), ijk, l_grid->dims[0],
-                  l_grid->inv_delta[1]);
+Vec_f_t dfdy(const multi_array<Scalar> &f, int ijk) {
+  return df1_simd(f.host_ptr(), ijk, l_grid->dims[0], l_grid->inv_delta[1]);
 }
 
-Vec_f_t
-dfdz(const multi_array<Scalar> &f, int ijk) {
+Vec_f_t dfdz(const multi_array<Scalar> &f, int ijk) {
   return df1_simd(f.host_ptr(), ijk, l_grid->dims[0] * l_grid->dims[1],
                   l_grid->inv_delta[2]);
 }
 
 #ifdef USE_SIMD
-inline Vec_f_t
-KO(const multi_array<Scalar> &f, int ijk) {
+inline Vec_f_t KO(const multi_array<Scalar> &f, int ijk) {
   return KO_simd(f.host_ptr(), ijk, *l_grid);
 }
 #else
-inline Scalar
-KO(const multi_array<Scalar> &f, int ijk) {
+inline Scalar KO(const multi_array<Scalar> &f, int ijk) {
   return KO(f.host_ptr(), ijk, *l_grid);
 }
 #endif
@@ -71,8 +67,8 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
   Ptmp = multi_array<Scalar>(m_data.env.grid().extent());
   Ptmp.assign(0.0);
 
-  skymap = multi_array<Scalar>(env.params().skymap_Nth,
-                               env.params().skymap_Nph);
+  skymap =
+      multi_array<Scalar>(env.params().skymap_Nth, env.params().skymap_Nph);
   skymap.assign(0.0);
   // skymap.sync_to_host();
   l_grid = &env.grid();
@@ -80,8 +76,7 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
 
 field_solver_EZ::~field_solver_EZ() {}
 
-void
-field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
+void field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
   int shift = m_env.params().shift_ghost;
   auto &grid = m_env.grid();
   auto &params = m_env.params();
@@ -102,8 +97,8 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
   auto &jy = m_data.B0.data(1);
   auto &jz = m_data.B0.data(2);
 
-  for (int k = grid.guard[2] - shift;
-       k < grid.dims[2] - grid.guard[2] + shift; k++) {
+  for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
+       k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
       // #pragma omp simd simdlen(8)
@@ -149,27 +144,20 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
           auto chi2 = B2 - E2;
           auto EdotB = exvec * bxvec + eyvec * byvec + ezvec * bzvec;
           auto E02 =
-              0.5 * (sqrt(chi2 * chi2 + 4.0 * EdotB * EdotB) - chi2) +
-              B2;
+              0.5 * (sqrt(chi2 * chi2 + 4.0 * EdotB * EdotB) - chi2) + B2;
 
           auto Jp = (bxvec * rotBx + byvec * rotBy + bzvec * rotBz) -
                     (exvec * rotEx + eyvec * rotEy + ezvec * rotEz) +
                     EdotB * (params.damp_gamma / params.dt);
-          Jx = divE * (eyvec * bzvec - ezvec * byvec) / E02 +
-               Jp * bxvec / B2;
-          Jy = divE * (ezvec * bxvec - exvec * bzvec) / E02 +
-               Jp * byvec / B2;
-          Jz = divE * (exvec * byvec - eyvec * bxvec) / E02 +
-               Jp * bzvec / B2;
+          Jx = divE * (eyvec * bzvec - ezvec * byvec) / E02 + Jp * bxvec / B2;
+          Jy = divE * (ezvec * bxvec - exvec * bzvec) / E02 + Jp * byvec / B2;
+          Jz = divE * (exvec * byvec - eyvec * bxvec) / E02 + Jp * bzvec / B2;
         } else {
           auto Jp = (bxvec * rotBx + byvec * rotBy + bzvec * rotBz) -
                     (exvec * rotEx + eyvec * rotEy + ezvec * rotEz);
-          Jx = (divE * (eyvec * bzvec - ezvec * byvec) + Jp * bxvec) /
-               B2;
-          Jy = (divE * (ezvec * bxvec - exvec * bzvec) + Jp * byvec) /
-               B2;
-          Jz = (divE * (exvec * byvec - eyvec * bxvec) + Jp * bzvec) /
-               B2;
+          Jx = (divE * (eyvec * bzvec - ezvec * byvec) + Jp * bxvec) / B2;
+          Jy = (divE * (ezvec * bxvec - exvec * bzvec) + Jp * byvec) / B2;
+          Jz = (divE * (exvec * byvec - eyvec * bxvec) + Jp * bzvec) / B2;
         }
 
         Jx.store(jx.host_ptr() + ijk);
@@ -225,8 +213,8 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
     }
   }
 
-  for (int k = grid.guard[2] - shift;
-       k < grid.dims[2] - grid.guard[2] + shift; k++) {
+  for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
+       k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
       // #pragma omp simd simdlen(8)
@@ -282,8 +270,7 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
   }
 }
 
-void
-field_solver_EZ::Kreiss_Oliger() {
+void field_solver_EZ::Kreiss_Oliger() {
   int shift = m_env.params().shift_ghost;
   auto &grid = m_env.grid();
   auto &params = m_env.params();
@@ -301,8 +288,8 @@ field_solver_EZ::Kreiss_Oliger() {
   auto &By_tmp = Btmp.data(1);
   auto &Bz_tmp = Btmp.data(2);
 
-  for (int k = grid.guard[2] - shift;
-       k < grid.dims[2] - grid.guard[2] + shift; k++) {
+  for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
+       k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
       // #pragma omp simd simdlen(8)
@@ -346,8 +333,8 @@ field_solver_EZ::Kreiss_Oliger() {
       break;
   }
 
-  for (int k = grid.guard[2] - shift;
-       k < grid.dims[2] - grid.guard[2] + shift; k++) {
+  for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
+       k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
       for (int i = grid.guard[0] - shift;
@@ -400,8 +387,7 @@ field_solver_EZ::Kreiss_Oliger() {
   }
 }
 
-void
-field_solver_EZ::clean_epar() {
+void field_solver_EZ::clean_epar() {
   int shift = m_env.params().shift_ghost;
   auto &grid = m_env.grid();
   size_t ijk;
@@ -412,8 +398,8 @@ field_solver_EZ::clean_epar() {
   auto &By = m_data.B.data(1);
   auto &Bz = m_data.B.data(2);
 
-  for (int k = grid.guard[2] - shift;
-       k < grid.dims[2] - grid.guard[2] + shift; k++) {
+  for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
+       k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
 #pragma omp simd simdlen(8)
@@ -421,11 +407,9 @@ field_solver_EZ::clean_epar() {
            i < grid.dims[0] - grid.guard[0] + shift; i++) {
         ijk = i + (j + k * grid.dims[1]) * grid.dims[0];
 
-        Scalar B2 =
-            Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] * Bz[ijk];
+        Scalar B2 = Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] * Bz[ijk];
         if (B2 < TINY) B2 = TINY;
-        Scalar EB =
-            Ex[ijk] * Bx[ijk] + Ey[ijk] * By[ijk] + Ez[ijk] * Bz[ijk];
+        Scalar EB = Ex[ijk] * Bx[ijk] + Ey[ijk] * By[ijk] + Ez[ijk] * Bz[ijk];
 
         Ex[ijk] = Ex[ijk] - EB / B2 * Bx[ijk];
         Ey[ijk] = Ey[ijk] - EB / B2 * By[ijk];
@@ -435,8 +419,7 @@ field_solver_EZ::clean_epar() {
   }
 }
 
-void
-field_solver_EZ::check_eGTb() {
+void field_solver_EZ::check_eGTb() {
   int shift = m_env.params().shift_ghost;
   auto &grid = m_env.grid();
   size_t ijk;
@@ -447,8 +430,8 @@ field_solver_EZ::check_eGTb() {
   auto &By = m_data.B.data(1);
   auto &Bz = m_data.B.data(2);
 
-  for (int k = grid.guard[2] - shift;
-       k < grid.dims[2] - grid.guard[2] + shift; k++) {
+  for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
+       k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
 #pragma omp simd simdlen(8)
@@ -456,11 +439,9 @@ field_solver_EZ::check_eGTb() {
            i < grid.dims[0] - grid.guard[0] + shift; i++) {
         ijk = i + (j + k * grid.dims[1]) * grid.dims[0];
 
-        Scalar B2 =
-            Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] * Bz[ijk];
+        Scalar B2 = Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] * Bz[ijk];
         if (B2 < TINY) B2 = TINY;
-        Scalar E2 =
-            Ex[ijk] * Ex[ijk] + Ey[ijk] * Ey[ijk] + Ez[ijk] * Ez[ijk];
+        Scalar E2 = Ex[ijk] * Ex[ijk] + Ey[ijk] * Ey[ijk] + Ez[ijk] * Ez[ijk];
 
         if (E2 > B2) {
           Scalar s = std::sqrt(B2 / E2);
@@ -473,8 +454,7 @@ field_solver_EZ::check_eGTb() {
   }
 }
 
-void
-field_solver_EZ::clean_epar_check_eGTb() {
+void field_solver_EZ::clean_epar_check_eGTb() {
   int shift = m_env.params().shift_ghost;
   auto &grid = m_env.grid();
   size_t ijk;
@@ -485,8 +465,8 @@ field_solver_EZ::clean_epar_check_eGTb() {
   auto &By = m_data.B.data(1);
   auto &Bz = m_data.B.data(2);
 
-  for (int k = grid.guard[2] - shift;
-       k < grid.dims[2] - grid.guard[2] + shift; k++) {
+  for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
+       k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
       for (int i = grid.guard[0] - shift;
@@ -534,17 +514,15 @@ field_solver_EZ::clean_epar_check_eGTb() {
   }
 }
 
-void
-field_solver_EZ::boundary_absorbing() {
+void field_solver_EZ::boundary_absorbing() {
   auto &params = m_env.params();
   auto &grid = m_env.grid();
   damping_boundary(Etmp, Btmp, Bbg, m_data.E, m_data.B, Ptmp, m_data.P,
                    params.shift_ghost, grid, params);
 }
 
-Scalar
-wpert(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
-      Scalar dw0, Scalar nT, Scalar rpert1, Scalar rpert2) {
+Scalar wpert(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
+             Scalar dw0, Scalar nT, Scalar rpert1, Scalar rpert2) {
   Scalar th1 = acos(std::sqrt(1.0 - 1.0 / rpert1));
   Scalar th2 = acos(std::sqrt(1.0 - 1.0 / rpert2));
   if (th1 > th2) {
@@ -583,6 +561,27 @@ Scalar wpert3d(Scalar t, Scalar r, Scalar th, Scalar ph, Scalar tp_start,
     return 0;
 }
 
+void twistv(Scalar t, Scalar x, Scalar y, Scalar z, Scalar tp_start,
+            Scalar tp_end, Scalar dw0, Scalar nT, Scalar theta0, Scalar drpert,
+            Scalar (&v)[3]) {
+  Scalar costh0 = cos(theta0);
+  Scalar sinth0 = sin(theta0);
+  Scalar x1 = -x * costh0 + z * sinth0;
+  Scalar y1 = y;
+  Scalar R1 = std::sqrt(x1 * x1 + y1 * y1);
+  Scalar costh = x1 / R1;
+  Scalar sinth = y1 / R1;
+  Scalar dw = 0.0;
+  if (R1 <= drpert && t >= tp_start && t <= tp_end) {
+    dw = dw0 * square(cos(R1 / drpert * M_PI / 2.0)) *
+         sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start)) *
+         square(sin((t - tp_start) * M_PI / (tp_end - tp_start)));
+  }
+  v[0] = -dw * R1 * costh * costh0;
+  v[1] = dw * R1 * sinth;
+  v[2] = dw * R1 * costh * sinth0;
+}
+
 void field_solver_EZ::boundary_pulsar(Scalar t) {
   int shift = m_env.params().shift_ghost;
   auto &grid = m_env.grid();
@@ -607,8 +606,8 @@ void field_solver_EZ::boundary_pulsar(Scalar t) {
 
   Scalar Bxnew, Bynew, Bznew, Exnew, Eynew, Eznew;
 
-  for (int k = grid.guard[2] - shift;
-       k < grid.dims[2] - grid.guard[2] + shift; k++) {
+  for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
+       k++) {
     for (int j = grid.guard[1] - shift;
          j < grid.dims[1] - grid.guard[1] + shift; j++) {
       // #pragma omp simd simdlen(8)
@@ -622,28 +621,43 @@ void field_solver_EZ::boundary_pulsar(Scalar t) {
         Scalar r2 = x * x + y * y + z * z;
         if (r2 < TINY) r2 = TINY;
         Scalar r = std::sqrt(r2);
-        Scalar wpert0, wpert1;
+        Scalar wpert0, wpert1, w;
+        Scalar vx, vy, vz, v[3];
 
         if (r < rl) {
           Scalar th = acos(z / r);
           Scalar ph = atan2(y, x);
-          if (params.pert2d) {
-            wpert0 = wpert(t, r, th, params.tp_start, params.tp_end, params.dw0,
-                           params.nT, params.rpert1, params.rpert2);
-            wpert1 =
-                wpert(t, r, th, params.tp_start1, params.tp_end1, params.dw1,
-                      params.nT1, params.rpert11, params.rpert21);
-          } else {
-            wpert0 = wpert3d(t, r, th, ph, params.tp_start, params.tp_end,
-                             params.dw0, params.nT, params.rpert1,
-                             params.rpert2, params.ph1, params.ph2, params.dph);
-            wpert1 =
-                wpert3d(t, r, th, ph, params.tp_start1, params.tp_end1,
-                        params.dw1, params.nT1, params.rpert11, params.rpert21,
-                        params.ph11, params.ph21, params.dph1);
-          }
+          if (params.pert_type == 0 || params.pert_type == 1) {
+            if (params.pert_type == 0) {
+              wpert0 =
+                  wpert(t, r, th, params.tp_start, params.tp_end, params.dw0,
+                        params.nT, params.rpert1, params.rpert2);
+              wpert1 =
+                  wpert(t, r, th, params.tp_start1, params.tp_end1, params.dw1,
+                        params.nT1, params.rpert11, params.rpert21);
+            } else if (params.pert_type == 1) {
+              wpert0 =
+                  wpert3d(t, r, th, ph, params.tp_start, params.tp_end,
+                          params.dw0, params.nT, params.rpert1, params.rpert2,
+                          params.ph1, params.ph2, params.dph);
+              wpert1 = wpert3d(t, r, th, ph, params.tp_start1, params.tp_end1,
+                               params.dw1, params.nT1, params.rpert11,
+                               params.rpert21, params.ph11, params.ph21,
+                               params.dph1);
+            }
 
-          Scalar w = params.omega + wpert0 + wpert1;
+            w = params.omega + wpert0 + wpert1;
+            vx = -w * y;
+            vy = w * x;
+            vz = 0.0;
+          } else if (params.pert_type == 2) {
+            // Note that this case sets background omega to be zero
+            twistv(t, x, y, z, params.tp_start, params.tp_end, params.dw0,
+                   params.nT, params.theta0, params.drpert, v);
+            vx = v[0];
+            vy = v[1];
+            vz = v[2];
+          }
 
           // Scalar bxn = params.b0 * cube(params.radius) *
           //              dipole_x(x, y, z, params.alpha, phase);
@@ -658,8 +672,7 @@ void field_solver_EZ::boundary_pulsar(Scalar t) {
               //               params.q22, params.q23,
               //               params.q_offset_x, params.q_offset_y,
               //               params.q_offset_z, phase, 0);
-              dipole2(x, y, z, params.p1, params.p2, params.p3, phase,
-                      0);
+              dipole2(x, y, z, params.p1, params.p2, params.p3, phase, 0);
           Scalar byn =
               params.b0 *
               // quadru_dipole(x, y, z, params.p1, params.p2, params.p3,
@@ -667,8 +680,7 @@ void field_solver_EZ::boundary_pulsar(Scalar t) {
               //               params.q22, params.q23,
               //               params.q_offset_x, params.q_offset_y,
               //               params.q_offset_z, phase, 1);
-              dipole2(x, y, z, params.p1, params.p2, params.p3, phase,
-                      1);
+              dipole2(x, y, z, params.p1, params.p2, params.p3, phase, 1);
           Scalar bzn =
               params.b0 *
               // quadru_dipole(x, y, z, params.p1, params.p2, params.p3,
@@ -676,8 +688,7 @@ void field_solver_EZ::boundary_pulsar(Scalar t) {
               //               params.q22, params.q23,
               //               params.q_offset_x, params.q_offset_y,
               //               params.q_offset_z, phase, 2);
-              dipole2(x, y, z, params.p1, params.p2, params.p3, phase,
-                      2);
+              dipole2(x, y, z, params.p1, params.p2, params.p3, phase, 2);
           Scalar s = shape(r, params.radius - d1, scaleBperp);
           Scalar bn_dot_r = bxn * x + byn * y + bzn * z;
           Scalar B_dot_r = Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z;
@@ -696,10 +707,8 @@ void field_solver_EZ::boundary_pulsar(Scalar t) {
           By[ijk] = Bynew;
           Bz[ijk] = Bznew;
 
-          Scalar vx = -w * y;
-          Scalar vy = w * x;
-          Scalar exn = -vy * Bz[ijk];
-          Scalar eyn = vx * Bz[ijk];
+          Scalar exn = -vy * Bz[ijk] + vz * By[ijk];
+          Scalar eyn = vx * Bz[ijk] - vz * Bx[ijk];
           Scalar ezn = -vx * By[ijk] + vy * Bx[ijk];
           Scalar en_dot_r = (exn * x + eyn * y + ezn * z);
           Scalar E_dot_r = (Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z);
@@ -734,8 +743,7 @@ void field_solver_EZ::boundary_pulsar(Scalar t) {
   }
 }
 
-void
-field_solver_EZ::evolve_fields(Scalar time) {
+void field_solver_EZ::evolve_fields(Scalar time) {
   Scalar As[5] = {0, -0.4178904745, -1.192151694643, -1.697784692471,
                   -1.514183444257};
   Scalar Bs[5] = {0.1496590219993, 0.3792103129999, 0.8229550293869,
@@ -751,8 +759,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
     timer::stamp();
     rk_step(As[i], Bs[i]);
 
-    if (m_env.rank() == 0)
-      timer::show_duration_since_stamp("rk_step", "ms");
+    if (m_env.rank() == 0) timer::show_duration_since_stamp("rk_step", "ms");
 
     timer::stamp();
     // if (m_env.params().clean_ep)
@@ -767,8 +774,7 @@ field_solver_EZ::evolve_fields(Scalar time) {
     boundary_pulsar(time + cs[i] * m_env.params().dt);
     if (i == 4) boundary_absorbing();
 
-    if (m_env.rank() == 0)
-      timer::show_duration_since_stamp("boundary", "ms");
+    if (m_env.rank() == 0) timer::show_duration_since_stamp("boundary", "ms");
 
     timer::stamp();
     m_env.send_guard_cells(m_data);
