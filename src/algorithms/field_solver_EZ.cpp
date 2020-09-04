@@ -563,16 +563,18 @@ Scalar wpert3d(Scalar t, Scalar r, Scalar th, Scalar ph, Scalar tp_start,
 
 void twistv(Scalar t, Scalar x, Scalar y, Scalar z, Scalar tp_start,
             Scalar tp_end, Scalar dw0, Scalar nT, Scalar theta0, Scalar drpert,
-            Scalar (&v)[3]) {
+            Scalar ri, Scalar (&v)[3]) {
   Scalar costh0 = cos(theta0);
   Scalar sinth0 = sin(theta0);
   Scalar x1 = -x * costh0 + z * sinth0;
   Scalar y1 = y;
+  Scalar z1 = x * sinth0 + z * costh0;
+  Scalar r =std::sqrt(x * x + y * y + z * z);
   Scalar R1 = std::sqrt(x1 * x1 + y1 * y1);
-  Scalar costh = x1 / R1;
-  Scalar sinth = y1 / R1;
+  Scalar costh = x1 / (R1 + TINY);
+  Scalar sinth = y1 / (R1 + TINY);
   Scalar dw = 0.0;
-  if (R1 <= drpert && t >= tp_start && t <= tp_end) {
+  if (r > ri && z1 >= 0 && R1 <= drpert && t >= tp_start && t <= tp_end) {
     dw = dw0 * square(cos(R1 / drpert * M_PI / 2.0)) *
          sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start)) *
          square(sin((t - tp_start) * M_PI / (tp_end - tp_start)));
@@ -594,7 +596,7 @@ void field_solver_EZ::boundary_pulsar(Scalar t) {
   auto &By = m_data.B.data(1);
   auto &Bz = m_data.B.data(2);
 
-  Scalar rl = 2.0 * params.radius;
+  Scalar rl = 1.5 * params.radius;
   Scalar ri = 0.5 * params.radius;
   Scalar scaleEpar = 0.5 * grid.delta[0];
   Scalar scaleEperp = 0.25 * grid.delta[0];
@@ -653,7 +655,7 @@ void field_solver_EZ::boundary_pulsar(Scalar t) {
           } else if (params.pert_type == 2) {
             // Note that this case sets background omega to be zero
             twistv(t, x, y, z, params.tp_start, params.tp_end, params.dw0,
-                   params.nT, params.theta0, params.drpert, v);
+                   params.nT, params.theta0, params.drpert, ri, v);
             vx = v[0];
             vy = v[1];
             vz = v[2];
