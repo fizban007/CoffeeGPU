@@ -579,9 +579,9 @@ void twistv(Scalar t, Scalar x, Scalar y, Scalar z, Scalar tp_start,
          sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start)) *
          square(sin((t - tp_start) * M_PI / (tp_end - tp_start)));
   }
-  v[0] = dw * R1 * sinth * costh0;
-  v[1] = dw * R1 * costh;
-  v[2] = - dw * R1 * sinth * sinth0;
+  v[0] = -dw * R1 * costh * costh0;
+  v[1] = dw * R1 * sinth;
+  v[2] = dw * R1 * costh * sinth0;
 }
 
 void field_solver_EZ::boundary_pulsar(Scalar t) {
