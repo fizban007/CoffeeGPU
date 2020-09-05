@@ -29,6 +29,7 @@ else()
     "data/multi_array.cpp"
     "sim_env.cpp"
     "algorithms/field_solver_EZ.cpp"
+    "algorithms/field_solver_EZ_spherical.cpp"
     "algorithms/pulsar.cpp"
     "algorithms/damping_boundary.cpp"
     "utils/memory.cpp"

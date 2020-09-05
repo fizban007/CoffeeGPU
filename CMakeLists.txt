@@ -70,6 +70,7 @@ if (use_cuda)
   check_language(CUDA)
   if (CMAKE_CUDA_COMPILER)
     enable_language(CUDA)
+    add_definitions(-DCUDA_ENABLED)
     message("Enabling Cuda, ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${CUDA_INCLUDE_DIRS}")
     include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${CUDA_INCLUDE_DIRS})
     set(CMAKE_CUDA_FLAGS "--expt-extended-lambda --expt-relaxed-constexpr \

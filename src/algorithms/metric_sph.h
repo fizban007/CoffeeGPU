@@ -2,12 +2,69 @@
 #define _METRIC_SPH_H_
 
 #include "cuda/cuda_control.h"
+#include "data/grid.h"
 #include "data/typedefs.h"
+#include "utils/simd.h"
 #include "utils/util_functions.h"
+#include "vectormath_exp.h"
+#include "vectormath_trig.h"
+#include <cmath>
 
 namespace Coffee {
 
+#ifdef USE_SIMD
+  inline simd::Vec_f_t pos_simd(const Grid& g, int i, int n, int stagger) {
+    simd::Vec_f_t result = simd::vec_inc * g.delta[i] +
+        g.pos(i, n, stagger);
+    return result;
+  }
+
+  inline simd::Vec_f_t pos_simd(const Grid& g, int i, int n, bool stagger) {
+    return pos_simd(g, i, n, (int)stagger);
+  }
+#endif
+
 namespace SPH {
+
+#ifdef USE_SIMD
+inline Vec_f_t get_x_simd(const Vec_f_t& r) {
+  return log(r);
+}
+
+inline Vec_f_t get_r_simd(const Vec_f_t& x, const Vec_f_t& y, const Vec_f_t& z) {
+  return exp(x);
+}
+
+inline Vec_f_t get_th_simd(const Vec_f_t& x, const Vec_f_t& y, const Vec_f_t& z) {
+  return y;
+}
+
+inline Vec_f_t get_gamma_d11_simd(const Vec_f_t& x, const Vec_f_t& y, const Vec_f_t& z) {
+  auto r = get_r_simd(x, y, z);
+  return r * r;
+}
+
+inline Vec_f_t get_gamma_d22_simd(const Vec_f_t& x, const Vec_f_t& y, const Vec_f_t& z) {
+  auto r = get_r_simd(x, y, z);
+  return r * r;
+}
+
+inline Vec_f_t get_gamma_d33_simd(const Vec_f_t& x, const Vec_f_t& y, const Vec_f_t& z) {
+  auto r = get_r_simd(x, y, z);
+  auto th = get_th_simd(x, y, z);
+  return square(r * sin(th));
+}
+
+inline Vec_f_t get_gamma_simd(const Vec_f_t& x, const Vec_f_t& y, const Vec_f_t& z) {
+  return get_gamma_d11_simd(x, y, z) * get_gamma_d22_simd(x, y, z) *
+      get_gamma_d33_simd(x, y, z);
+}
+
+inline Vec_f_t get_sqrt_gamma_simd(const Vec_f_t& x, const Vec_f_t& y, const Vec_f_t& z) {
+  return sqrt(get_gamma_simd(x, y, z));
+}
+
+#endif
 
 HD_INLINE Scalar
 get_x(Scalar r) {
