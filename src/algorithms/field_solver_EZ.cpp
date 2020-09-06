@@ -96,7 +96,7 @@ void field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
   auto &jx = m_data.B0.data(0);
   auto &jy = m_data.B0.data(1);
   auto &jz = m_data.B0.data(2);
-  auto &P = m_data.P.data();
+  auto &P = m_data.P;
 
   for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
        k++) {
@@ -166,7 +166,7 @@ void field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
         Jz.store(jz.host_ptr() + ijk);
 
         Vec_f_t Px(0.0), Py(0.0), Pz(0.0);
-        if (dev_params.divB_clean) {
+        if (params.divB_clean) {
           Px = dfdx(P, ijk);
           Py = dfdy(P, ijk);
           Pz = dfdz(P, ijk);
