@@ -96,6 +96,7 @@ void field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
   auto &jx = m_data.B0.data(0);
   auto &jy = m_data.B0.data(1);
   auto &jz = m_data.B0.data(2);
+  auto &P = m_data.P.data();
 
   for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
        k++) {
@@ -163,12 +164,14 @@ void field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
         Jx.store(jx.host_ptr() + ijk);
         Jy.store(jy.host_ptr() + ijk);
         Jz.store(jz.host_ptr() + ijk);
-        // Scalar Px = dfdx(P, ijk);
-        // Scalar Py = dfdy(P, ijk);
-        // Scalar Pz = dfdz(P, ijk);
-        // Scalar Px = 0.0;
-        // Scalar Py = 0.0;
-        // Scalar Pz = 0.0;
+
+        Vec_f_t Px(0.0), Py(0.0), Pz(0.0);
+        if (dev_params.divB_clean) {
+          Px = dfdx(P, ijk);
+          Py = dfdy(P, ijk);
+          Pz = dfdz(P, ijk);
+        }
+
         Vec_f_t dbxvec, dbyvec, dbzvec;
         dbxvec.load(dBx.host_ptr() + ijk);
         dbyvec.load(dBy.host_ptr() + ijk);
@@ -181,9 +184,9 @@ void field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
         // dEx[ijk] = As * dEx[ijk] + params.dt * (rotBx - Jx);
         // dEy[ijk] = As * dEy[ijk] + params.dt * (rotBy - Jy);
         // dEz[ijk] = As * dEz[ijk] + params.dt * (rotBz - Jz);
-        dbxvec = dbxvec * As - rotEx * params.dt;
-        dbyvec = dbyvec * As - rotEy * params.dt;
-        dbzvec = dbzvec * As - rotEz * params.dt;
+        dbxvec = dbxvec * As - (rotEx + Px) * params.dt;
+        dbyvec = dbyvec * As - (rotEy + Py) * params.dt;
+        dbzvec = dbzvec * As - (rotEz + Pz) * params.dt;
         dbxvec.store(dBx.host_ptr() + ijk);
         dbyvec.store(dBy.host_ptr() + ijk);
         dbzvec.store(dBz.host_ptr() + ijk);
@@ -200,15 +203,16 @@ void field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
         deyvec.store(dEy.host_ptr() + ijk);
         dezvec.store(dEz.host_ptr() + ijk);
 
+        Vec_f_t Pvec, dPvec;
+        Pvec.load(P.host_ptr() + ijk);
+        dPvec.load(dP.host_ptr() + ijk);
+        dPvec =
+            dPvec * As - (Pvec / params.tau + divB * params.ch2) * params.dt;
+        dPvec.store(dP.host_ptr() + ijk);
         // dP[ijk] = As * dP[ijk] -
         //           params.dt *
         //               (params.ch2 * divB + m_data.P[ijk] /
         //               params.tau);
-        // jx[ijk] = Jx;
-        // jy[ijk] = Jy;
-        // jz[ijk] = Jz;
-        // m_data.divB[ijk] = divB;
-        // m_data.divE[ijk] = divE;
       }
     }
   }
@@ -255,6 +259,12 @@ void field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
         exvec.store(Bx.host_ptr() + ijk);
         eyvec.store(By.host_ptr() + ijk);
         ezvec.store(Bz.host_ptr() + ijk);
+
+        Vec_f_t Pvec, dPvec;
+        Pvec.load(P.host_ptr() + ijk);
+        dPvec.load(dP.host_ptr() + ijk);
+        Pvec = mul_add(dPvec, Bs, Pvec);
+        Pvec.store(P.host_ptr() + ijk);
 
         // Ex[ijk] += Bs * dEx[ijk];
         // Ey[ijk] += Bs * dEy[ijk];
@@ -569,7 +579,7 @@ void twistv(Scalar t, Scalar x, Scalar y, Scalar z, Scalar tp_start,
   Scalar x1 = -x * costh0 + z * sinth0;
   Scalar y1 = y;
   Scalar z1 = x * sinth0 + z * costh0;
-  Scalar r =std::sqrt(x * x + y * y + z * z);
+  Scalar r = std::sqrt(x * x + y * y + z * z);
   Scalar R1 = std::sqrt(x1 * x1 + y1 * y1);
   Scalar costh = x1 / (R1 + TINY);
   Scalar sinth = y1 / (R1 + TINY);
@@ -581,7 +591,7 @@ void twistv(Scalar t, Scalar x, Scalar y, Scalar z, Scalar tp_start,
   }
   v[0] = dw * R1 * sinth * costh0;
   v[1] = dw * R1 * costh;
-  v[2] = - dw * R1 * sinth * sinth0;
+  v[2] = -dw * R1 * sinth * sinth0;
 }
 
 void field_solver_EZ::boundary_pulsar(Scalar t) {
