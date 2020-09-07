@@ -7,7 +7,7 @@
 #include "algorithms/pulsar.h"
 #include "utils/simd.h"
 #include "utils/timer.h"
-#include "vectormath_trig.h"
+#include "vectormath_hyp.h"
 
 namespace Coffee {
 
