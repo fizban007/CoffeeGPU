@@ -7,6 +7,7 @@
 #include "algorithms/pulsar.h"
 #include "utils/simd.h"
 #include "utils/timer.h"
+#include "vectormath_trig.h"
 
 namespace Coffee {
 
@@ -184,9 +185,16 @@ void field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
         // dEx[ijk] = As * dEx[ijk] + params.dt * (rotBx - Jx);
         // dEy[ijk] = As * dEy[ijk] + params.dt * (rotBy - Jy);
         // dEz[ijk] = As * dEz[ijk] + params.dt * (rotBz - Jz);
-        dbxvec = dbxvec * As - (rotEx + Px) * params.dt;
-        dbyvec = dbyvec * As - (rotEy + Py) * params.dt;
-        dbzvec = dbzvec * As - (rotEz + Pz) * params.dt;
+
+        Vec_f_t x = vec_inc * grid.delta[0] + grid.pos(0, i, 1);
+        Vec_f_t y = vec_inc * grid.delta[1] + grid.pos(1, j, 1);
+        Vec_f_t z = vec_inc * grid.delta[2] + grid.pos(2, k, 1);
+        Vec_f_t r = sqrt(x * x + y * y + z * z);
+        Vec_f_t s = 0.5 * (1.0 - tanh((r - 3.0) / 0.5));
+
+        dbxvec = dbxvec * As - (rotEx + Px * s) * params.dt;
+        dbyvec = dbyvec * As - (rotEy + Py * s) * params.dt;
+        dbzvec = dbzvec * As - (rotEz + Pz * s) * params.dt;
         dbxvec.store(dBx.host_ptr() + ijk);
         dbyvec.store(dBy.host_ptr() + ijk);
         dbzvec.store(dBz.host_ptr() + ijk);
