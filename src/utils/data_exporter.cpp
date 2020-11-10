@@ -279,6 +279,9 @@ void data_exporter::write_field_output(sim_data& data, uint32_t timestep,
   data.dU_EgtB.assign_dev(0.0);
   data.dU_Epar.assign_dev(0.0);
   data.dU_KO.assign_dev(0.0);
+  data.dU_EgtB.assign(0.0);
+  data.dU_Epar.assign(0.0);
+  data.dU_KO.assign(0.0);
 
   datafile.close();
   // H5Fclose(datafile);

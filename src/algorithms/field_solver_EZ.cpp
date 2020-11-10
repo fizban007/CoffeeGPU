@@ -528,9 +528,17 @@ void field_solver_EZ::clean_epar_check_eGTb() {
         B2 = max(B2, TINY);
         auto EB = bxvec * exvec + byvec * eyvec + bzvec * ezvec;
 
+        Vec_f_t u0 = exvec * exvec + eyvec * eyvec + ezvec * ezvec;
+
         exvec = exvec - EB * bxvec / B2;
         eyvec = eyvec - EB * byvec / B2;
         ezvec = ezvec - EB * bzvec / B2;
+
+        Vec_f_t u1 = exvec * exvec + eyvec * eyvec + ezvec * ezvec;
+        Vec_f_t du;
+        du.load(dU_Epar.host_ptr() + ijk);
+        du += u1 - u0;
+        du.store(dU_Epar.host_ptr() + ijk);
 
         // Scalar B2 = Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] *
         // Bz[ijk]; if (B2 < TINY)
@@ -545,6 +553,11 @@ void field_solver_EZ::clean_epar_check_eGTb() {
         exvec = select(egtb, exvec * s, exvec);
         eyvec = select(egtb, eyvec * s, eyvec);
         ezvec = select(egtb, ezvec * s, ezvec);
+
+        u1 = exvec * exvec + eyvec * eyvec + ezvec * ezvec;
+        du.load(dU_EgtB.host_ptr() + ijk);
+        du += u1 - u0;
+        du.store(dU_EgtB.host_ptr() + ijk);
 
         exvec.store(Ex.host_ptr() + ijk);
         eyvec.store(Ey.host_ptr() + ijk);
