@@ -507,6 +507,8 @@ void field_solver_EZ::clean_epar_check_eGTb() {
   auto &Bx = m_data.B.data(0);
   auto &By = m_data.B.data(1);
   auto &Bz = m_data.B.data(2);
+  auto &dU_EgtB = m_data.dU_EgtB;
+  auto &dU_Epar = m_data.dU_Epar;
 
   for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
        k++) {
