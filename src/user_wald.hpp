@@ -5,6 +5,7 @@
 vector_field<Scalar>& A = solver.Dn;
 multi_array<Scalar>& A0 = solver.rho;
 Scalar a0 = 0.0;
+Scalar a = env.params().a;
 Scalar x, y, z;
 Scalar intBx, intBy, intBz, intEdx, intEdy, intEdz;
 Scalar Eux, Euy, Euz, Bdx, Bdy, Bdz;
@@ -58,19 +59,19 @@ for (int k = 0; k < env.grid().dims[2] - 1; ++k) {
                             * env.grid().inv_delta[1]
                             - (A(1, i, j, k + 1) - A(1, i, j, k)) 
                             * env.grid().inv_delta[2])
-                            / get_sqrt_gamma(a0, x, y + env.grid().delta[1] / 2.0, 
+                            / get_sqrt_gamma(a, x, y + env.grid().delta[1] / 2.0, 
                               z + env.grid().delta[2] / 2.0);
       data.B(1, i, j, k) = ((A(0, i, j, k + 1) - A(0, i, j, k)) 
                             * env.grid().inv_delta[2]
                             - (A(2, i + 1, j, k) - A(2, i, j, k)) 
                             * env.grid().inv_delta[0])
-                            / get_sqrt_gamma(a0, x + env.grid().delta[0] / 2.0, 
+                            / get_sqrt_gamma(a, x + env.grid().delta[0] / 2.0, 
                               y, z + env.grid().delta[2] / 2.0);
       data.B(2, i, j, k) = ((A(1, i + 1, j, k) - A(1, i, j, k)) 
                             * env.grid().inv_delta[0] 
                             - (A(0, i, j + 1, k) - A(0, i, j, k)) 
                             * env.grid().inv_delta[1])
-                            / get_sqrt_gamma(a0, x + env.grid().delta[0] / 2.0, 
+                            / get_sqrt_gamma(a, x + env.grid().delta[0] / 2.0, 
                               y + env.grid().delta[1] / 2.0, z);
 
       // solver.Ed(0, i, j, k) = (A0(i + 1, j, k) - A0(i, j, k))

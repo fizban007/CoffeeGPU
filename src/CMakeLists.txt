@@ -57,6 +57,9 @@ target_link_libraries(coffee-2d-spherical Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARI
 add_executable(coffee-gr "main-gr.cpp")
 target_link_libraries(coffee-gr Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 
+add_executable(coffee-gr-Yee "main-gr-Yee.cpp")
+target_link_libraries(coffee-gr-Yee Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+
 add_executable(coffee-wave "main-wave.cpp")
 target_link_libraries(coffee-wave Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 endif()
