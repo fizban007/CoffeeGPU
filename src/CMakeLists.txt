@@ -20,7 +20,7 @@ if(use_cuda AND CMAKE_CUDA_COMPILER)
     "algorithms/field_solver_gr_EZ.cu"
     "algorithms/field_solver_EZ_cylindrical.cu"
     "algorithms/field_solver_EZ_spherical.cu"
-    # "algorithms/field_solver_gr.cu"
+    "algorithms/field_solver_gr.cu"
     "algorithms/pulsar.cu"
     "algorithms/metric_cks.cu"
    )

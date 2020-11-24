@@ -6,7 +6,7 @@
 #include "interpolation.h"
 #include "metric_cks.h"
 #include "utils/timer.h"
-#include "utils/nvproftool.h"
+// #include "utils/nvproftool.h"
 
 #define BLOCK_SIZE_X 32
 #define BLOCK_SIZE_Y 2
@@ -639,7 +639,7 @@ HOST_DEVICE Scalar sigma(Scalar a, Scalar x, Scalar y, Scalar z, Scalar r0, Scal
   return sig0 * cube((r0 - r) / d);
 }
 
-HOST_DEVICE Scalar pmlsigma(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Scalar sig0) {
+HOST_DEVICE Scalar pmlsigma_gr(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Scalar sig0) {
   if (x > xh) return sig0 * pow((x - xh) / pmlscale, 3.0);
   else if (x < xl) return sig0 * pow((xl - x) / pmlscale, 3.0);
   else return 0.0;
@@ -647,7 +647,7 @@ HOST_DEVICE Scalar pmlsigma(Scalar x, Scalar xl, Scalar xh, Scalar pmlscale, Sca
 
 
 __global__ void
-kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Scalar *Dnz,
+kernel_absorbing_boundary_gr_thread(const Scalar *Dnx, const Scalar *Dny, const Scalar *Dnz,
                       const Scalar *Bnx, const Scalar *Bny, const Scalar *Bnz,
                       Scalar *Dx, Scalar *Dy, Scalar *Dz, 
                       Scalar *Bx, Scalar *By, Scalar *Bz,
@@ -721,9 +721,9 @@ kernel_absorbing_boundary_thread(const Scalar *Dnx, const Scalar *Dny, const Sca
     Scalar zh = dev_params.lower[2] + dev_params.size[2] - dev_params.pml[2] * dev_grid.delta[2];
     Scalar zl = dev_params.lower[2] + dev_params.pml[2] * dev_grid.delta[2];
     if (x > xh || x < xl || y > yh || y < yl || z > zh || z < zl) {
-      sigx = pmlsigma(x, xl, xh, dev_params.pmllen * dev_grid.delta[0], dev_params.sigpml);
-      sigy = pmlsigma(y, yl, yh, dev_params.pmllen * dev_grid.delta[0], dev_params.sigpml);
-      sigz = pmlsigma(z, zl, zh, dev_params.pmllen * dev_grid.delta[0], dev_params.sigpml);
+      sigx = pmlsigma_gr(x, xl, xh, dev_params.pmllen * dev_grid.delta[0], dev_params.sigpml);
+      sigy = pmlsigma_gr(y, yl, yh, dev_params.pmllen * dev_grid.delta[0], dev_params.sigpml);
+      sigz = pmlsigma_gr(z, zl, zh, dev_params.pmllen * dev_grid.delta[0], dev_params.sigpml);
       sig = sigx + sigy + sigz;
       if (sig > TINY) {
         Dx[ijk] = exp(-sig) * Dnx[ijk] + (1.0 - exp(-sig)) / sig * (Dx[ijk] - Dnx[ijk]);
@@ -785,7 +785,6 @@ field_solver_gr::~field_solver_gr() {}
 
 void
 field_solver_gr::evolve_fields_gr() {
-  RANGE_PUSH("Compute", CLR_GREEN);
   copy_fields_gr();
 
   // substep #1:
@@ -798,11 +797,9 @@ field_solver_gr::evolve_fields_gr() {
     std::cout << "substep 1, check_eGTb done." << std::endl;
   }
   CudaSafeCall(cudaDeviceSynchronize());
-  RANGE_POP;
   m_env.send_guard_cells(m_data);
 
   // substep #2:
-  RANGE_PUSH("Compute", CLR_GREEN);
   compute_E_gr();
   compute_H_gr();
   rk_push_gr();
@@ -812,11 +809,9 @@ field_solver_gr::evolve_fields_gr() {
     std::cout << "substep 2, check_eGTb done." << std::endl;
   }
   CudaSafeCall(cudaDeviceSynchronize());
-  RANGE_POP;
   m_env.send_guard_cells(m_data);
 
   // substep #3:
-  RANGE_PUSH("Compute", CLR_GREEN);
   compute_E_gr();
   compute_H_gr();
   rk_push_gr();
@@ -831,7 +826,6 @@ field_solver_gr::evolve_fields_gr() {
   }
   absorbing_boundary();
   CudaSafeCall(cudaDeviceSynchronize());
-  RANGE_POP;
 
   m_env.send_guard_cells(m_data);
 }
@@ -923,7 +917,7 @@ field_solver_gr::check_eGTb_gr() {
 
 void
 field_solver_gr::absorbing_boundary() {
-  kernel_absorbing_boundary_thread<<<blockGroupSize, blockSize>>>(
+  kernel_absorbing_boundary_gr_thread<<<blockGroupSize, blockSize>>>(
       Dn.dev_ptr(0), Dn.dev_ptr(1), Dn.dev_ptr(2), Bn.dev_ptr(0),
       Bn.dev_ptr(1), Bn.dev_ptr(2), m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), 
       m_data.E.dev_ptr(2), m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), 

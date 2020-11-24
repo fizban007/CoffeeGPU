@@ -91,8 +91,8 @@ int main(int argc, char *argv[]) {
 #endif
     }
     timer::stamp("step");
-    // solver.evolve_fields_gr();
-    solver.evolve_fields(time);
+    solver.evolve_fields_gr();
+    // solver.evolve_fields(time);
     if (env.rank() == 0)
       timer::show_duration_since_stamp("evolve field", "ms", "step");
     time += env.params().dt;
