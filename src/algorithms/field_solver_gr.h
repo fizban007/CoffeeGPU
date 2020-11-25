@@ -7,7 +7,6 @@ class field_solver_gr {
  public:
 
   vector_field<Scalar> Dn, Bn, dD, dB, Ed, Hd;
-  multi_array<Scalar> rho;
 
   field_solver_gr(sim_data& mydata, sim_environment& env);
   ~field_solver_gr();

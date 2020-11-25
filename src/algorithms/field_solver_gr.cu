@@ -53,6 +53,32 @@ kernel_compute_rho_gr_thread(const Scalar *Dx, const Scalar *Dy, const Scalar *D
 }
 
 __global__ void
+kernel_compute_divB_gr_thread(const Scalar *Bx, const Scalar *By, const Scalar *Bz,
+                          Scalar *divB, int shift) {
+  size_t ijk;
+  int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j = threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k = threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+    Scalar x = dev_grid.pos(0, i, 0);
+    Scalar y = dev_grid.pos(1, j, 0);
+    Scalar z = dev_grid.pos(2, k, 0);
+    divB[ijk] = (dev_grid.inv_delta[0] * (Bx[ijk] * get_sqrt_gamma(dev_params.a, x + dev_grid.delta[0] / 2.0, y, z) 
+               - Bx[ijk - 1] * get_sqrt_gamma(dev_params.a, x - dev_grid.delta[0] / 2.0, y, z)) +
+               dev_grid.inv_delta[1] * (By[ijk] * get_sqrt_gamma(dev_params.a, x, y + dev_grid.delta[1] / 2.0, z)
+               - By[ijk - dev_grid.dims[0]] * get_sqrt_gamma(dev_params.a, x, y - dev_grid.delta[1] / 2.0, z)) +
+               dev_grid.inv_delta[2] * (Bz[ijk] * get_sqrt_gamma(dev_params.a, x, y, z + dev_grid.delta[2] / 2.0)
+               - Bz[ijk - dev_grid.dims[0] * dev_grid.dims[1]]
+               * get_sqrt_gamma(dev_params.a, x, y, z - dev_grid.delta[2] / 2.0)))
+               / get_sqrt_gamma(dev_params.a, x, y, z);
+  }
+}
+
+__global__ void
 kernel_compute_E_gr_thread(const Scalar *Dx, const Scalar *Dy, const Scalar *Dz,
                           const Scalar *Bx, const Scalar *By, const Scalar *Bz,
                           Scalar *Ex, Scalar *Ey, Scalar *Ez, int shift) {
@@ -827,6 +853,12 @@ field_solver_gr::evolve_fields_gr() {
   absorbing_boundary();
   CudaSafeCall(cudaDeviceSynchronize());
 
+  kernel_compute_divB_gr_thread<<<blockGroupSize, blockSize>>>(
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      m_data.divB.dev_ptr(), m_env.params().shift_ghost);
+  CudaCheckError();
+  CudaSafeCall(cudaDeviceSynchronize());
+
   m_env.send_guard_cells(m_data);
 }
 
@@ -845,7 +877,7 @@ field_solver_gr::rk_push_gr() {
   // kernel_compute_rho<<<gridSize, blockSize>>>(
   kernel_compute_rho_gr_thread<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-      rho.dev_ptr(), m_env.params().shift_ghost);
+      m_data.divE.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
   // `dE = curl B - curl B0 - j, dB = -curl E`
   // kernel_rk_push<<<g, blockSize>>>(
