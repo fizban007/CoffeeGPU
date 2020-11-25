@@ -3,7 +3,7 @@
 
 
 vector_field<Scalar>& A = solver.Dn;
-multi_array<Scalar>& A0 = solver.rho;
+// multi_array<Scalar>& A0 = solver.rho;
 Scalar a0 = 0.0;
 Scalar a = env.params().a;
 Scalar x, y, z;

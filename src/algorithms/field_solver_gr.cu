@@ -797,8 +797,6 @@ field_solver_gr::field_solver_gr(sim_data &mydata, sim_environment& env) : m_dat
   dB.initialize();
   Hd.initialize();
 
-  rho = multi_array<Scalar>(m_data.env.grid().extent());
-  rho.assign_dev(0.0);
 
   blockGroupSize = dim3((m_data.env.grid().reduced_dim(0) + m_env.params().shift_ghost * 2 + blockSize.x - 1) / blockSize.x,
                         (m_data.env.grid().reduced_dim(1) + m_env.params().shift_ghost * 2 + blockSize.y - 1) / blockSize.y,
@@ -887,7 +885,7 @@ field_solver_gr::rk_push_gr() {
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
       m_data.B0.dev_ptr(0), m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2),
       dD.dev_ptr(0), dD.dev_ptr(1), dD.dev_ptr(2), dB.dev_ptr(0),
-      dB.dev_ptr(1), dB.dev_ptr(2), rho.dev_ptr(), m_env.params().shift_ghost);
+      dB.dev_ptr(1), dB.dev_ptr(2), m_data.divE.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
