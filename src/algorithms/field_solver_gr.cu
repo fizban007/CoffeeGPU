@@ -87,12 +87,12 @@ kernel_compute_E_gr_thread(const Scalar *Dx, const Scalar *Dy, const Scalar *Dz,
   Scalar Ddx, Ddy, Ddz;
   Scalar x, y, z;
 
-  int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
-  int j = threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  int k = threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
-  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
-      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
-      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+  int i = threadIdx.x + blockIdx.x * blockDim.x + 1;
+  int j = threadIdx.y + blockIdx.y * blockDim.y + 1;
+  int k = threadIdx.z + blockIdx.z * blockDim.z + 1;
+  if (i < dev_grid.dims[0] - 1 &&
+      j < dev_grid.dims[1] - 1 &&
+      k < dev_grid.dims[2] - 1) {
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
     // Calculate Ex
@@ -159,12 +159,12 @@ kernel_compute_H_gr_thread(const Scalar *Dx, const Scalar *Dy, const Scalar *Dz,
   Scalar Bdx, Bdy, Bdz;
   Scalar x, y, z;
 
-  int i = threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
-  int j = threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  int k = threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
-  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
-      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
-      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+  int i = threadIdx.x + blockIdx.x * blockDim.x + 1;
+  int j = threadIdx.y + blockIdx.y * blockDim.y + 1;
+  int k = threadIdx.z + blockIdx.z * blockDim.z + 1;
+  if (i < dev_grid.dims[0] - 1 &&
+      j < dev_grid.dims[1] - 1 &&
+      k < dev_grid.dims[2] - 1) {
     ijk = i + j * dev_grid.dims[0] +
           k * dev_grid.dims[0] * dev_grid.dims[1];
     // We use B0 to store lower B
@@ -905,7 +905,11 @@ field_solver_gr::rk_update_gr(Scalar rk_c1, Scalar rk_c2, Scalar rk_c3) {
 
 void
 field_solver_gr::compute_E_gr() {
-  kernel_compute_E_gr_thread<<<blockGroupSize, blockSize>>>(
+  dim3 blockGroupSize1 =
+      dim3((m_data.env.grid().dims[0] - 2 + blockSize.x - 1) / blockSize.x,
+           (m_data.env.grid().dims[1] - 2 + blockSize.y - 1) / blockSize.y,
+           (m_data.env.grid().dims[2] - 2 + blockSize.z - 1) / blockSize.z);
+  kernel_compute_E_gr_thread<<<blockGroupSize1, blockSize>>>(
     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
     Ed.dev_ptr(0), Ed.dev_ptr(1), Ed.dev_ptr(2), m_env.params().shift_ghost);
@@ -914,7 +918,11 @@ field_solver_gr::compute_E_gr() {
 
 void
 field_solver_gr::compute_H_gr() {
-  kernel_compute_H_gr_thread<<<blockGroupSize, blockSize>>>(
+  dim3 blockGroupSize1 =
+      dim3((m_data.env.grid().dims[0] - 2 + blockSize.x - 1) / blockSize.x,
+           (m_data.env.grid().dims[1] - 2 + blockSize.y - 1) / blockSize.y,
+           (m_data.env.grid().dims[2] - 2 + blockSize.z - 1) / blockSize.z);
+  kernel_compute_H_gr_thread<<<blockGroupSize1, blockSize>>>(
     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
     m_data.B0.dev_ptr(0), m_data.B0.dev_ptr(1), m_data.B0.dev_ptr(2),
