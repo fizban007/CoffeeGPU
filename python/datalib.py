@@ -7,6 +7,9 @@ from pathlib import Path
 import os
 import re
 
+extra_fld_keys = ["B", "J", "U"]
+
+
 class Data:
   def __init__(self, path=None):
    if path is not None:
@@ -36,10 +39,19 @@ class Data:
     return self.__dict__[key]
 
   def __load_fld_quantity(self, key):
-    path = os.path.join(self._path, f"fld.{self._current_fld_step:05d}.h5")
-    data = h5py.File(path, "r")
-    self.__dict__[key] = data[key][()]
-    data.close()
+    if key in extra_fld_keys:
+      if key == "U":
+        self.__dict__[key] = (self.Bx * self.Bx + self.By * self.By + self.Bz * self.Bz 
+          + self.Ex * self.Ex + self.Ey * self.Ey + self.Ez * self.Ez) / 2.0
+      elif key == "B":
+        self.__dict__[key] = np.sqrt(self.Bx * self.Bx + self.By * self.By + self.Bz * self.Bz)
+      elif key == "J":
+        self.__dict__[key] = np.sqrt(self.Jx * self.Jx + self.Jy * self.Jy + self.Jz * self.Jz)
+    else:
+      path = os.path.join(self._path, f"fld.{self._current_fld_step:05d}.h5")
+      data = h5py.File(path, "r")
+      self.__dict__[key] = data[key][()]
+      data.close()
 
   def __load_ptc_quantity(self, key):
     pass
@@ -71,7 +83,7 @@ class Data:
         os.path.join(self._path, f"fld.{self._current_fld_step:05d}.h5"),
         "r",
       )
-      self._fld_keys = list(f_fld.keys()) + ["B", "J", "flux"]
+      self._fld_keys = list(f_fld.keys()) + extra_fld_keys
       f_fld.close()
 
     # generate a list of output steps for particles
