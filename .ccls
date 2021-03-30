@@ -1,6 +1,6 @@
 clang++
-%cpp -std=c++14
-%h -std=c++14
+%cpp -std=c++17
+%h -std=c++17
 %h -x c++-header
 %cu -std=c++14
 %cu --cuda-gpu-arch=sm_61
