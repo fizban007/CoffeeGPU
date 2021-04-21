@@ -3,8 +3,6 @@
 
 // #include <immintrin.h>
 #include "data/typedefs.h"
-#define MAX_VECTOR_SIZE 512
-#include "vectorclass.h"
 
 namespace Coffee {
 
@@ -12,6 +10,8 @@ namespace simd {
 
 #if !defined(USE_DOUBLE) && \
     (defined(__AVX512F__) || defined(__AVX512__))
+#define MAX_VECTOR_SIZE 512
+#include "vectorclass.h"
 #define USE_SIMD
 #pragma message "using AVX512 with float"
 typedef Vec16ui Vec_ui_t;
@@ -23,6 +23,8 @@ const Vec_f_t vec_inc = Vec16f(0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f,
 constexpr int vec_width = 16;
 #elif defined(USE_DOUBLE) && \
     (defined(__AVX512F__) || defined(__AVX512__))
+#define MAX_VECTOR_SIZE 512
+#include "vectorclass.h"
 #define USE_SIMD
 #pragma message "using AVX512 with double"
 typedef Vec8uq Vec_ui_t;
@@ -32,6 +34,8 @@ typedef Vec8d Vec_f_t;
 const Vec_f_t vec_inc = Vec8d(0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0);
 constexpr int vec_width = 8;
 #elif !defined(USE_DOUBLE) && defined(__AVX2__)
+#define MAX_VECTOR_SIZE 512
+#include "vectorclass.h"
 #define USE_SIMD
 #pragma message "using AVX2 with float"
 typedef Vec8ui Vec_idx_t;
@@ -42,6 +46,8 @@ typedef Vec8f Vec_f_t;
 const Vec_f_t vec_inc = Vec8f(0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0);
 constexpr int vec_width = 8;
 #elif defined(USE_DOUBLE) && defined(__AVX2__)
+#define MAX_VECTOR_SIZE 512
+#include "vectorclass.h"
 #define USE_SIMD
 #pragma message "using AVX2 with double"
 typedef Vec8ui Vec_idx_t;

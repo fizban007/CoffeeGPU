@@ -21,7 +21,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -qopenmp-simd -DNDEBUG -xHost -no-prec-div ${CXX_EXTRA_FLAGS}")
 else()
   # set(CXX_EXTRA_FLAGS "-Wno-misleading-indentation -Wno-unused-parameter")
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fopenmp-simd -DNDEBUG -march=native ${CXX_EXTRA_FLAGS}")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fopenmp-simd -DNDEBUG -mcpu=native ${CXX_EXTRA_FLAGS}")
 endif()
 set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 ${CXX_EXTRA_FLAGS}")
 

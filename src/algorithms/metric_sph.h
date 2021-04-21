@@ -8,8 +8,11 @@
 #include "data/typedefs.h"
 #include "utils/simd.h"
 #include "utils/util_functions.h"
+
+#ifdef USE_SIMD
 #include "vectormath_exp.h"
 #include "vectormath_trig.h"
+#endif
 
 namespace Coffee {
 
