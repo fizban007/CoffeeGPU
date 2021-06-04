@@ -90,6 +90,8 @@ struct sim_params {
   Scalar tp_end = 0.5; ///< Time for the perturbation to end
   Scalar rpert1 = 5.0; ///< Perturbation range
   Scalar rpert2 = 10.0; ///< Perturbation range
+  Scalar thp1 = 0.3; ///< Perturbation range in angle
+  Scalar thp2 = 0.4; ///< Perturbation range in angle
   Scalar dw0 = 0.0; ///< Amplitude of the angular velocity perturbation
   Scalar nT = 1.0; ///< Number of periods in the perturbation
   Scalar shear = 0.0; ///< lateral phase shift
@@ -103,6 +105,8 @@ struct sim_params {
   Scalar tp_end1 = 1.5; ///< Time for the perturbation to end
   Scalar rpert11 = 5.0; ///< Perturbation range
   Scalar rpert21 = 10.0; ///< Perturbation range
+  Scalar thp11 = 0.3; ///< Perturbation range in angle
+  Scalar thp21 = 0.4; ///< Perturbation range in angle
   Scalar dw1 = 0.0; ///< Amplitude of the angular velocity perturbation
   Scalar nT1 = 1.0; ///< Number of periods in the perturbation
   Scalar shear1 = 0.0; ///< lateral phase shift
