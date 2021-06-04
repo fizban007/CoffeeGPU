@@ -584,7 +584,7 @@ wpert_sph_angle(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
   }
   Scalar mu = (thp1 + thp2) / 2.0;
   // Scalar s = (mu - thp1) / 3.0;
-  if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2)
+  if (t >= tp_start && t <= tp_end && th >= thp1 && th <= thp2)
     // return dw0 * exp(-0.5 * square((th - mu) / s)) *
     //        sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
     return dw0 * square(cos((th - mu) * M_PI / (thp2 - thp1))) *
