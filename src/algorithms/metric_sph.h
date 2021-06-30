@@ -9,12 +9,14 @@
 #include "utils/simd.h"
 #include "utils/util_functions.h"
 
+namespace Coffee {
+
 #ifdef USE_SIMD
+namespace simd {
 #include "vectormath_exp.h"
 #include "vectormath_trig.h"
+}
 #endif
-
-namespace Coffee {
 
 #ifdef USE_SIMD
 using simd::Vec_f_t;
