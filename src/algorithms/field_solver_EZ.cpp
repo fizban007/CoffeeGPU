@@ -306,6 +306,7 @@ void field_solver_EZ::Kreiss_Oliger() {
   auto &By_tmp = Btmp.data(1);
   auto &Bz_tmp = Btmp.data(2);
   auto &dU_KO = m_data.dU_KO;
+  auto &dU_KO_cum = m_data.dU_KO_cum;
 
   for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
        k++) {
@@ -410,8 +411,11 @@ void field_solver_EZ::Kreiss_Oliger() {
 
         // m_data.P[ijk] -= params.KOeps * KO_const * Ptmp[ijk];
         Vec_f_t du;
-        du.load(dU_KO.host_ptr() + ijk);
+        du.load(dU_KO_cum.host_ptr() + ijk);
         du += u1 - u0;
+        du.store(dU_KO_cum.host_ptr() + ijk);
+        du.load(dU_KO.host_ptr() + ijk);
+        du = u1 - u0;
         du.store(dU_KO.host_ptr() + ijk);
       }
     }
@@ -429,6 +433,7 @@ void field_solver_EZ::clean_epar() {
   auto &By = m_data.B.data(1);
   auto &Bz = m_data.B.data(2);
   auto &dU_Epar = m_data.dU_Epar;
+  auto &dU_Epar_cum = m_data.dU_Epar_cum;
 
   for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
        k++) {
@@ -450,7 +455,8 @@ void field_solver_EZ::clean_epar() {
         Ez[ijk] = Ez[ijk] - EB / B2 * Bz[ijk];
 
         Scalar u1 = Ex[ijk] * Ex[ijk] + Ey[ijk] * Ey[ijk] + Ez[ijk] * Ez[ijk];
-        dU_Epar[ijk] += u1 - u0;
+        dU_Epar_cum[ijk] += u1 - u0;
+        dU_Epar[ijk] = u1 - u0;
       }
     }
   }
@@ -467,6 +473,7 @@ void field_solver_EZ::check_eGTb() {
   auto &By = m_data.B.data(1);
   auto &Bz = m_data.B.data(2);
   auto &dU_EgtB = m_data.dU_EgtB;
+  auto &dU_EgtB_cum = m_data.dU_EgtB_cum;
 
   for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
        k++) {
@@ -491,7 +498,8 @@ void field_solver_EZ::check_eGTb() {
         }
 
         Scalar u1 = Ex[ijk] * Ex[ijk] + Ey[ijk] * Ey[ijk] + Ez[ijk] * Ez[ijk];
-        dU_EgtB[ijk] += u1 - u0;
+        dU_EgtB_cum[ijk] += u1 - u0;
+        dU_EgtB[ijk] = u1 - u0;
       }
     }
   }
@@ -509,6 +517,8 @@ void field_solver_EZ::clean_epar_check_eGTb() {
   auto &Bz = m_data.B.data(2);
   auto &dU_EgtB = m_data.dU_EgtB;
   auto &dU_Epar = m_data.dU_Epar;
+  auto &dU_EgtB_cum = m_data.dU_EgtB_cum;
+  auto &dU_Epar_cum = m_data.dU_Epar_cum;
 
   for (int k = grid.guard[2] - shift; k < grid.dims[2] - grid.guard[2] + shift;
        k++) {
@@ -538,8 +548,11 @@ void field_solver_EZ::clean_epar_check_eGTb() {
 
         Vec_f_t u1 = exvec * exvec + eyvec * eyvec + ezvec * ezvec;
         Vec_f_t du;
-        du.load(dU_Epar.host_ptr() + ijk);
+        du.load(dU_Epar_cum.host_ptr() + ijk);
         du += u1 - u0;
+        du.store(dU_Epar_cum.host_ptr() + ijk);
+        du.load(dU_Epar.host_ptr() + ijk);
+        du = u1 - u0;
         du.store(dU_Epar.host_ptr() + ijk);
 
         // Scalar B2 = Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] *
@@ -557,8 +570,11 @@ void field_solver_EZ::clean_epar_check_eGTb() {
         ezvec = select(egtb, ezvec * s, ezvec);
 
         u1 = exvec * exvec + eyvec * eyvec + ezvec * ezvec;
-        du.load(dU_EgtB.host_ptr() + ijk);
+        du.load(dU_EgtB_cum.host_ptr() + ijk);
         du += u1 - u0;
+        du.store(dU_EgtB_cum.host_ptr() + ijk);
+        du.load(dU_EgtB.host_ptr() + ijk);
+        du = u1 - u0;
         du.store(dU_EgtB.host_ptr() + ijk);
 
         exvec.store(Ex.host_ptr() + ijk);

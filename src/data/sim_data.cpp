@@ -13,6 +13,9 @@ sim_data::sim_data(const sim_environment& e) : env(e) {
   dU_EgtB = multi_array<Scalar>(env.grid().extent());
   dU_Epar = multi_array<Scalar>(env.grid().extent());
   dU_KO = multi_array<Scalar>(env.grid().extent());
+  dU_EgtB_cum = multi_array<Scalar>(env.grid().extent());
+  dU_Epar_cum = multi_array<Scalar>(env.grid().extent());
+  dU_KO_cum = multi_array<Scalar>(env.grid().extent());
   Stagger st_e[3] = {Stagger(0b110), Stagger(0b101), Stagger(0b011)};
   Stagger st_b[3] = {Stagger(0b001), Stagger(0b010), Stagger(0b100)};
   B.set_stagger(st_b);
@@ -35,6 +38,9 @@ sim_data::sync_to_host() {
   dU_EgtB.sync_to_host();
   dU_Epar.sync_to_host();
   dU_KO.sync_to_host();
+  dU_EgtB_cum.sync_to_host();
+  dU_Epar_cum.sync_to_host();
+  dU_KO_cum.sync_to_host();
 }
 
 void
@@ -48,6 +54,9 @@ sim_data::sync_to_device() {
   dU_EgtB.sync_to_device();
   dU_Epar.sync_to_device();
   dU_KO.sync_to_device();
+  dU_EgtB_cum.sync_to_device();
+  dU_Epar_cum.sync_to_device();
+  dU_KO_cum.sync_to_device();
 }
 
 }  // namespace Coffee

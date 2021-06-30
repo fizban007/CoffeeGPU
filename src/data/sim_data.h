@@ -13,6 +13,7 @@ class sim_data {
   vector_field<Scalar> E, B, B0;
   multi_array<Scalar> P, divB, divE;
   multi_array<Scalar> dU_EgtB, dU_Epar, dU_KO;
+  multi_array<Scalar> dU_EgtB_cum, dU_Epar_cum, dU_KO_cum;
   const sim_environment& env;
 
   sim_data(const sim_environment& env);
