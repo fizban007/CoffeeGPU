@@ -417,7 +417,7 @@ void field_solver_EZ::Kreiss_Oliger() {
         du.load(dU_KO_cum.host_ptr() + ijk);
         du += u1 - u0;
         du.store(dU_KO_cum.host_ptr() + ijk);
-        du.load(dU_KO.host_ptr() + ijk);
+        
         du = u1 - u0;
         du.store(dU_KO.host_ptr() + ijk);
       }
@@ -554,7 +554,7 @@ void field_solver_EZ::clean_epar_check_eGTb() {
         du.load(dU_Epar_cum.host_ptr() + ijk);
         du += u1 - u0;
         du.store(dU_Epar_cum.host_ptr() + ijk);
-        du.load(dU_Epar.host_ptr() + ijk);
+        
         du = u1 - u0;
         du.store(dU_Epar.host_ptr() + ijk);
 
@@ -576,7 +576,7 @@ void field_solver_EZ::clean_epar_check_eGTb() {
         du.load(dU_EgtB_cum.host_ptr() + ijk);
         du += u1 - u0;
         du.store(dU_EgtB_cum.host_ptr() + ijk);
-        du.load(dU_EgtB.host_ptr() + ijk);
+        
         du = u1 - u0;
         du.store(dU_EgtB.host_ptr() + ijk);
 
