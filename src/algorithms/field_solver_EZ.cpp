@@ -459,7 +459,7 @@ void field_solver_EZ::clean_epar() {
 
         Scalar u1 = Ex[ijk] * Ex[ijk] + Ey[ijk] * Ey[ijk] + Ez[ijk] * Ez[ijk];
         dU_Epar_cum[ijk] += u1 - u0;
-        dU_Epar[ijk] = u1 - u0;
+        dU_Epar[ijk] += u1 - u0;
       }
     }
   }
@@ -502,7 +502,7 @@ void field_solver_EZ::check_eGTb() {
 
         Scalar u1 = Ex[ijk] * Ex[ijk] + Ey[ijk] * Ey[ijk] + Ez[ijk] * Ez[ijk];
         dU_EgtB_cum[ijk] += u1 - u0;
-        dU_EgtB[ijk] = u1 - u0;
+        dU_EgtB[ijk] += u1 - u0;
       }
     }
   }
@@ -554,8 +554,8 @@ void field_solver_EZ::clean_epar_check_eGTb() {
         du.load(dU_Epar_cum.host_ptr() + ijk);
         du += u1 - u0;
         du.store(dU_Epar_cum.host_ptr() + ijk);
-        
-        du = u1 - u0;
+        du.load(dU_Epar.host_ptr() + ijk);
+        du += u1 - u0;
         du.store(dU_Epar.host_ptr() + ijk);
 
         // Scalar B2 = Bx[ijk] * Bx[ijk] + By[ijk] * By[ijk] + Bz[ijk] *
@@ -576,8 +576,8 @@ void field_solver_EZ::clean_epar_check_eGTb() {
         du.load(dU_EgtB_cum.host_ptr() + ijk);
         du += u1 - u0;
         du.store(dU_EgtB_cum.host_ptr() + ijk);
-        
-        du = u1 - u0;
+        du.load(dU_EgtB.host_ptr() + ijk);
+        du += u1 - u0;
         du.store(dU_EgtB.host_ptr() + ijk);
 
         exvec.store(Ex.host_ptr() + ijk);
@@ -833,6 +833,10 @@ void field_solver_EZ::evolve_fields(Scalar time) {
   Etmp.copy_from(m_data.E);
   Btmp.copy_from(m_data.B);
   Ptmp.copy_from(m_data.P);
+
+  m_data.dU_KO.assign(0.0);
+  m_data.dU_Epar.assign(0.0);
+  m_data.dU_EgtB.assign(0.0);
 
   for (int i = 0; i < 5; ++i) {
     timer::stamp();
