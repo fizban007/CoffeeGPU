@@ -1,20 +1,21 @@
 #ifndef _SIM_ENV_IMPL_H_
 #define _SIM_ENV_IMPL_H_
 
-#include "sim_env.h"
+#include "cxxopts.hpp"
 #include "data/sim_data.h"
 #include "data/vec3.h"
+#include "sim_env.h"
 #include <mpi.h>
-#include "cxxopts.hpp"
 
 namespace Coffee {
 
 sim_environment::sim_environment(int* argc, char*** argv) {
   // Parse options
-  cxxopts::Options options("Coffee", "Computational Force-free Electrodynamics");
+  cxxopts::Options options("Coffee",
+                           "Computational Force-free Electrodynamics");
   options.add_options()("r,restart-file", "Path of the restart file",
-                        cxxopts::value<std::string>())("h,help",
-                                                       "Print usage");
+                        cxxopts::value<std::string>()->implicit_value(
+                            "snapshot.h5"))("h,help", "Print usage");
 
   auto result = options.parse(*argc, *argv);
   if (result.count("help")) {
@@ -26,7 +27,7 @@ sim_environment::sim_environment(int* argc, char*** argv) {
     m_is_restart = true;
     // m_restart_file = result["restart-file"].as<std::string>();
   }
-  
+
   int is_initialized = 0;
   MPI_Initialized(&is_initialized);
 
@@ -118,7 +119,8 @@ sim_environment::setup_domain() {
   for (int i = 0; i < 3; i++) m_mpi_dims[i] = dims[i];
 
   // Create a cartesian MPI group for communication
-  MPI_Cart_create(m_world, m_grid.dim(), dims, m_is_periodic, true, &m_cart);
+  MPI_Cart_create(m_world, m_grid.dim(), dims, m_is_periodic, true,
+                  &m_cart);
 
   // Obtain the mpi coordinate of the current rank
   MPI_Cart_coords(m_cart, m_rank, m_grid.dim(), m_mpi_coord);
@@ -225,6 +227,6 @@ sim_environment::send_guard_cell_z(sim_data& data, int dir) {
   send_array_z(data.P, dir);
 }
 
-}
+}  // namespace Coffee
 
 #endif  // _SIM_ENV_IMPL_H_
