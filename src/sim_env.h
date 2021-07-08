@@ -76,7 +76,7 @@ class sim_environment {
   int m_neighbor_right[3] = {NEIGHBOR_NULL};
   multi_array<int> m_domain_map;
   bool m_is_restart = false;
-  std::string m_restart_file = "";
+  std::string m_restart_file = "snapshot.h5";
 
   MPI_Comm m_world;
   MPI_Comm m_cart;

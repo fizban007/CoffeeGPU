@@ -24,7 +24,7 @@ sim_environment::sim_environment(int* argc, char*** argv) {
 
   if (result.count("restart-file")) {
     m_is_restart = true;
-    m_restart_file = result["restart-file"].as<std::string>();
+    // m_restart_file = result["restart-file"].as<std::string>();
   }
   
   int is_initialized = 0;
