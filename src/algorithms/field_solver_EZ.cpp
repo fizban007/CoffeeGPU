@@ -60,7 +60,22 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
   Bbg = vector_field<Scalar>(m_data.env.grid());
   Bbg.copy_stagger(m_data.B);
   // If damp to vacuum background field
-  Bbg.copy_from(m_data.B);
+  // Bbg.copy_from(m_data.B);
+  // For restart cases we should not just copy m_data.B. 
+  for (int i = 0; i < 3; ++i) {
+  Bbg.initialize(i, [&](Scalar x, Scalar y, Scalar z) {
+    // Put your initial condition for Bx here
+    // return env.params().b0 * cube(env.params().radius) *
+    //        dipole_x(x, y, z, env.params().alpha, 0);
+    return m_env.params().b0 *
+           quadru_dipole(
+               x, y, z, m_env.params().p1, m_env.params().p2,
+               m_env.params().p3, m_env.params().q11, m_env.params().q12,
+               m_env.params().q13, m_env.params().q22, m_env.params().q23,
+               m_env.params().q_offset_x, m_env.params().q_offset_y,
+               m_env.params().q_offset_z, 0, i);
+  });
+}
   // If damp to zero
   // Bbg.initialize();
 

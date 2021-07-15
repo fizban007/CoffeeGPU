@@ -351,65 +351,65 @@ data_exporter::save_snapshot_multiple(sim_data& data, uint32_t step,
   // }
   datafile.close();
 
-  filename = outputDirectory + std::string("snapshot_B0x.h5");
-  datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
-  datafile.write_parallel(data.B0.data(0), ext_total, idx_dst, ext,
-                          idx_src, "B0x");
-  // if (rank == 0) {
-  datafile.write(step, "step");
-  datafile.write(time, "time");
-  // }
-  datafile.close();
+  // filename = outputDirectory + std::string("snapshot_B0x.h5");
+  // datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
+  // datafile.write_parallel(data.B0.data(0), ext_total, idx_dst, ext,
+  //                         idx_src, "B0x");
+  // // if (rank == 0) {
+  // datafile.write(step, "step");
+  // datafile.write(time, "time");
+  // // }
+  // datafile.close();
 
-  filename = outputDirectory + std::string("snapshot_B0y.h5");
-  datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
-  datafile.write_parallel(data.B0.data(1), ext_total, idx_dst, ext,
-                          idx_src, "B0y");
-  // if (rank == 0) {
-  datafile.write(step, "step");
-  datafile.write(time, "time");
-  // }
-  datafile.close();
+  // filename = outputDirectory + std::string("snapshot_B0y.h5");
+  // datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
+  // datafile.write_parallel(data.B0.data(1), ext_total, idx_dst, ext,
+  //                         idx_src, "B0y");
+  // // if (rank == 0) {
+  // datafile.write(step, "step");
+  // datafile.write(time, "time");
+  // // }
+  // datafile.close();
 
-  filename = outputDirectory + std::string("snapshot_B0z.h5");
-  datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
-  datafile.write_parallel(data.B0.data(2), ext_total, idx_dst, ext,
-                          idx_src, "B0z");
-  // if (rank == 0) {
-  datafile.write(step, "step");
-  datafile.write(time, "time");
-  // }
-  datafile.close();
+  // filename = outputDirectory + std::string("snapshot_B0z.h5");
+  // datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
+  // datafile.write_parallel(data.B0.data(2), ext_total, idx_dst, ext,
+  //                         idx_src, "B0z");
+  // // if (rank == 0) {
+  // datafile.write(step, "step");
+  // datafile.write(time, "time");
+  // // }
+  // datafile.close();
 
-  filename = outputDirectory + std::string("snapshot_P.h5");
-  datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
-  datafile.write_parallel(data.P, ext_total, idx_dst, ext, idx_src,
-                          "P");
-  // if (rank == 0) {
-  datafile.write(step, "step");
-  datafile.write(time, "time");
-  // }
-  datafile.close();
+  // filename = outputDirectory + std::string("snapshot_P.h5");
+  // datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
+  // datafile.write_parallel(data.P, ext_total, idx_dst, ext, idx_src,
+  //                         "P");
+  // // if (rank == 0) {
+  // datafile.write(step, "step");
+  // datafile.write(time, "time");
+  // // }
+  // datafile.close();
 
-  filename = outputDirectory + std::string("snapshot_divE.h5");
-  datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
-  datafile.write_parallel(data.divE, ext_total, idx_dst, ext, idx_src,
-                          "divE");
-  // if (rank == 0) {
-  datafile.write(step, "step");
-  datafile.write(time, "time");
-  // }
-  datafile.close();
+  // filename = outputDirectory + std::string("snapshot_divE.h5");
+  // datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
+  // datafile.write_parallel(data.divE, ext_total, idx_dst, ext, idx_src,
+  //                         "divE");
+  // // if (rank == 0) {
+  // datafile.write(step, "step");
+  // datafile.write(time, "time");
+  // // }
+  // datafile.close();
 
-  filename = outputDirectory + std::string("snapshot_divB.h5");
-  datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
-  datafile.write_parallel(data.divB, ext_total, idx_dst, ext, idx_src,
-                          "divB");
-  // if (rank == 0) {
-  datafile.write(step, "step");
-  datafile.write(time, "time");
-  // }
-  datafile.close();
+  // filename = outputDirectory + std::string("snapshot_divB.h5");
+  // datafile = hdf_create(filename, H5CreateMode::trunc_parallel);
+  // datafile.write_parallel(data.divB, ext_total, idx_dst, ext, idx_src,
+  //                         "divB");
+  // // if (rank == 0) {
+  // datafile.write(step, "step");
+  // datafile.write(time, "time");
+  // // }
+  // datafile.close();
 }
 
 void
@@ -507,75 +507,78 @@ data_exporter::load_snapshot_multiple(sim_data& data, uint32_t& step,
   // Open the snapshot file for reading
   H5File file_Bz(filename, H5OpenMode::read_parallel);
   file_Bz.read_subset(data.B.data(2), "Bz", idx_src, ext, idx_dst);
+  auto step1 = file_Bz.read_scalar<uint32_t>("step");
+  auto time1 = file_Bz.read_scalar<Scalar>("time");
   file_Bz.close();
 
-  filename = outputDirectory + std::string("snapshot_B0x.h5");
-  // Check whether filename exists
-  if (!std::filesystem::exists(filename)) {
-    std::cout << "Can't find restart file" << filename << std::endl;
-    MPI_Abort(m_env.cart(), errorcode);
-  }
-  // Open the snapshot file for reading
-  H5File file_B0x(filename, H5OpenMode::read_parallel);
-  file_B0x.read_subset(data.B0.data(0), "B0x", idx_src, ext, idx_dst);
-  file_B0x.close();
+  // filename = outputDirectory + std::string("snapshot_B0x.h5");
+  // // Check whether filename exists
+  // if (!std::filesystem::exists(filename)) {
+  //   std::cout << "Can't find restart file" << filename << std::endl;
+  //   MPI_Abort(m_env.cart(), errorcode);
+  // }
+  // // Open the snapshot file for reading
+  // H5File file_B0x(filename, H5OpenMode::read_parallel);
+  // file_B0x.read_subset(data.B0.data(0), "B0x", idx_src, ext, idx_dst);
+  // file_B0x.close();
 
-  filename = outputDirectory + std::string("snapshot_B0y.h5");
-  // Check whether filename exists
-  if (!std::filesystem::exists(filename)) {
-    std::cout << "Can't find restart file" << filename << std::endl;
-    MPI_Abort(m_env.cart(), errorcode);
-  }
-  // Open the snapshot file for reading
-  H5File file_B0y(filename, H5OpenMode::read_parallel);
-  file_B0y.read_subset(data.B0.data(1), "B0y", idx_src, ext, idx_dst);
-  file_B0y.close();
+  // filename = outputDirectory + std::string("snapshot_B0y.h5");
+  // // Check whether filename exists
+  // if (!std::filesystem::exists(filename)) {
+  //   std::cout << "Can't find restart file" << filename << std::endl;
+  //   MPI_Abort(m_env.cart(), errorcode);
+  // }
+  // // Open the snapshot file for reading
+  // H5File file_B0y(filename, H5OpenMode::read_parallel);
+  // file_B0y.read_subset(data.B0.data(1), "B0y", idx_src, ext, idx_dst);
+  // file_B0y.close();
 
-  filename = outputDirectory + std::string("snapshot_B0z.h5");
-  // Check whether filename exists
-  if (!std::filesystem::exists(filename)) {
-    std::cout << "Can't find restart file" << filename << std::endl;
-    MPI_Abort(m_env.cart(), errorcode);
-  }
-  // Open the snapshot file for reading
-  H5File file_B0z(filename, H5OpenMode::read_parallel);
-  file_B0z.read_subset(data.B0.data(2), "B0z", idx_src, ext, idx_dst);
-  file_B0z.close();
+  // filename = outputDirectory + std::string("snapshot_B0z.h5");
+  // // Check whether filename exists
+  // if (!std::filesystem::exists(filename)) {
+  //   std::cout << "Can't find restart file" << filename << std::endl;
+  //   MPI_Abort(m_env.cart(), errorcode);
+  // }
+  // // Open the snapshot file for reading
+  // H5File file_B0z(filename, H5OpenMode::read_parallel);
+  // file_B0z.read_subset(data.B0.data(2), "B0z", idx_src, ext, idx_dst);
+  // file_B0z.close();
 
-  filename = outputDirectory + std::string("snapshot_P.h5");
-  // Check whether filename exists
-  if (!std::filesystem::exists(filename)) {
-    std::cout << "Can't find restart file" << filename << std::endl;
-    MPI_Abort(m_env.cart(), errorcode);
-  }
-  // Open the snapshot file for reading
-  H5File file_P(filename, H5OpenMode::read_parallel);
-  file_P.read_subset(data.P, "P", idx_src, ext, idx_dst);
-  file_P.close();
+  // filename = outputDirectory + std::string("snapshot_P.h5");
+  // // Check whether filename exists
+  // if (!std::filesystem::exists(filename)) {
+  //   std::cout << "Can't find restart file" << filename << std::endl;
+  //   MPI_Abort(m_env.cart(), errorcode);
+  // }
+  // // Open the snapshot file for reading
+  // H5File file_P(filename, H5OpenMode::read_parallel);
+  // file_P.read_subset(data.P, "P", idx_src, ext, idx_dst);
+  // file_P.close();
 
-  filename = outputDirectory + std::string("snapshot_divE.h5");
-  // Check whether filename exists
-  if (!std::filesystem::exists(filename)) {
-    std::cout << "Can't find restart file" << filename << std::endl;
-    MPI_Abort(m_env.cart(), errorcode);
-  }
-  // Open the snapshot file for reading
-  H5File file_divE(filename, H5OpenMode::read_parallel);
-  file_divE.read_subset(data.divE, "divE", idx_src, ext, idx_dst);
-  file_divE.close();
+  // filename = outputDirectory + std::string("snapshot_divE.h5");
+  // // Check whether filename exists
+  // if (!std::filesystem::exists(filename)) {
+  //   std::cout << "Can't find restart file" << filename << std::endl;
+  //   MPI_Abort(m_env.cart(), errorcode);
+  // }
+  // // Open the snapshot file for reading
+  // H5File file_divE(filename, H5OpenMode::read_parallel);
+  // file_divE.read_subset(data.divE, "divE", idx_src, ext, idx_dst);
+  // file_divE.close();
 
-  filename = outputDirectory + std::string("snapshot_divB.h5");
-  // Check whether filename exists
-  if (!std::filesystem::exists(filename)) {
-    std::cout << "Can't find restart file" << filename << std::endl;
-    MPI_Abort(m_env.cart(), errorcode);
-  }
-  // Open the snapshot file for reading
-  H5File file_divB(filename, H5OpenMode::read_parallel);
-  file_divB.read_subset(data.divB, "divB", idx_src, ext, idx_dst);
-  auto step1 = file_divB.read_scalar<uint32_t>("step");
-  auto time1 = file_divB.read_scalar<Scalar>("time");
-  file_divB.close();
+  // filename = outputDirectory + std::string("snapshot_divB.h5");
+  // // Check whether filename exists
+  // if (!std::filesystem::exists(filename)) {
+  //   std::cout << "Can't find restart file" << filename << std::endl;
+  //   MPI_Abort(m_env.cart(), errorcode);
+  // }
+  // // Open the snapshot file for reading
+  // H5File file_divB(filename, H5OpenMode::read_parallel);
+  // file_divB.read_subset(data.divB, "divB", idx_src, ext, idx_dst);
+  // auto step1 = file_divB.read_scalar<uint32_t>("step");
+  // auto time1 = file_divB.read_scalar<Scalar>("time");
+  // file_divB.close();
+  
   if (step != step1) {
     std::cout << "Snapshot files not at the same timestep!"
               << std::endl;
