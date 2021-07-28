@@ -51,6 +51,7 @@ main(int argc, char *argv[]) {
 
   // Main simulation loop
   Scalar time = step * env.params().dt;
+  uint32_t prev_snapshot = -1;
   if (env.is_restart()) {
     // cout << "Restarting from snapshot file " << env.restart_file() <<
     // "\n";
@@ -58,9 +59,10 @@ main(int argc, char *argv[]) {
     // time);
     cout << "Restarting from snapshot file(s) \n";
     exporter.load_snapshot_multiple(data, step, time);
+    prev_snapshot = step;
   }
 
-  uint32_t prev_snapshot = step;
+  
   for (; step <= env.params().max_steps; step++) {
     if (step % env.params().snapshot_interval == 0 &&
         step != prev_snapshot) {
@@ -75,7 +77,8 @@ main(int argc, char *argv[]) {
     }
     if (env.rank() == 0) std::cout << "step = " << step << std::endl;
     // Do stuff here
-    if (step % env.params().data_interval == 0) {
+    if (step % env.params().data_interval == 0 &&
+        step != prev_snapshot) {
       timer::stamp("output");
       exporter.write_output(data, step, 0.0);
       if (env.rank() == 0)
