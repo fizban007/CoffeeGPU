@@ -23,6 +23,14 @@ main(int argc, char *argv[]) {
   // Initialize the simulation environment
   sim_environment env(&argc, &argv);
 
+  int errorcode = 10;
+  if (env.params().problem != 2) {
+    std::cout << "This executable solves the Alfven wave from pulsar "
+                 "problem. Please set the 'problem' parameter to 2."
+              << std::endl;
+    MPI_Abort(env.cart(), errorcode);
+  }
+
   // Initialize all the simulation data structures
   sim_data data(env);
 
@@ -62,7 +70,6 @@ main(int argc, char *argv[]) {
     prev_snapshot = step;
   }
 
-  
   for (; step <= env.params().max_steps; step++) {
     if (step % env.params().snapshot_interval == 0 &&
         step != prev_snapshot) {
