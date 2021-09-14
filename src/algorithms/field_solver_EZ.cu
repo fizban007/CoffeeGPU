@@ -114,7 +114,7 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
       Pz = 0.0;
     }
 
-    // dP[ijk] = As * dP[ijk] - dev_params.dt * dev_params.ch2 * divB +
+    // dP[ijk] = As * dP[ijk] - dev_params.dt * dev_params.ch2 * divB -
     //                                           P[ijk] /
     //                                           dev_params.tau;
 
@@ -149,7 +149,7 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     dEy[ijk] = As * dEy[ijk] + dev_params.dt * (rotBy - Jy);
     dEz[ijk] = As * dEz[ijk] + dev_params.dt * (rotBz - Jz);
 
-    dP[ijk] = As * dP[ijk] - dev_params.dt * dev_params.ch2 * divB +
+    dP[ijk] = As * dP[ijk] - dev_params.dt * dev_params.ch2 * divB -
                                               P[ijk] / dev_params.tau;
     jx[ijk] = Jx;
     jy[ijk] = Jy;
