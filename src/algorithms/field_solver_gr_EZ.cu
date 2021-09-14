@@ -328,8 +328,8 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
         dev_params.dt *
             (-alpha * divB + get_beta_u1(dev_params.a, x, y, z) * Pxd +
              get_beta_u2(dev_params.a, x, y, z) * Pyd +
-             get_beta_u3(dev_params.a, x, y, z) * Pzd -
-             alpha * P[ijk] / dev_params.tau);
+             get_beta_u3(dev_params.a, x, y, z) * Pzd) -
+             alpha * P[ijk] / dev_params.tau;
 
     jx[ijk] = Jx;
     jy[ijk] = Jy;

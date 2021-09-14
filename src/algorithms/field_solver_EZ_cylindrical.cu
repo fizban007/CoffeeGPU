@@ -197,8 +197,8 @@ kernel_rk_step1_thread(const Scalar *ER, const Scalar *Ez,
     dEf[ijk] = As * dEf[ijk] + dev_params.dt * (rotBf - Jf);
     dEz[ijk] = As * dEz[ijk] + dev_params.dt * (rotBz - Jz);
 
-    dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
-                                              P[ijk] / dev_params.tau);
+    dP[ijk] = As * dP[ijk] - dev_params.dt * dev_params.ch2 * divB -
+                                              P[ijk] / dev_params.tau;
   }
 }
 

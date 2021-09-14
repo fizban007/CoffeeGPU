@@ -248,12 +248,12 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
         Pvec.load(P.host_ptr() + ijk);
         dPvec.load(dP.host_ptr() + ijk);
         dPvec = dPvec * As -
-                (Pvec / params.tau + divB * params.ch2) * params.dt;
+                Pvec / params.tau - divB * params.ch2 * params.dt;
         dPvec.store(dP.host_ptr() + ijk);
         // dP[ijk] = As * dP[ijk] -
         //           params.dt *
-        //               (params.ch2 * divB + m_data.P[ijk] /
-        //               params.tau);
+        //               params.ch2 * divB - m_data.P[ijk] /
+        //               params.tau;
       }
     }
   }

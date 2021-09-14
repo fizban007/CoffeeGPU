@@ -319,8 +319,8 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     dEy[ijk] = As * dEy[ijk] + dev_params.dt * (rotBy - Jy);
     dEz[ijk] = As * dEz[ijk] + dev_params.dt * (rotBz - Jz);
 
-    dP[ijk] = As * dP[ijk] - dev_params.dt * (dev_params.ch2 * divB +
-                                              P[ijk] / dev_params.tau);
+    dP[ijk] = As * dP[ijk] - dev_params.dt * dev_params.ch2 * divB -
+                                              P[ijk] / dev_params.tau;
     jx[ijk] = Jx;
     jy[ijk] = Jy;
     jz[ijk] = Jz;

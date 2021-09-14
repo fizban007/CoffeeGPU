@@ -57,7 +57,7 @@ struct sim_params {
   // EZ scheme
   bool divB_clean = true; ///< Whether or not to do divergence cleaning
   Scalar ch2 = 1.0; ///< Dedner wave speed (squared)
-  Scalar tau = 0.02; ///< Dedner damping time
+  Scalar tau = 2.0; ///< Dedner damping time (in units of dt)
   Scalar KOeps = 0.50; ///< Small parameter in Kreiss-Oliger dissipation (range [0-1])
   bool KO_geometry = true; ///< Whether or not to include geometric factors in KO
   bool use_edotb_damping = true;
