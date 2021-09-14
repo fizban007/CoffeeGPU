@@ -13,7 +13,7 @@
 #define BLOCK_SIZE_Z 2
 
 
-#define TINY 1e-7
+// #define TINY 1e-7
 
 namespace Coffee {
 

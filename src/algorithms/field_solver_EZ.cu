@@ -780,7 +780,7 @@ field_solver_EZ::total_energy(vector_field<Scalar> &f) {
         Scalar y = m_env.grid().pos(1, j, 1);
         Scalar z = m_env.grid().pos(2, k, 1);
         Scalar r = std::sqrt(x * x + y * y + z * z);
-        if ((!(m_env.params().pulsar && r < m_env.params().radius)) &&
+        if ((!(m_env.params().problem == 1 && r < m_env.params().radius)) &&
             x < xh && x > xl && y < yh && y > yl && z < zh && z > zl) {
           Wtmp += f.data(0)[ijk] * f.data(0)[ijk] +
                   f.data(1)[ijk] * f.data(1)[ijk] +
