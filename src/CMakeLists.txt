@@ -62,6 +62,9 @@ target_link_libraries(coffee-gr-Yee Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${
 
 add_executable(coffee-wave "main-wave.cpp")
 target_link_libraries(coffee-wave Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
+
+add_executable(coffee-tearing "main-tearing.cpp")
+target_link_libraries(coffee-tearing Coffee ${MPI_LIBRARIES} ${HDF5_LIBRARIES} ${Boost_LIBRARIES})
 endif()
 
 add_executable(coffee-3d "main-pulsar3d.cpp")

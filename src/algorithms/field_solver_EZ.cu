@@ -33,6 +33,8 @@ static dim3 blockSize(BLOCK_SIZE_X, BLOCK_SIZE_Y, BLOCK_SIZE_Z);
 
 static dim3 blockGroupSize;
 
+static dim3 blockGroupSize2, blockSize2;
+
 __global__ void
 kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
                 const Scalar *Bx, const Scalar *By, const Scalar *Bz,
@@ -150,7 +152,7 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     dEz[ijk] = As * dEz[ijk] + dev_params.dt * (rotBz - Jz);
 
     dP[ijk] = As * dP[ijk] - dev_params.dt * dev_params.ch2 * divB -
-                                              P[ijk] / dev_params.tau;
+              P[ijk] / dev_params.tau;
     jx[ijk] = Jx;
     jy[ijk] = Jy;
     jz[ijk] = Jz;
@@ -638,18 +640,30 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
 
 void
 field_solver_EZ::boundary_absorbing() {
-  // kernel_boundary_absorbing_thread<<<blockGroupSize, blockSize>>>(
-  //     Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
-  //     Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
-  //     m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-  //     m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-  //     m_env.params().shift_ghost);
-  kernel_boundary_absorbing1_thread<<<blockGroupSize, blockSize>>>(
+  kernel_boundary_absorbing_EZ_thread<<<blockGroupSize, blockSize>>>(
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
-      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
+      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2), Bbg.dev_ptr(0),
+      Bbg.dev_ptr(1), Bbg.dev_ptr(2), m_data.E.dev_ptr(0),
+      m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0),
+      m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), Ptmp.dev_ptr(),
+      m_data.P.dev_ptr(), m_env.params().shift_ghost);
+  CudaCheckError();
+}
+
+void
+field_solver_EZ::boundary_outgoing_z() {
+  blockGroupSize2 =
+      dim3((m_data.env.grid().reduced_dim(0) +
+            m_env.params().shift_ghost * 2 + blockSize.x - 1) /
+               blockSize.x,
+           (m_data.env.grid().reduced_dim(1) +
+            m_env.params().shift_ghost * 2 + blockSize.y - 1) /
+               blockSize.y);
+  blockSize2 = dim3(BLOCK_SIZE_X, BLOCK_SIZE_Y);
+  kernel_outgoing_z<<<blockGroupSize2, blockSize2>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      Ptmp.dev_ptr(), m_data.P.dev_ptr(), m_env.params().shift_ghost);
+      m_data.P.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -679,6 +693,8 @@ field_solver_EZ::evolve_fields(Scalar time) {
 
     if (m_env.params().problem == 1)
       boundary_pulsar(time + cs[i] * m_env.params().dt);
+    else if (m_env.params().problem == 4)
+      boundary_outgoing_z();
     if (i == 4) boundary_absorbing();
 
     CudaSafeCall(cudaDeviceSynchronize());
@@ -699,6 +715,8 @@ field_solver_EZ::evolve_fields(Scalar time) {
   if (m_env.params().check_egb) check_eGTb();
   if (m_env.params().problem == 1)
     boundary_pulsar(time + m_env.params().dt);
+  else if (m_env.params().problem == 4)
+      boundary_outgoing_z();
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
   // m_env.send_guard_cell_array(P);
@@ -721,6 +739,31 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
   Btmp.copy_stagger(m_data.B);
   dB.initialize();
   Btmp.copy_from(m_data.B);
+
+  Bbg = vector_field<Scalar>(m_data.env.grid());
+  Bbg.copy_stagger(m_data.B);
+  // If damp to vacuum background field
+  // Bbg.copy_from(m_data.B);
+  Bbg.copy_from(m_data.B0);
+  // For restart cases we should not just copy m_data.B.
+  // for (int i = 0; i < 3; ++i) {
+  //   Bbg.initialize(i, [&](Scalar x, Scalar y, Scalar z) {
+  //     // Put your initial condition for Bx here
+  //     // return env.params().b0 * cube(env.params().radius) *
+  //     //        dipole_x(x, y, z, env.params().alpha, 0);
+  //     return m_env.params().b0 *
+  //            quadru_dipole(
+  //                x, y, z, m_env.params().p1, m_env.params().p2,
+  //                m_env.params().p3, m_env.params().q11,
+  //                m_env.params().q12, m_env.params().q13,
+  //                m_env.params().q22, m_env.params().q23,
+  //                m_env.params().q_offset_x,
+  //                m_env.params().q_offset_y,
+  //                m_env.params().q_offset_z, 0, i);
+  //   });
+  // }
+  // If damp to zero
+  // Bbg.initialize();
 
   // P = multi_array<Scalar>(m_data.env.grid().extent());
   // P.assign_dev(0.0);
@@ -780,7 +823,8 @@ field_solver_EZ::total_energy(vector_field<Scalar> &f) {
         Scalar y = m_env.grid().pos(1, j, 1);
         Scalar z = m_env.grid().pos(2, k, 1);
         Scalar r = std::sqrt(x * x + y * y + z * z);
-        if ((!(m_env.params().problem == 1 && r < m_env.params().radius)) &&
+        if ((!(m_env.params().problem == 1 &&
+               r < m_env.params().radius)) &&
             x < xh && x > xl && y < yh && y > yl && z < zh && z > zl) {
           Wtmp += f.data(0)[ijk] * f.data(0)[ijk] +
                   f.data(1)[ijk] * f.data(1)[ijk] +

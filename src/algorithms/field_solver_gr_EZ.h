@@ -5,7 +5,7 @@ namespace Coffee {
 
 class field_solver_gr_EZ {
  public:
-  vector_field<Scalar> Dtmp, Btmp, dD, dB, Ed, Hd;
+  vector_field<Scalar> Dtmp, Btmp, dD, dB, Ed, Hd, Bbg;
   multi_array<Scalar> dP, Ptmp;
 
   field_solver_gr_EZ(sim_data& mydata, sim_environment& env);

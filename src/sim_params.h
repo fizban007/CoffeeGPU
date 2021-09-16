@@ -65,8 +65,11 @@ struct sim_params {
 
   int problem = 0; ///< Problem selection that determines the boundary condition. 
   // Possible values for the "problem" parameter:
-  // 0: Periodic box only; 1: pulsar with quadudipole fields;
-  // 2: Alfven wave from pulsar; 3: accretion disk
+  // 0: Periodic box only; 
+  // 1: pulsar with quadudipole fields;
+  // 2: Alfven wave from pulsar; 
+  // 3: accretion disk
+  // 4: current sheet tearing with outgoing z boundary condition
 
   // Pulsar problem
   Scalar radius = 10.0; ///< Radius of the pulsar

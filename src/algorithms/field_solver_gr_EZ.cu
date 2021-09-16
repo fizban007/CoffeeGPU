@@ -286,15 +286,18 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
       // dBx[ijk] =
       //     As * dBx[ijk] +
       //     dev_params.dt * (- rotEx - alpha * Pxu +
-      //                      get_beta_u1(dev_params.a, x, y, z) * divB);
+      //                      get_beta_u1(dev_params.a, x, y, z) *
+      //                      divB);
       // dBy[ijk] =
       //     As * dBy[ijk] +
       //     dev_params.dt * (- rotEy - alpha * Pyu +
-      //                      get_beta_u2(dev_params.a, x, y, z) * divB);
+      //                      get_beta_u2(dev_params.a, x, y, z) *
+      //                      divB);
       // dBz[ijk] =
       //     As * dBz[ijk] +
       //     dev_params.dt * (- rotEz - alpha * Pzu +
-      //                      get_beta_u3(dev_params.a, x, y, z) * divB);
+      //                      get_beta_u3(dev_params.a, x, y, z) *
+      //                      divB);
       dBx[ijk] =
           As * dBx[ijk] +
           dev_params.dt *
@@ -329,7 +332,7 @@ kernel_rk_step1_gr(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
             (-alpha * divB + get_beta_u1(dev_params.a, x, y, z) * Pxd +
              get_beta_u2(dev_params.a, x, y, z) * Pyd +
              get_beta_u3(dev_params.a, x, y, z) * Pzd) -
-             alpha * P[ijk] / dev_params.tau;
+        alpha * P[ijk] / dev_params.tau;
 
     jx[ijk] = Jx;
     jy[ijk] = Jy;
@@ -700,55 +703,6 @@ kernel_absorbing_inner(const Scalar *Dnx, const Scalar *Dny,
   }
 }
 
-__global__ void
-kernel_outgoing_z(Scalar *Dx, Scalar *Dy, Scalar *Dz, Scalar *Bx,
-                  Scalar *By, Scalar *Bz, Scalar *P, int shift) {
-  size_t ijk;
-  int i =
-      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
-  int j =
-      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
-  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
-      j < dev_grid.dims[1] - dev_grid.guard[1] + shift) {
-    int k = dev_grid.guard[2];
-    ijk = i + j * dev_grid.dims[0] +
-          k * dev_grid.dims[0] * dev_grid.dims[1];
-    Scalar x = dev_grid.pos(0, i, 1);
-    Scalar y = dev_grid.pos(1, j, 1);
-    Scalar z = dev_grid.pos(2, k, 1);
-    int s = dev_grid.dims[0] * dev_grid.dims[1];
-    if (std::abs(z - dev_params.lower[2]) < dev_grid.delta[2] / 2.0) {
-      for (int l = 1; l <= dev_params.guard[2]; ++l) {
-        Dx[ijk - l * s] = Dx[ijk];
-        Dy[ijk - l * s] = Dy[ijk];
-        Dz[ijk - l * s] = Dz[ijk];
-        Bx[ijk - l * s] = Bx[ijk];
-        By[ijk - l * s] = By[ijk];
-        Bz[ijk - l * s] = Bz[ijk];
-        P[ijk - l * s] = P[ijk];
-      }
-    }
-    k = dev_grid.dims[2] - dev_grid.guard[2];
-    ijk = i + j * dev_grid.dims[0] +
-          k * dev_grid.dims[0] * dev_grid.dims[1];
-    x = dev_grid.pos(0, i, 1);
-    y = dev_grid.pos(1, j, 1);
-    z = dev_grid.pos(2, k, 1);
-    if (std::abs(z - dev_params.lower[2] + dev_params.size[2]) <
-        dev_grid.delta[2] / 2.0) {
-      for (int l = 1; l <= dev_params.guard[2]; ++l) {
-        Dx[ijk + l * s] = Dx[ijk];
-        Dy[ijk + l * s] = Dy[ijk];
-        Dz[ijk + l * s] = Dz[ijk];
-        Bx[ijk + l * s] = Bx[ijk];
-        By[ijk + l * s] = By[ijk];
-        Bz[ijk + l * s] = Bz[ijk];
-        P[ijk + l * s] = P[ijk];
-      }
-    }
-  }
-}
-
 void
 field_solver_gr_EZ::rk_step(Scalar As, Scalar Bs) {
   kernel_rk_step1_gr<<<blockGroupSize, blockSize>>>(
@@ -809,18 +763,14 @@ field_solver_gr_EZ::check_eGTb() {
 
 void
 field_solver_gr_EZ::boundary_absorbing() {
-  //  kernel_boundary_absorbing1_thread<<<blockGroupSize, blockSize>>>(
-  //      Dtmp.dev_ptr(0), Dtmp.dev_ptr(1), Dtmp.dev_ptr(2),
-  //      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
-  //      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-  //      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-  //      Ptmp.dev_ptr(), P.dev_ptr(), m_env.params().shift_ghost);
-  kernel_boundary_absorbing_thread<<<blockGroupSize, blockSize>>>(
+  kernel_boundary_absorbing_EZ_thread<<<blockGroupSize, blockSize>>>(
       Dtmp.dev_ptr(0), Dtmp.dev_ptr(1), Dtmp.dev_ptr(2),
-      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
-      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
-      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      m_env.params().shift_ghost);
+      Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2), Bbg.dev_ptr(0),
+      Bbg.dev_ptr(1), Bbg.dev_ptr(2), m_data.E.dev_ptr(0),
+      m_data.E.dev_ptr(1), m_data.E.dev_ptr(2), m_data.B.dev_ptr(0),
+      m_data.B.dev_ptr(1), m_data.B.dev_ptr(2), Ptmp.dev_ptr(),
+      m_data.P.dev_ptr(), m_env.params().shift_ghost);
+
   CudaCheckError();
   kernel_absorbing_inner<<<blockGroupSize, blockSize>>>(
       Dtmp.dev_ptr(0), Dtmp.dev_ptr(1), Dtmp.dev_ptr(2),
@@ -940,6 +890,31 @@ field_solver_gr_EZ::field_solver_gr_EZ(sim_data &mydata,
   dP.assign_dev(0.0);
   Ptmp = multi_array<Scalar>(m_data.env.grid().extent());
   Ptmp.assign_dev(0.0);
+
+  Bbg = vector_field<Scalar>(m_data.env.grid());
+  Bbg.copy_stagger(m_data.B);
+  // If damp to vacuum background field
+  // Bbg.copy_from(m_data.B);
+  // Bbg.copy_from(m_data.B0);
+  // For restart cases we should not just copy m_data.B.
+  // for (int i = 0; i < 3; ++i) {
+  //   Bbg.initialize(i, [&](Scalar x, Scalar y, Scalar z) {
+  //     // Put your initial condition for Bx here
+  //     // return env.params().b0 * cube(env.params().radius) *
+  //     //        dipole_x(x, y, z, env.params().alpha, 0);
+  //     return m_env.params().b0 *
+  //            quadru_dipole(
+  //                x, y, z, m_env.params().p1, m_env.params().p2,
+  //                m_env.params().p3, m_env.params().q11,
+  //                m_env.params().q12, m_env.params().q13,
+  //                m_env.params().q22, m_env.params().q23,
+  //                m_env.params().q_offset_x,
+  //                m_env.params().q_offset_y,
+  //                m_env.params().q_offset_z, 0, i);
+  //   });
+  // }
+  // If damp to zero
+  Bbg.initialize();
 
   blockGroupSize =
       dim3((m_data.env.grid().reduced_dim(0) +

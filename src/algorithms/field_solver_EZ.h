@@ -30,6 +30,7 @@ class field_solver_EZ {
   void boundary_pulsar(Scalar t);
   void boundary_alfven(Scalar t);
   void boundary_absorbing();
+  void boundary_outgoing_z();
 };
 
 }  // namespace Coffee
