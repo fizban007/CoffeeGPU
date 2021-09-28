@@ -361,7 +361,7 @@ kernel_rk_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 __global__ void
 kernel_Epar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
                 const Scalar *By, const Scalar *Bz, Scalar *dU_Epar,
-                int shift) {
+                Scalar *dU_Epar_cum, int shift) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -395,13 +395,14 @@ kernel_Epar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
     Scalar u1 = gm_d11 * Ex[ijk] * Ex[ijk] +
                 gm_d22 * Ey[ijk] * Ey[ijk] + gm_d33 * Ez[ijk] * Ez[ijk];
     dU_Epar[ijk] += u1 - u0;
+    dU_Epar_cum[ijk] += u1 - u0;
   }
 }
 
 __global__ void
 kernel_EgtB_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
                 const Scalar *By, const Scalar *Bz, Scalar *dU_EgtB,
-                int shift) {
+                Scalar *dU_EgtB_cum, int shift) {
   size_t ijk;
   int i =
       threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
@@ -438,6 +439,7 @@ kernel_EgtB_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, const Scalar *Bx,
     Scalar u1 = gm_d11 * Ex[ijk] * Ex[ijk] +
                 gm_d22 * Ey[ijk] * Ey[ijk] + gm_d33 * Ez[ijk] * Ez[ijk];
     dU_EgtB[ijk] += u1 - u0;
+    dU_EgtB_cum[ijk] += u1 - u0;
   }
 }
 
@@ -503,7 +505,7 @@ kernel_KO_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                     Scalar *By, Scalar *Bz, Scalar *Ex_tmp,
                     Scalar *Ey_tmp, Scalar *Ez_tmp, Scalar *Bx_tmp,
                     Scalar *By_tmp, Scalar *Bz_tmp, Scalar *P,
-                    Scalar *P_tmp, Scalar *dU_KO, int shift) {
+                    Scalar *P_tmp, Scalar *dU_KO, Scalar *dU_KO_cum, int shift) {
   Scalar KO_const = 0.0;
 
   switch (FFE_DISSIPATION_ORDER) {
@@ -550,7 +552,8 @@ kernel_KO_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
         gm_d11 * Ex[ijk] * Ex[ijk] + gm_d22 * Ey[ijk] * Ey[ijk] +
         gm_d33 * Ez[ijk] * Ez[ijk] + gm_d11 * Bx[ijk] * Bx[ijk] +
         gm_d22 * By[ijk] * By[ijk] + gm_d33 * Bz[ijk] * Bz[ijk];
-    dU_KO[ijk] += u1 - u0;
+    dU_KO_cum[ijk] += u1 - u0;
+    dU_KO[ijk] = u1 - u0;
   }
 }
 
@@ -719,7 +722,7 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
       if (std::abs(r - dev_params.radius) < dev_grid.delta[0] / 2.0) {
         Bx[ijk] = bxn / g11sqrt;
         Ey[ijk] = eyn / g22sqrt;
-        Ez[ijk] = 0.0;
+        Ez[ijk] = ezn / g33sqrt;
       } else if (r < dev_params.radius - TINY) {
         Bx[ijk] = bxn / g11sqrt;
         By[ijk] = byn / g22sqrt;
@@ -946,7 +949,7 @@ field_solver_EZ_spherical::Kreiss_Oliger() {
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
       Btmp.dev_ptr(0), Btmp.dev_ptr(1), Btmp.dev_ptr(2),
       m_data.P.dev_ptr(), Ptmp.dev_ptr(), m_data.dU_KO.dev_ptr(),
-      m_env.params().shift_ghost);
+      m_data.dU_KO_cum.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -955,7 +958,7 @@ field_solver_EZ_spherical::check_eGTb() {
   kernel_EgtB_sph<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      m_data.dU_EgtB.dev_ptr(), m_env.params().shift_ghost);
+      m_data.dU_EgtB.dev_ptr(), m_data.dU_EgtB_cum.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -964,7 +967,7 @@ field_solver_EZ_spherical::clean_epar() {
   kernel_Epar_sph<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      m_data.dU_Epar.dev_ptr(), m_env.params().shift_ghost);
+      m_data.dU_Epar.dev_ptr(), m_data.dU_Epar_cum.dev_ptr(), m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -1013,6 +1016,10 @@ field_solver_EZ_spherical::evolve_fields(Scalar time) {
   Etmp.copy_from(m_data.E);
   Btmp.copy_from(m_data.B);
   Ptmp.copy_from(m_data.P);
+
+  m_data.dU_KO.assign_dev(0.0);
+  m_data.dU_Epar.assign_dev(0.0);
+  m_data.dU_EgtB.assign_dev(0.0);
 
   for (int i = 0; i < 5; ++i) {
     timer::stamp();
