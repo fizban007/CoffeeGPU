@@ -320,7 +320,7 @@ kernel_rk_step1_sph(const Scalar *Elx, const Scalar *Ely,
     dEz[ijk] = As * dEz[ijk] + dev_params.dt * (rotBz - Jz);
 
     dP[ijk] = As * dP[ijk] - dev_params.dt * dev_params.ch2 * divB -
-                                              P[ijk] / dev_params.tau;
+              P[ijk] / dev_params.tau;
     jx[ijk] = Jx;
     jy[ijk] = Jy;
     jz[ijk] = Jz;
@@ -574,9 +574,9 @@ wpert_sph(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
 }
 
 __device__ Scalar
-wpert_sph_angle(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
-          Scalar dw0, Scalar nT, Scalar thp1, Scalar thp2) {
-  
+wpert_sph_angle(Scalar t, Scalar r, Scalar th, Scalar tp_start,
+                Scalar tp_end, Scalar dw0, Scalar nT, Scalar thp1,
+                Scalar thp2) {
   if (thp1 > thp2) {
     Scalar tmp = thp1;
     thp1 = thp2;
@@ -586,7 +586,8 @@ wpert_sph_angle(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
   // Scalar s = (mu - thp1) / 3.0;
   if (t >= tp_start && t <= tp_end && th >= thp1 && th <= thp2)
     // return dw0 * exp(-0.5 * square((th - mu) / s)) *
-    //        sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
+    //        sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end -
+    //        tp_start));
     return dw0 * square(cos((th - mu) * M_PI / (thp2 - thp1))) *
            square(sin((t - tp_start) * M_PI / (tp_end - tp_start))) *
            sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
@@ -595,8 +596,9 @@ wpert_sph_angle(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
 }
 
 __device__ Scalar
-wpert_sph_shear(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
-          Scalar dw0, Scalar nT, Scalar rpert1, Scalar rpert2, Scalar shear) {
+wpert_sph_shear(Scalar t, Scalar r, Scalar th, Scalar tp_start,
+                Scalar tp_end, Scalar dw0, Scalar nT, Scalar rpert1,
+                Scalar rpert2, Scalar shear) {
   Scalar th1 = acos(std::sqrt(1.0 - 1.0 / rpert1));
   Scalar th2 = acos(std::sqrt(1.0 - 1.0 / rpert2));
   if (th1 > th2) {
@@ -610,6 +612,28 @@ wpert_sph_shear(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
   if (t1 >= tp_start && t1 <= tp_end && th >= th1 && th <= th2)
     return dw0 * exp(-0.5 * square((th - mu) / s)) *
            sin((t1 - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
+  else
+    return 0;
+}
+
+__device__ Scalar
+fast_v2_pert(Scalar t, Scalar r, Scalar th, Scalar tp_start,
+             Scalar tp_end, Scalar amp, Scalar nT, Scalar thp1,
+             Scalar thp2) {
+  if (thp1 > thp2) {
+    Scalar tmp = thp1;
+    thp1 = thp2;
+    thp2 = tmp;
+  }
+  Scalar mu = (thp1 + thp2) / 2.0;
+  // Scalar s = (mu - thp1) / 3.0;
+  if (t >= tp_start && t <= tp_end && th >= thp1 && th <= thp2)
+    // return amp * exp(-0.5 * square((th - mu) / s)) *
+    //        sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end -
+    //        tp_start));
+    return amp * square(cos((th - mu) * M_PI / (thp2 - thp1))) *
+           square(sin((t - tp_start) * M_PI / (tp_end - tp_start))) *
+           sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
   else
     return 0;
 }
@@ -632,41 +656,62 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar z = 0.0;
     Scalar r = get_r(x, y, z);
     Scalar th = get_th(x, y, z);
-    // Scalar wpert0 =
-    //     wpert_sph(t, r, th, dev_params.tp_start, dev_params.tp_end,
-    //               dev_params.dw0, dev_params.nT, dev_params.rpert1,
-    //               dev_params.rpert2);
-    // Scalar wpert1 =
-    //     wpert_sph(t, r, th, dev_params.tp_start1, dev_params.tp_end1,
-    //               dev_params.dw1, dev_params.nT1, dev_params.rpert11,
-    //               dev_params.rpert21);
-    // Scalar wpert0 =
-    //     wpert_sph_shear(t, r, th, dev_params.tp_start, dev_params.tp_end,
-    //               dev_params.dw0, dev_params.nT, dev_params.rpert1,
-    //               dev_params.rpert2, dev_params.shear);
-    // Scalar wpert1 =
-    //     wpert_sph_shear(t, r, th, dev_params.tp_start1, dev_params.tp_end1,
-    //               dev_params.dw1, dev_params.nT1, dev_params.rpert11,
-    //               dev_params.rpert21, dev_params.shear1);
-    Scalar wpert0 =
-        wpert_sph_angle(t, r, th, dev_params.tp_start, dev_params.tp_end,
-                  dev_params.dw0, dev_params.nT, dev_params.thp1,
-                  dev_params.thp2);
-    Scalar wpert1 =
-        wpert_sph_angle(t, r, th, dev_params.tp_start1, dev_params.tp_end1,
-                  dev_params.dw1, dev_params.nT1, dev_params.thp11,
-                  dev_params.thp21);
-    Scalar w = dev_params.omega + wpert0 + wpert1;
-    Scalar bxn, byn, bzn, exn, eyn, ezn, v3n;
+    Scalar wpert0, wpert1, w;
+    Scalar bxn, byn, bzn, exn, eyn, ezn, v2n, v3n;
     Scalar g11sqrt, g22sqrt, g33sqrt;
 
     if (r < dev_params.radius + dev_grid.delta[0]) {
       bxn = dev_params.b0 * dipole_sph_2d(r, th, 0);
       byn = dev_params.b0 * dipole_sph_2d(r, th, 1);
       bzn = dev_params.b0 * dipole_sph_2d(r, th, 2);
-      v3n = w * r * sin(th);
-      exn = v3n * byn;
+      if (dev_params.pert_type < 3) {
+        if (dev_params.pert_type ==
+            0) {  // Alfven wave perturbation, angular range determined
+                  // by field line equatorial extent
+          wpert0 = wpert_sph(t, r, th, dev_params.tp_start,
+                             dev_params.tp_end, dev_params.dw0,
+                             dev_params.nT, dev_params.rpert1,
+                             dev_params.rpert2);
+          wpert1 = wpert_sph(t, r, th, dev_params.tp_start1,
+                             dev_params.tp_end1, dev_params.dw1,
+                             dev_params.nT1, dev_params.rpert11,
+                             dev_params.rpert21);
+        } else if (dev_params.pert_type ==
+                   1) {  // Alfven wave perturbation with initial shear
+          wpert0 = wpert_sph_shear(t, r, th, dev_params.tp_start,
+                                   dev_params.tp_end, dev_params.dw0,
+                                   dev_params.nT, dev_params.rpert1,
+                                   dev_params.rpert2, dev_params.shear);
+          wpert1 = wpert_sph_shear(
+              t, r, th, dev_params.tp_start1, dev_params.tp_end1,
+              dev_params.dw1, dev_params.nT1, dev_params.rpert11,
+              dev_params.rpert21, dev_params.shear1);
+        } else if (dev_params.pert_type ==
+                   2) {  // Alfven wave perturbation, angular range
+                         // directly using theta
+          wpert0 = wpert_sph_angle(t, r, th, dev_params.tp_start,
+                                   dev_params.tp_end, dev_params.dw0,
+                                   dev_params.nT, dev_params.thp1,
+                                   dev_params.thp2);
+          wpert1 = wpert_sph_angle(t, r, th, dev_params.tp_start1,
+                                   dev_params.tp_end1, dev_params.dw1,
+                                   dev_params.nT1, dev_params.thp11,
+                                   dev_params.thp21);
+        }
+        w = dev_params.omega + wpert0 + wpert1;
+        v3n = w * r * sin(th);
+        v2n = 0.0;
+      } else if (dev_params.pert_type == 3) {  // Fast wave perturbation
+        v2n = fast_v2_pert(t, r, th, dev_params.tp_start,
+                           dev_params.tp_end, dev_params.dw0,
+                           dev_params.nT, dev_params.thp1,
+                           dev_params.thp2);
+        v3n = dev_params.omega * r * sin(th);
+      }
+
+      exn = v3n * byn - v2n * bzn;
       eyn = -v3n * bxn;
+      ezn = v2n * bxn;
       g11sqrt = std::sqrt(get_gamma_d11(x, y, z));
       g22sqrt = std::sqrt(get_gamma_d22(x, y, z));
       g33sqrt = std::sqrt(get_gamma_d33(x, y, z));
@@ -681,7 +726,7 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
         Bz[ijk] = bzn / g33sqrt;
         Ex[ijk] = exn / g11sqrt;
         Ey[ijk] = eyn / g22sqrt;
-        Ez[ijk] = 0.0;
+        Ez[ijk] = ezn / g33sqrt;
       }
     }
   }
@@ -968,7 +1013,6 @@ field_solver_EZ_spherical::evolve_fields(Scalar time) {
   Etmp.copy_from(m_data.E);
   Btmp.copy_from(m_data.B);
   Ptmp.copy_from(m_data.P);
-
 
   for (int i = 0; i < 5; ++i) {
     timer::stamp();
