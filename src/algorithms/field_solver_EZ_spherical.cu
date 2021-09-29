@@ -505,7 +505,8 @@ kernel_KO_step2_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                     Scalar *By, Scalar *Bz, Scalar *Ex_tmp,
                     Scalar *Ey_tmp, Scalar *Ez_tmp, Scalar *Bx_tmp,
                     Scalar *By_tmp, Scalar *Bz_tmp, Scalar *P,
-                    Scalar *P_tmp, Scalar *dU_KO, Scalar *dU_KO_cum, int shift) {
+                    Scalar *P_tmp, Scalar *dU_KO, Scalar *dU_KO_cum,
+                    int shift) {
   Scalar KO_const = 0.0;
 
   switch (FFE_DISSIPATION_ORDER) {
@@ -664,10 +665,14 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     Scalar g11sqrt, g22sqrt, g33sqrt;
 
     if (r < dev_params.radius + dev_grid.delta[0]) {
-      bxn = dev_params.b0 * dipole_sph_2d(r, th, 0);
-      byn = dev_params.b0 * dipole_sph_2d(r, th, 1);
-      bzn = dev_params.b0 * dipole_sph_2d(r, th, 2);
+      g11sqrt = std::sqrt(get_gamma_d11(x, y, z));
+      g22sqrt = std::sqrt(get_gamma_d22(x, y, z));
+      g33sqrt = std::sqrt(get_gamma_d33(x, y, z));
+      if (g33sqrt < TINY) g33sqrt = TINY;
       if (dev_params.pert_type < 3) {
+        bxn = dev_params.b0 * dipole_sph_2d(r, th, 0);
+        byn = dev_params.b0 * dipole_sph_2d(r, th, 1);
+        bzn = dev_params.b0 * dipole_sph_2d(r, th, 2);
         if (dev_params.pert_type ==
             0) {  // Alfven wave perturbation, angular range determined
                   // by field line equatorial extent
@@ -704,32 +709,41 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
         w = dev_params.omega + wpert0 + wpert1;
         v3n = w * r * sin(th);
         v2n = 0.0;
+        exn = v3n * byn - v2n * bzn;
+        eyn = -v3n * bxn;
+        ezn = v2n * bxn;
+        if (std::abs(r - dev_params.radius) < dev_grid.delta[0] / 2.0) {
+          Bx[ijk] = bxn / g11sqrt;
+          Ey[ijk] = eyn / g22sqrt;
+          Ez[ijk] = ezn / g33sqrt;
+        } else if (r < dev_params.radius - TINY) {
+          Bx[ijk] = bxn / g11sqrt;
+          By[ijk] = byn / g22sqrt;
+          Bz[ijk] = bzn / g33sqrt;
+          Ex[ijk] = exn / g11sqrt;
+          Ey[ijk] = eyn / g22sqrt;
+          Ez[ijk] = ezn / g33sqrt;
+        }
       } else if (dev_params.pert_type == 3) {  // Fast wave perturbation
         v2n = fast_v2_pert(t, r, th, dev_params.tp_start,
                            dev_params.tp_end, dev_params.dw0,
                            dev_params.nT, dev_params.thp1,
                            dev_params.thp2);
         v3n = dev_params.omega * r * sin(th);
-      }
-
-      exn = v3n * byn - v2n * bzn;
-      eyn = -v3n * bxn;
-      ezn = v2n * bxn;
-      g11sqrt = std::sqrt(get_gamma_d11(x, y, z));
-      g22sqrt = std::sqrt(get_gamma_d22(x, y, z));
-      g33sqrt = std::sqrt(get_gamma_d33(x, y, z));
-      if (g33sqrt < TINY) g33sqrt = TINY;
-      if (std::abs(r - dev_params.radius) < dev_grid.delta[0] / 2.0) {
-        Bx[ijk] = bxn / g11sqrt;
-        Ey[ijk] = eyn / g22sqrt;
-        Ez[ijk] = ezn / g33sqrt;
-      } else if (r < dev_params.radius - TINY) {
-        Bx[ijk] = bxn / g11sqrt;
-        By[ijk] = byn / g22sqrt;
-        Bz[ijk] = bzn / g33sqrt;
-        Ex[ijk] = exn / g11sqrt;
-        Ey[ijk] = eyn / g22sqrt;
-        Ez[ijk] = ezn / g33sqrt;
+        bxn = Bx[ijk] * g11sqrt;
+        byn = By[ijk] * g22sqrt;
+        bzn = Bz[ijk] * g33sqrt;
+        exn = v3n * byn - v2n * bzn;
+        eyn = -v3n * bxn;
+        ezn = v2n * bxn;
+        if (std::abs(r - dev_params.radius) < dev_grid.delta[0] / 2.0) {
+          Ey[ijk] = eyn / g22sqrt;
+          Ez[ijk] = ezn / g33sqrt;
+        } else if (r < dev_params.radius - TINY) {
+          Ex[ijk] = exn / g11sqrt;
+          Ey[ijk] = eyn / g22sqrt;
+          Ez[ijk] = ezn / g33sqrt;
+        }
       }
     }
   }
@@ -958,7 +972,8 @@ field_solver_EZ_spherical::check_eGTb() {
   kernel_EgtB_sph<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      m_data.dU_EgtB.dev_ptr(), m_data.dU_EgtB_cum.dev_ptr(), m_env.params().shift_ghost);
+      m_data.dU_EgtB.dev_ptr(), m_data.dU_EgtB_cum.dev_ptr(),
+      m_env.params().shift_ghost);
   CudaCheckError();
 }
 
@@ -967,7 +982,8 @@ field_solver_EZ_spherical::clean_epar() {
   kernel_Epar_sph<<<blockGroupSize, blockSize>>>(
       m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
       m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
-      m_data.dU_Epar.dev_ptr(), m_data.dU_Epar_cum.dev_ptr(), m_env.params().shift_ghost);
+      m_data.dU_Epar.dev_ptr(), m_data.dU_Epar_cum.dev_ptr(),
+      m_env.params().shift_ghost);
   CudaCheckError();
 }
 
