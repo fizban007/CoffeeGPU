@@ -725,7 +725,7 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
           Ez[ijk] = ezn / g33sqrt;
         }
       } else if (dev_params.pert_type == 3) {  // Fast wave perturbation
-        v2n = fast_v2_pert(t, r, th, dev_params.tp_start,
+        v2n = r * fast_v2_pert(t, r, th, dev_params.tp_start,
                            dev_params.tp_end, dev_params.dw0,
                            dev_params.nT, dev_params.thp1,
                            dev_params.thp2);
