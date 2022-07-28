@@ -1,7 +1,7 @@
 #ifndef _USER_INIT_H_
 #define _USER_INIT_H_
 
-// 3D pulsar, using field_solver_EZ_cylindrical
+// 3D pulsar, using field_solver_EZ
 
 Stagger st_e[3] = {Stagger(0b111), Stagger(0b111), Stagger(0b111)};
 Stagger st_b[3] = {Stagger(0b111), Stagger(0b111), Stagger(0b111)};
