@@ -574,6 +574,27 @@ wpert_sph(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
 }
 
 __device__ Scalar
+wpert_sph_angle(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
+          Scalar dw0, Scalar nT, Scalar thp1, Scalar thp2) {
+  
+  if (thp1 > thp2) {
+    Scalar tmp = thp1;
+    thp1 = thp2;
+    thp2 = tmp;
+  }
+  Scalar mu = (thp1 + thp2) / 2.0;
+  // Scalar s = (mu - thp1) / 3.0;
+  if (t >= tp_start && t <= tp_end && th >= thp1 && th <= thp2)
+    // return dw0 * exp(-0.5 * square((th - mu) / s)) *
+    //        sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
+    return dw0 * square(cos((th - mu) * M_PI / (thp2 - thp1))) *
+           square(sin((t - tp_start) * M_PI / (tp_end - tp_start))) *
+           sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
+  else
+    return 0;
+}
+
+__device__ Scalar
 wpert_sph_shear(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
           Scalar dw0, Scalar nT, Scalar rpert1, Scalar rpert2, Scalar shear) {
   Scalar th1 = acos(std::sqrt(1.0 - 1.0 / rpert1));
@@ -619,14 +640,22 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
     //     wpert_sph(t, r, th, dev_params.tp_start1, dev_params.tp_end1,
     //               dev_params.dw1, dev_params.nT1, dev_params.rpert11,
     //               dev_params.rpert21);
+    // Scalar wpert0 =
+    //     wpert_sph_shear(t, r, th, dev_params.tp_start, dev_params.tp_end,
+    //               dev_params.dw0, dev_params.nT, dev_params.rpert1,
+    //               dev_params.rpert2, dev_params.shear);
+    // Scalar wpert1 =
+    //     wpert_sph_shear(t, r, th, dev_params.tp_start1, dev_params.tp_end1,
+    //               dev_params.dw1, dev_params.nT1, dev_params.rpert11,
+    //               dev_params.rpert21, dev_params.shear1);
     Scalar wpert0 =
-        wpert_sph_shear(t, r, th, dev_params.tp_start, dev_params.tp_end,
-                  dev_params.dw0, dev_params.nT, dev_params.rpert1,
-                  dev_params.rpert2, dev_params.shear);
+        wpert_sph_angle(t, r, th, dev_params.tp_start, dev_params.tp_end,
+                  dev_params.dw0, dev_params.nT, dev_params.thp1,
+                  dev_params.thp2);
     Scalar wpert1 =
-        wpert_sph_shear(t, r, th, dev_params.tp_start1, dev_params.tp_end1,
-                  dev_params.dw1, dev_params.nT1, dev_params.rpert11,
-                  dev_params.rpert21, dev_params.shear1);
+        wpert_sph_angle(t, r, th, dev_params.tp_start1, dev_params.tp_end1,
+                  dev_params.dw1, dev_params.nT1, dev_params.thp11,
+                  dev_params.thp21);
     Scalar w = dev_params.omega + wpert0 + wpert1;
     Scalar bxn, byn, bzn, exn, eyn, ezn, v3n;
     Scalar g11sqrt, g22sqrt, g33sqrt;

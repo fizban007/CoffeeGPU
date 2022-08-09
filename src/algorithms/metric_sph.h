@@ -8,10 +8,15 @@
 #include "data/typedefs.h"
 #include "utils/simd.h"
 #include "utils/util_functions.h"
-#include "vectormath_exp.h"
-#include "vectormath_trig.h"
 
 namespace Coffee {
+
+#ifdef USE_SIMD
+namespace simd {
+#include "vectormath_exp.h"
+#include "vectormath_trig.h"
+}
+#endif
 
 #ifdef USE_SIMD
 using simd::Vec_f_t;

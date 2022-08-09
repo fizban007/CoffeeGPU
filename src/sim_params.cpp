@@ -114,6 +114,8 @@ sim_params parse_config(const std::string& filename) {
   result.tp_end = config->get_as<double>("tp_end").value_or(defaults.tp_end);
   result.rpert1 = config->get_as<double>("rpert1").value_or(defaults.rpert1);
   result.rpert2 = config->get_as<double>("rpert2").value_or(defaults.rpert2);
+  result.thp1 = config->get_as<double>("thp1").value_or(defaults.thp1);
+  result.thp2 = config->get_as<double>("thp2").value_or(defaults.thp2);
   result.dw0 = config->get_as<double>("dw0").value_or(defaults.dw0);
   result.nT = config->get_as<double>("nT").value_or(defaults.nT);
   result.shear = config->get_as<double>("shear").value_or(defaults.shear);
@@ -128,6 +130,8 @@ sim_params parse_config(const std::string& filename) {
   result.tp_end1 = config->get_as<double>("tp_end1").value_or(defaults.tp_end1);
   result.rpert11 = config->get_as<double>("rpert11").value_or(defaults.rpert11);
   result.rpert21 = config->get_as<double>("rpert21").value_or(defaults.rpert21);
+  result.thp11 = config->get_as<double>("thp11").value_or(defaults.thp11);
+  result.thp21 = config->get_as<double>("thp21").value_or(defaults.thp21);
   result.dw1 = config->get_as<double>("dw1").value_or(defaults.dw1);
   result.nT1 = config->get_as<double>("nT1").value_or(defaults.nT1);
   result.shear1 = config->get_as<double>("shear1").value_or(defaults.shear1);

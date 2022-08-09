@@ -4,7 +4,6 @@
 #include "cuda/cuda_control.h"
 #include "data/grid.h"
 #include "utils/simd.h"
-#include "vectorclass.h"
 
 namespace Coffee {
 
