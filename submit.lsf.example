@@ -1,0 +1,13 @@
+#!/bin/bash
+# Begin LSF Directives
+#BSUB -P AST174
+#BSUB -q debug
+#BSUB -W 2:00
+#BSUB -nnodes 1
+#BSUB -J alfven_ffe
+#BSUB -o alfven_ffe.%J
+#BSUB -e alfven_ffe.%J
+
+source $HOME/CoffeeGPU/summit
+export PAMI_DISABLE_IPC=1
+jsrun --smpiargs="-gpu" -r6 -a1 -g1 -c1 ./coffee-2d-spherical

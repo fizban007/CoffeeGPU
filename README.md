@@ -7,7 +7,15 @@ First clone the directory:
 
     git clone https://github.com/fizban007/CoffeeGPU
     
-Now to build this, you need to have `cmake`, `cuda`, `mpi`, and `hdf5` installed. 
+Now to build this, you need to have `cmake`, `cuda` (optional), `mpi`, and `hdf5` installed. After cloning the repo, do the following:
+
+    cd CoffeGPU
+    mkdir build
+    cd build
+    cmake .. -Duse_cuda=1 -Duse_double=0
+    make
+
+If you instead specify `-Duse_cuda=0` then the CPU version will be compiled. `-Duse_double` controls whether to use double precision. A bunch of executables will be found under `CoffeeGPU/bin`, corresponding to different setups.
 
 ## Compilation on tigressdata or tigergpu
 
