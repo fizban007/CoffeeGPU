@@ -22,6 +22,14 @@ int main(int argc, char *argv[]) {
   // Initialize the simulation environment
   sim_environment env(&argc, &argv);
 
+  int errorcode = 10;
+  if (env.params().problem != 0) {
+    std::cout << "This executable solves the alfven wave in periodic box problem. Please "
+                 "set the 'problem' parameter to 0."
+              << std::endl;
+    MPI_Abort(env.cart(), errorcode);
+  }
+
   // Initialize all the simulation data structures
   sim_data data(env);
   // field_solver_gr solver(data, env);

@@ -57,14 +57,18 @@ struct sim_params {
   // EZ scheme
   bool divB_clean = true; ///< Whether or not to do divergence cleaning
   Scalar ch2 = 1.0; ///< Dedner wave speed (squared)
-  Scalar tau = 0.02; ///< Dedner damping time
+  Scalar tau = 2.0; ///< Dedner damping time (in units of dt)
   Scalar KOeps = 0.50; ///< Small parameter in Kreiss-Oliger dissipation (range [0-1])
   bool KO_geometry = true; ///< Whether or not to include geometric factors in KO
   bool use_edotb_damping = true;
   Scalar damp_gamma = 0.2;
 
+  int problem = 0; ///< Problem selection that determines the boundary condition. 
+  // Possible values for the "problem" parameter:
+  // 0: Periodic box only; 1: pulsar with quadudipole fields;
+  // 2: Alfven wave from pulsar; 3: accretion disk
+
   // Pulsar problem
-  bool pulsar = true; ///< Whether or not to use pulsar setup
   Scalar radius = 10.0; ///< Radius of the pulsar
   Scalar omega = 0.001; ///< Angular velocity of the pulsar
   Scalar b0 = 1e3; ///< Magnetic field at stellar surface

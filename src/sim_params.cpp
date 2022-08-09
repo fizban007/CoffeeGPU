@@ -88,7 +88,8 @@ sim_params parse_config(const std::string& filename) {
   result.KO_geometry =
       config->get_as<bool>("KO_geometry").value_or(defaults.KO_geometry);
 
-  result.pulsar = config->get_as<bool>("pulsar").value_or(defaults.pulsar);
+  result.problem = config->get_as<int>("problem").value_or(defaults.problem);
+
   result.radius = config->get_as<double>("radius").value_or(defaults.radius);
   result.omega = config->get_as<double>("omega").value_or(defaults.omega);
   result.b0 = config->get_as<double>("b0").value_or(defaults.b0);
