@@ -1,7 +1,6 @@
 #!/bin/bash
 # Begin LSF Directives
 #BSUB -P AST174
-# BSUB -q batch
 #BSUB -q debug
 #BSUB -W 2:00
 #BSUB -nnodes 1
