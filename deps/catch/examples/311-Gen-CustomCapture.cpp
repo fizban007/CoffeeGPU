@@ -9,7 +9,9 @@
 // per-variable custom capture list, this example shows how to achieve
 // that.
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators_adapters.hpp>
+#include <catch2/generators/catch_generators_random.hpp>
 
 TEST_CASE("Generate random doubles across different ranges",
           "[generator][example][advanced]") {
@@ -23,11 +25,11 @@ TEST_CASE("Generate random doubles across different ranges",
     }));
 
     auto r2(r1);
-    
+
     // This will take r1 by reference and r2 by value.
     // Note that there are no advantages for doing so in this example,
     // it is done only for expository purposes.
-    auto number = Catch::Generators::generate( CATCH_INTERNAL_LINEINFO,
+    auto number = Catch::Generators::generate( "custom capture generator", CATCH_INTERNAL_LINEINFO,
         [&r1, r2]{
             using namespace Catch::Generators;
             return makeGenerators(take(50, random(std::get<0>(r1), std::get<1>(r2))));

@@ -5,17 +5,17 @@
 // semantic, because it buffers the output. For most uses however,
 // there is no important difference between having `std::cerr` buffered
 // or unbuffered.
+#include <catch2/catch_test_macros.hpp>
 
-#define CATCH_CONFIG_NOSTDOUT
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <sstream>
+#include <cstdio>
 
 class out_buff : public std::stringbuf {
     std::FILE* m_stream;
 public:
-    out_buff(std::FILE* stream) :m_stream(stream) {}
-    ~out_buff() { pubsync(); }
-    int sync() {
+    out_buff(std::FILE* stream):m_stream(stream) {}
+    ~out_buff();
+    int sync() override {
         int ret = 0;
         for (unsigned char c : str()) {
             if (putc(c, m_stream) == EOF) {
@@ -28,6 +28,12 @@ public:
         return ret;
     }
 };
+
+out_buff::~out_buff() { pubsync(); }
+
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wexit-time-destructors" // static variables in cout/cerr/clog
+#endif
 
 namespace Catch {
     std::ostream& cout() {
