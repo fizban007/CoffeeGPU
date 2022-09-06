@@ -3,8 +3,8 @@
 FROM archlinux
 
 # install packages
-RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
-    pacman -Syu --noconfirm --needed base base-devel cuda git openmpi hdf5-openmpi cmake
+#RUN --mount=type=cache,sharing=locked,target=/var/cache/pacman \
+RUN pacman -Syu --noconfirm --needed base base-devel cuda git openmpi hdf5-openmpi cmake
 
 # configure nvidia container runtime
 # https://github.com/NVIDIA/nvidia-container-runtime#environment-variables-oci-spec
