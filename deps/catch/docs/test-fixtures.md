@@ -1,6 +1,8 @@
 <a id="top"></a>
 # Test fixtures
 
+## Defining test fixtures
+
 Although Catch allows you to group tests together as sections within a test case, it can still be convenient, sometimes, to group them using a more traditional test fixture. Catch fully supports this too. You define the test fixture as a simple structure:
 
 ```c++
@@ -84,6 +86,9 @@ _While there is an upper limit on the number of types you can specify
 in single `TEMPLATE_TEST_CASE_METHOD` or `TEMPLATE_PRODUCT_TEST_CASE_METHOD`,
 the limit is very high and should not be encountered in practice._
 
+## Signature-based parametrised test fixtures
+
+> [Introduced](https://github.com/catchorg/Catch2/issues/1609) in Catch 2.8.0.
 
 Catch2 also provides `TEMPLATE_TEST_CASE_METHOD_SIG` and `TEMPLATE_PRODUCT_TEST_CASE_METHOD_SIG` to support
 fixtures using non-type template parameters. These test cases work similar to `TEMPLATE_TEST_CASE_METHOD` and `TEMPLATE_PRODUCT_TEST_CASE_METHOD`,
@@ -100,6 +105,13 @@ TEMPLATE_TEST_CASE_METHOD_SIG(Nttp_Fixture, "A TEMPLATE_TEST_CASE_METHOD_SIG bas
     REQUIRE(Nttp_Fixture<V>::value > 0);
 }
 
+template<typename T>
+struct Template_Fixture_2 {
+    Template_Fixture_2() {}
+
+    T m_a;
+};
+
 template< typename T, size_t V>
 struct Template_Foo_2 {
     size_t size() { return V; }
@@ -108,6 +120,21 @@ struct Template_Foo_2 {
 TEMPLATE_PRODUCT_TEST_CASE_METHOD_SIG(Template_Fixture_2, "A TEMPLATE_PRODUCT_TEST_CASE_METHOD_SIG based test run that succeeds", "[class][template][product][nttp]", ((typename T, size_t S), T, S),(std::array, Template_Foo_2), ((int,2), (float,6)))
 {
     REQUIRE(Template_Fixture_2<TestType>{}.m_a.size() >= 2);
+}
+```
+
+## Template fixtures with types specified in template type lists
+
+Catch2 also provides `TEMPLATE_LIST_TEST_CASE_METHOD` to support template fixtures with types specified in
+template type lists like `std::tuple`, `boost::mpl::list` or `boost::mp11::mp_list`. This test case works the same as `TEMPLATE_TEST_CASE_METHOD`,
+only difference is the source of types. This allows you to reuse the template type list in multiple test cases.
+
+Example:
+```cpp
+using MyTypes = std::tuple<int, char, double>;
+TEMPLATE_LIST_TEST_CASE_METHOD(Template_Fixture, "Template test case method with test types specified inside std::tuple", "[class][template][list]", MyTypes)
+{
+    REQUIRE( Template_Fixture<TestType>::m_a == 1 );
 }
 ```
 
