@@ -680,6 +680,10 @@ field_solver_EZ::evolve_fields(Scalar time) {
   Btmp.copy_from(m_data.B);
   Ptmp.copy_from(m_data.P);
 
+  m_data.dU_KO.assign_dev(0.0);
+  m_data.dU_Epar.assign_dev(0.0);
+  m_data.dU_EgtB.assign_dev(0.0);
+
   for (int i = 0; i < 5; ++i) {
     timer::stamp();
     rk_step(As[i], Bs[i]);

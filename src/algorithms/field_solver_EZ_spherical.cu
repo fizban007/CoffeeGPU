@@ -580,7 +580,7 @@ wpert_sph(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
 __device__ Scalar
 wpert_sph_angle(Scalar t, Scalar r, Scalar th, Scalar tp_start,
                 Scalar tp_end, Scalar dw0, Scalar nT, Scalar thp1,
-                Scalar thp2, scalar shear) {
+                Scalar thp2, Scalar shear) {
   if (thp1 > thp2) {
     Scalar tmp = thp1;
     thp1 = thp2;
