@@ -580,7 +580,7 @@ wpert_sph(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
 __device__ Scalar
 wpert_sph_angle(Scalar t, Scalar r, Scalar th, Scalar tp_start,
                 Scalar tp_end, Scalar dw0, Scalar nT, Scalar thp1,
-                Scalar thp2) {
+                Scalar thp2, Scalar shear) {
   if (thp1 > thp2) {
     Scalar tmp = thp1;
     thp1 = thp2;
@@ -588,13 +588,14 @@ wpert_sph_angle(Scalar t, Scalar r, Scalar th, Scalar tp_start,
   }
   Scalar mu = (thp1 + thp2) / 2.0;
   // Scalar s = (mu - thp1) / 3.0;
-  if (t >= tp_start && t <= tp_end && th >= thp1 && th <= thp2)
+  Scalar t1 = t - shear * (thp2 - th) / (thp2 - thp1);
+  if (t1 >= tp_start && t1 <= tp_end && th >= thp1 && th <= thp2)
     // return dw0 * exp(-0.5 * square((th - mu) / s)) *
     //        sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end -
     //        tp_start));
     return dw0 * square(cos((th - mu) * M_PI / (thp2 - thp1))) *
-           square(sin((t - tp_start) * M_PI / (tp_end - tp_start))) *
-           sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
+           square(sin((t1 - tp_start) * M_PI / (tp_end - tp_start))) *
+           sin((t1 - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
   else
     return 0;
 }
@@ -700,11 +701,11 @@ kernel_boundary_pulsar_sph(Scalar *Ex, Scalar *Ey, Scalar *Ez,
           wpert0 = wpert_sph_angle(t, r, th, dev_params.tp_start,
                                    dev_params.tp_end, dev_params.dw0,
                                    dev_params.nT, dev_params.thp1,
-                                   dev_params.thp2);
+                                   dev_params.thp2, dev_params.shear);
           wpert1 = wpert_sph_angle(t, r, th, dev_params.tp_start1,
                                    dev_params.tp_end1, dev_params.dw1,
                                    dev_params.nT1, dev_params.thp11,
-                                   dev_params.thp21);
+                                   dev_params.thp21, dev_params.shear1);
         }
         w = dev_params.omega + wpert0 + wpert1;
         v3n = w * r * sin(th);
