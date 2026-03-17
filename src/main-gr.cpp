@@ -30,7 +30,6 @@ int main(int argc, char *argv[]) {
 // #endif
 
   // #include "user_init.hpp"
-  // #include "user_emwave.hpp"
   // #include "user_alfven.hpp"
   // #include "user_alfven_EZ.hpp"
 // #ifdef EZ

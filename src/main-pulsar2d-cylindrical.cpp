@@ -24,7 +24,6 @@ int main(int argc, char *argv[]) {
   field_solver_EZ_cylindrical solver(data, env);
 
   // #include "user_init.hpp"
-  // #include "user_emwave.hpp"
   // #include "user_alfven.hpp"
   // #include "user_alfven_EZ.hpp"
   #include "user_pulsar.hpp"
