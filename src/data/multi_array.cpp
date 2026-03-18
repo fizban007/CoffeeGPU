@@ -43,7 +43,9 @@ multi_array<T>::copy_from(const self_type& other) {
 
 template <typename T>
 void
-multi_array<T>::assign_dev(const T& value) {}
+multi_array<T>::assign_dev(const T& value) {
+  assign(value);
+}
 
 template <typename T>
 void
