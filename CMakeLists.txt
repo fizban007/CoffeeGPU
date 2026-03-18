@@ -9,6 +9,7 @@ message ("CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 
 option(build_tests "Build the test suite." ON)
 option(use_cuda "Build the GPU part of the code" ON)
+option(use_double "Use double precision floating point numbers" OFF)
 
 if (POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW) # CMake 3.12
