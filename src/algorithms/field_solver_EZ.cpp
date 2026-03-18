@@ -65,26 +65,20 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
 
   Bbg = vector_field<Scalar>(m_data.env.grid());
   Bbg.copy_stagger(m_data.B);
-  // If damp to vacuum background field
-  // Bbg.copy_from(m_data.B);
-  // For restart cases we should not just copy m_data.B.
-  for (int i = 0; i < 3; ++i) {
-    Bbg.initialize(i, [&](Scalar x, Scalar y, Scalar z) {
-      // Put your initial condition for Bx here
-      // return env.params().b0 * cube(env.params().radius) *
-      //        dipole_x(x, y, z, env.params().alpha, 0);
-      return m_env.params().b0 *
-             quadru_dipole(
-                 x, y, z, m_env.params().p1, m_env.params().p2,
-                 m_env.params().p3, m_env.params().q11,
-                 m_env.params().q12, m_env.params().q13,
-                 m_env.params().q22, m_env.params().q23,
-                 m_env.params().q_offset_x, m_env.params().q_offset_y,
-                 m_env.params().q_offset_z, 0, i);
-    });
+  if (m_env.params().problem == 2) {
+    // Damp to vacuum background field for Alfven wave problem
+    // Note that this only considers the non-rotating aligned dipole case
+    for (int i = 0; i < 3; ++i) {
+      Bbg.initialize(i, [&](Scalar x, Scalar y, Scalar z) {
+        return m_env.params().b0 *
+               dipole2(x, y, z, m_env.params().p1, m_env.params().p2, m_env.params().p3, 0,
+                       i);
+      });
+    }
+  } else {
+    // Damp to zero for other problems
+    Bbg.initialize();
   }
-  // If damp to zero
-  // Bbg.initialize();
 
   // P = multi_array<Scalar>(m_data.env.grid().extent());
   // P.assign(0.0);
@@ -219,15 +213,21 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
         // dEy[ijk] = As * dEy[ijk] + params.dt * (rotBy - Jy);
         // dEz[ijk] = As * dEz[ijk] + params.dt * (rotBz - Jz);
 
-        Vec_f_t x = vec_inc * grid.delta[0] + grid.pos(0, i, 1);
-        Vec_f_t y = vec_inc * grid.delta[1] + grid.pos(1, j, 1);
-        Vec_f_t z = vec_inc * grid.delta[2] + grid.pos(2, k, 1);
-        Vec_f_t r = sqrt(x * x + y * y + z * z);
-        Vec_f_t s = 0.5 * (1.0 - tanh((r - 3.0) / 0.5));
+        if (params.problem == 1 || params.problem == 2) {
+          Vec_f_t x = vec_inc * grid.delta[0] + grid.pos(0, i, 1);
+          Vec_f_t y = vec_inc * grid.delta[1] + grid.pos(1, j, 1);
+          Vec_f_t z = vec_inc * grid.delta[2] + grid.pos(2, k, 1);
+          Vec_f_t r = sqrt(x * x + y * y + z * z);
+          Vec_f_t s = 0.5 * (1.0 - tanh((r - 3.0) / 0.5));
 
-        dbxvec = dbxvec * As - (rotEx + Px * s) * params.dt;
-        dbyvec = dbyvec * As - (rotEy + Py * s) * params.dt;
-        dbzvec = dbzvec * As - (rotEz + Pz * s) * params.dt;
+          dbxvec = dbxvec * As - (rotEx + Px * s) * params.dt;
+          dbyvec = dbyvec * As - (rotEy + Py * s) * params.dt;
+          dbzvec = dbzvec * As - (rotEz + Pz * s) * params.dt;
+        } else {
+          dbxvec = dbxvec * As - (rotEx + Px) * params.dt;
+          dbyvec = dbyvec * As - (rotEy + Py) * params.dt;
+          dbzvec = dbzvec * As - (rotEz + Pz) * params.dt;
+        }
         dbxvec.store(dBx.host_ptr() + ijk);
         dbyvec.store(dBy.host_ptr() + ijk);
         dbzvec.store(dBz.host_ptr() + ijk);

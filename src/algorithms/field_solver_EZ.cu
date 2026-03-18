@@ -143,9 +143,21 @@ kernel_rk_step1(const Scalar *Ex, const Scalar *Ey, const Scalar *Ez,
     //   dP[ijk] = 0.0;
     // }
 
-    dBx[ijk] = As * dBx[ijk] - dev_params.dt * (rotEx + Px);
-    dBy[ijk] = As * dBy[ijk] - dev_params.dt * (rotEy + Py);
-    dBz[ijk] = As * dBz[ijk] - dev_params.dt * (rotEz + Pz);
+    if (dev_params.problem == 1 || dev_params.problem == 2) {
+      Scalar x = dev_grid.pos(0, i, 1);
+      Scalar y = dev_grid.pos(1, j, 1);
+      Scalar z = dev_grid.pos(2, k, 1);
+      Scalar r = sqrt(x * x + y * y + z * z);
+      Scalar s = 0.5 * (1.0 - tanh((r - 3.0) / 0.5));
+
+      dBx[ijk] = As * dBx[ijk] - dev_params.dt * (rotEx + Px * s);
+      dBy[ijk] = As * dBy[ijk] - dev_params.dt * (rotEy + Py * s);
+      dBz[ijk] = As * dBz[ijk] - dev_params.dt * (rotEz + Pz * s);
+    } else {
+      dBx[ijk] = As * dBx[ijk] - dev_params.dt * (rotEx + Px);
+      dBy[ijk] = As * dBy[ijk] - dev_params.dt * (rotEy + Py);
+      dBz[ijk] = As * dBz[ijk] - dev_params.dt * (rotEz + Pz);
+    }
 
     dEx[ijk] = As * dEx[ijk] + dev_params.dt * (rotBx - Jx);
     dEy[ijk] = As * dEy[ijk] + dev_params.dt * (rotBy - Jy);
@@ -297,7 +309,7 @@ kernel_KO_step1(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     By_tmp[ijk] = KO(By, ijk, dev_grid);
     Bz_tmp[ijk] = KO(Bz, ijk, dev_grid);
 
-    P_tmp[ijk] = KO(P, ijk, dev_grid);
+    // P_tmp[ijk] = KO(P, ijk, dev_grid);
 
     // // Exclude the damping layer
     // Scalar x = dev_grid.pos(0, i, 1);
@@ -361,7 +373,7 @@ kernel_KO_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 
   switch (FFE_DISSIPATION_ORDER) {
     case 4:
-      KO_const = -1. / 16;
+      KO_const = 1. / 16;
       break;
     case 6:
       KO_const = -1. / 64;
@@ -389,7 +401,7 @@ kernel_KO_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     By[ijk] -= dev_params.KOeps * KO_const * By_tmp[ijk];
     Bz[ijk] -= dev_params.KOeps * KO_const * Bz_tmp[ijk];
 
-    P[ijk] -= dev_params.KOeps * KO_const * P_tmp[ijk];
+    // P[ijk] -= dev_params.KOeps * KO_const * P_tmp[ijk];
   }
 }
 
@@ -482,7 +494,7 @@ kernel_boundary_pulsar(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
     Scalar r2 = x * x + y * y + z * z;
     if (r2 < TINY) r2 = TINY;
     Scalar r = std::sqrt(r2);
-    Scalar rl = 2.0 * dev_params.radius;
+    Scalar rl = 1.5 * dev_params.radius;
     Scalar ri = 0.5 * dev_params.radius;
     // Scalar scale = 1.0 * dev_grid.delta[0];
     Scalar scaleEpar = 0.5 * dev_grid.delta[0];
@@ -957,28 +969,19 @@ field_solver_EZ::field_solver_EZ(sim_data &mydata, sim_environment &env)
 
   Bbg = vector_field<Scalar>(m_data.env.grid());
   Bbg.copy_stagger(m_data.B);
-  // If damp to vacuum background field
-  // Bbg.copy_from(m_data.B);
-  Bbg.copy_from(m_data.B0);
-  // For restart cases we should not just copy m_data.B.
-  // for (int i = 0; i < 3; ++i) {
-  //   Bbg.initialize(i, [&](Scalar x, Scalar y, Scalar z) {
-  //     // Put your initial condition for Bx here
-  //     // return env.params().b0 * cube(env.params().radius) *
-  //     //        dipole_x(x, y, z, env.params().alpha, 0);
-  //     return m_env.params().b0 *
-  //            quadru_dipole(
-  //                x, y, z, m_env.params().p1, m_env.params().p2,
-  //                m_env.params().p3, m_env.params().q11,
-  //                m_env.params().q12, m_env.params().q13,
-  //                m_env.params().q22, m_env.params().q23,
-  //                m_env.params().q_offset_x,
-  //                m_env.params().q_offset_y,
-  //                m_env.params().q_offset_z, 0, i);
-  //   });
-  // }
-  // If damp to zero
-  // Bbg.initialize();
+  if (m_env.params().problem == 2) {
+    // Damp to vacuum background field for Alfven wave problem
+    for (int i = 0; i < 3; ++i) {
+      Bbg.initialize(i, [&](Scalar x, Scalar y, Scalar z) {
+        return m_env.params().b0 *
+               dipole2(x, y, z, m_env.params().p1, m_env.params().p2,
+                       m_env.params().p3, 0, i);
+      });
+    }
+  } else {
+    // Damp to zero for other problems
+    Bbg.initialize();
+  }
 
   // P = multi_array<Scalar>(m_data.env.grid().extent());
   // P.assign_dev(0.0);
