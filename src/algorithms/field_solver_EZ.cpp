@@ -215,8 +215,8 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
 
         if (params.problem == 1 || params.problem == 2) {
           Vec_f_t x = vec_inc * grid.delta[0] + grid.pos(0, i, 1);
-          Vec_f_t y = vec_inc * grid.delta[1] + grid.pos(1, j, 1);
-          Vec_f_t z = vec_inc * grid.delta[2] + grid.pos(2, k, 1);
+          Scalar y = grid.pos(1, j, 1);
+          Scalar z = grid.pos(2, k, 1);
           Vec_f_t r = sqrt(x * x + y * y + z * z);
           Vec_f_t s = 0.5 * (1.0 - tanh((r - 3.0) / 0.5));
 
