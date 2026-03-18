@@ -37,3 +37,6 @@ target_link_libraries(test_mpi2 Coffee)
 
 add_executable(test_output "test_output.cpp")
 target_link_libraries(test_output Coffee)
+
+add_executable(problem2_parity_compare "problem2_parity_compare.cpp")
+target_link_libraries(problem2_parity_compare Coffee)

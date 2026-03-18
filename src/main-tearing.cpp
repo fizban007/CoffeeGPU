@@ -22,13 +22,13 @@ int main(int argc, char *argv[]) {
   // Initialize the simulation environment
   sim_environment env(&argc, &argv);
 
-  // int errorcode = 10;
-  // if (env.params().problem != 0) {
-  //   std::cout << "This executable solves the current sheet tearing problem. Please "
-  //                "set the 'problem' parameter to 0."
-  //             << std::endl;
-  //   MPI_Abort(env.cart(), errorcode);
-  // }
+  int errorcode = 10;
+  if (env.params().problem != 4) {
+    std::cout << "This executable solves the current sheet tearing "
+                 "problem. Please set the 'problem' parameter to 4."
+              << std::endl;
+    MPI_Abort(env.cart(), errorcode);
+  }
 
   // Initialize all the simulation data structures
   sim_data data(env);

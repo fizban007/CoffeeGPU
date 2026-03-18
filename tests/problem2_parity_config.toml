@@ -1,0 +1,46 @@
+# Minimal parity config for problem == 2.
+# Run this with coffee-alfven3d from separate CPU and CUDA builds, then
+# compare the final snapshot_*.h5 files with tests/problem2_parity_compare.
+
+dt = 0.001
+max_steps = 1
+data_interval = 100
+snapshot_interval = 1
+
+periodic_boundary = [ false, false, false ]
+
+N = [ 32, 24, 16 ]
+guard = [ 5, 5, 5 ]
+lower = [ -0.2, -1.5707963267948966, -3.141592653589793 ]
+size = [ 5.7, 3.141592653589793, 6.283185307179586 ]
+nodes = [ 1, 1, 1 ]
+shift_ghost = 0
+downsample = 1
+
+calc_current = true
+clean_ep = true
+check_egb = true
+use_edotb_damping = false
+
+pml = [ 0, 0, 0 ]
+pmllen = 1
+sigpml = 10.0
+
+divB_clean = true
+ch2 = 1.0
+tau = 2.0
+KOeps = 0.05
+KO_geometry = false
+
+problem = 2
+radius = 1.0
+omega = 0.0
+b0 = 1e3
+
+tp_start = 0.0
+tp_end = 10.0
+thp1 = 0.2
+thp2 = 0.4
+dw0 = 0.4
+nT = 4.0
+pert_type = 2

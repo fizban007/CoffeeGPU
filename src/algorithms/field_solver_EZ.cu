@@ -393,6 +393,73 @@ kernel_KO_step2(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
   }
 }
 
+__device__ Scalar
+wpert(Scalar t, Scalar r, Scalar th, Scalar tp_start, Scalar tp_end,
+      Scalar dw0, Scalar nT, Scalar rpert1, Scalar rpert2) {
+  Scalar th1 = acos(std::sqrt(1.0 - 1.0 / rpert1));
+  Scalar th2 = acos(std::sqrt(1.0 - 1.0 / rpert2));
+  if (th1 > th2) {
+    Scalar tmp = th1;
+    th1 = th2;
+    th2 = tmp;
+  }
+  Scalar mu = (th1 + th2) / 2.0;
+  Scalar s = (mu - th1) / 3.0;
+  if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2)
+    return dw0 * exp(-0.5 * square((th - mu) / s)) *
+           sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start));
+  else
+    return 0;
+}
+
+__device__ Scalar
+wpert3d(Scalar t, Scalar r, Scalar th, Scalar ph, Scalar tp_start,
+        Scalar tp_end, Scalar dw0, Scalar nT, Scalar rpert1,
+        Scalar rpert2, Scalar ph1, Scalar ph2, Scalar dph) {
+  Scalar th1 = acos(std::sqrt(1.0 - 1.0 / rpert1));
+  Scalar th2 = acos(std::sqrt(1.0 - 1.0 / rpert2));
+  if (th1 > th2) {
+    Scalar tmp = th1;
+    th1 = th2;
+    th2 = tmp;
+  }
+  Scalar mu = (th1 + th2) / 2.0;
+  Scalar s = (mu - th1) / 3.0;
+
+  if (t >= tp_start && t <= tp_end && th >= th1 && th <= th2)
+    return dw0 * exp(-0.5 * square((th - mu) / s)) *
+           sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start)) *
+           shape(ph, ph2 * M_PI, dph * M_PI) *
+           (1.0 - shape(ph, ph1 * M_PI, dph * M_PI));
+  else
+    return 0;
+}
+
+__device__ void
+twistv(Scalar t, Scalar x, Scalar y, Scalar z, Scalar tp_start,
+       Scalar tp_end, Scalar dw0, Scalar nT, Scalar theta0,
+       Scalar drpert, Scalar ri, Scalar (&v)[3]) {
+  Scalar costh0 = cos(theta0);
+  Scalar sinth0 = sin(theta0);
+  Scalar x1 = -x * costh0 + z * sinth0;
+  Scalar y1 = y;
+  Scalar z1 = x * sinth0 + z * costh0;
+  Scalar r = std::sqrt(x * x + y * y + z * z);
+  Scalar R1 = std::sqrt(x1 * x1 + y1 * y1);
+  Scalar costh = x1 / (R1 + TINY);
+  Scalar sinth = y1 / (R1 + TINY);
+  Scalar dw = 0.0;
+  if (r > ri && z1 >= 0 && R1 <= drpert && t >= tp_start &&
+      t <= tp_end) {
+    dw = dw0 * square(cos(R1 / drpert * M_PI / 2.0)) *
+         sin((t - tp_start) * 2.0 * M_PI * nT / (tp_end - tp_start)) *
+         square(sin((t - tp_start) * M_PI / (tp_end - tp_start)));
+  }
+  v[0] = dw * R1 * sinth * costh0;
+  v[1] = dw * R1 * costh;
+  v[2] = -dw * R1 * sinth * sinth0;
+}
+
 __global__ void
 kernel_boundary_pulsar(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
                        Scalar *By, Scalar *Bz, Scalar *P, Scalar t,
@@ -530,6 +597,137 @@ kernel_boundary_pulsar(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
 }
 
 __global__ void
+kernel_boundary_alfven(Scalar *Ex, Scalar *Ey, Scalar *Ez, Scalar *Bx,
+                       Scalar *By, Scalar *Bz, Scalar *P, Scalar t,
+                       int shift) {
+  size_t ijk;
+  int i =
+      threadIdx.x + blockIdx.x * blockDim.x + dev_grid.guard[0] - shift;
+  int j =
+      threadIdx.y + blockIdx.y * blockDim.y + dev_grid.guard[1] - shift;
+  int k =
+      threadIdx.z + blockIdx.z * blockDim.z + dev_grid.guard[2] - shift;
+  if (i < dev_grid.dims[0] - dev_grid.guard[0] + shift &&
+      j < dev_grid.dims[1] - dev_grid.guard[1] + shift &&
+      k < dev_grid.dims[2] - dev_grid.guard[2] + shift) {
+    ijk = i + j * dev_grid.dims[0] +
+          k * dev_grid.dims[0] * dev_grid.dims[1];
+
+    Scalar x = dev_grid.pos(0, i, 1);
+    Scalar y = dev_grid.pos(1, j, 1);
+    Scalar z = dev_grid.pos(2, k, 1);
+    Scalar r2 = x * x + y * y + z * z;
+    if (r2 < TINY) r2 = TINY;
+    Scalar r = std::sqrt(r2);
+
+    Scalar rl = 1.5 * dev_params.radius;
+    Scalar ri = 0.5 * dev_params.radius;
+    Scalar scaleEpar = 0.5 * dev_grid.delta[0];
+    Scalar scaleEperp = 0.25 * dev_grid.delta[0];
+    Scalar scaleBperp = scaleEpar;
+    Scalar scaleBpar = scaleBperp;
+    Scalar d1 = 4.0 * dev_grid.delta[0];
+    Scalar d0 = 0.0;
+    Scalar phase = dev_params.omega * t;
+
+    if (r < rl) {
+      Scalar th = acos(z / r);
+      Scalar ph = atan2(y, x);
+      Scalar w0 = 0.0, w1 = 0.0, w = 0.0;
+      Scalar vx = 0.0, vy = 0.0, vz = 0.0, v[3];
+
+      if (dev_params.pert_type == 0 || dev_params.pert_type == 1) {
+        if (dev_params.pert_type == 0) {
+          w0 = wpert(t, r, th, dev_params.tp_start, dev_params.tp_end,
+                     dev_params.dw0, dev_params.nT, dev_params.rpert1,
+                     dev_params.rpert2);
+          w1 = wpert(t, r, th, dev_params.tp_start1, dev_params.tp_end1,
+                     dev_params.dw1, dev_params.nT1, dev_params.rpert11,
+                     dev_params.rpert21);
+        } else {
+          w0 = wpert3d(t, r, th, ph, dev_params.tp_start,
+                       dev_params.tp_end, dev_params.dw0,
+                       dev_params.nT, dev_params.rpert1,
+                       dev_params.rpert2, dev_params.ph1,
+                       dev_params.ph2, dev_params.dph);
+          w1 = wpert3d(t, r, th, ph, dev_params.tp_start1,
+                       dev_params.tp_end1, dev_params.dw1,
+                       dev_params.nT1, dev_params.rpert11,
+                       dev_params.rpert21, dev_params.ph11,
+                       dev_params.ph21, dev_params.dph1);
+        }
+        w = dev_params.omega + w0 + w1;
+        vx = -w * y;
+        vy = w * x;
+      } else if (dev_params.pert_type == 2) {
+        twistv(t, x, y, z, dev_params.tp_start, dev_params.tp_end,
+               dev_params.dw0, dev_params.nT, dev_params.theta0,
+               dev_params.drpert, ri, v);
+        vx = v[0];
+        vy = v[1];
+        vz = v[2];
+      }
+
+      Scalar bxn = dev_params.b0 *
+                   dipole2(x, y, z, dev_params.p1, dev_params.p2,
+                           dev_params.p3, phase, 0);
+      Scalar byn = dev_params.b0 *
+                   dipole2(x, y, z, dev_params.p1, dev_params.p2,
+                           dev_params.p3, phase, 1);
+      Scalar bzn = dev_params.b0 *
+                   dipole2(x, y, z, dev_params.p1, dev_params.p2,
+                           dev_params.p3, phase, 2);
+
+      Scalar s = shape(r, dev_params.radius - d1, scaleBperp);
+      Scalar bn_dot_r = bxn * x + byn * y + bzn * z;
+      Scalar B_dot_r = Bx[ijk] * x + By[ijk] * y + Bz[ijk] * z;
+      Scalar Bxnew = bn_dot_r * x / r2 * s + B_dot_r * x / r2 * (1.0 - s);
+      Scalar Bynew = bn_dot_r * y / r2 * s + B_dot_r * y / r2 * (1.0 - s);
+      Scalar Bznew = bn_dot_r * z / r2 * s + B_dot_r * z / r2 * (1.0 - s);
+      s = shape(r, dev_params.radius - d1, scaleBpar);
+      Bxnew += (bxn - bn_dot_r * x / r2) * s +
+               (Bx[ijk] - B_dot_r * x / r2) * (1.0 - s);
+      Bynew += (byn - bn_dot_r * y / r2) * s +
+               (By[ijk] - B_dot_r * y / r2) * (1.0 - s);
+      Bznew += (bzn - bn_dot_r * z / r2) * s +
+               (Bz[ijk] - B_dot_r * z / r2) * (1.0 - s);
+      Bx[ijk] = Bxnew;
+      By[ijk] = Bynew;
+      Bz[ijk] = Bznew;
+
+      Scalar exn = -vy * Bz[ijk] + vz * By[ijk];
+      Scalar eyn = vx * Bz[ijk] - vz * Bx[ijk];
+      Scalar ezn = -vx * By[ijk] + vy * Bx[ijk];
+      Scalar en_dot_r = exn * x + eyn * y + ezn * z;
+      Scalar E_dot_r = Ex[ijk] * x + Ey[ijk] * y + Ez[ijk] * z;
+      s = shape(r, dev_params.radius - d0, scaleEperp);
+      Scalar Exnew = en_dot_r * x / r2 * s + E_dot_r * x / r2 * (1.0 - s);
+      Scalar Eynew = en_dot_r * y / r2 * s + E_dot_r * y / r2 * (1.0 - s);
+      Scalar Eznew = en_dot_r * z / r2 * s + E_dot_r * z / r2 * (1.0 - s);
+      s = shape(r, dev_params.radius - d0, scaleEpar);
+      Exnew += (exn - en_dot_r * x / r2) * s +
+               (Ex[ijk] - E_dot_r * x / r2) * (1.0 - s);
+      Eynew += (eyn - en_dot_r * y / r2) * s +
+               (Ey[ijk] - E_dot_r * y / r2) * (1.0 - s);
+      Eznew += (ezn - en_dot_r * z / r2) * s +
+               (Ez[ijk] - E_dot_r * z / r2) * (1.0 - s);
+      Ex[ijk] = Exnew;
+      Ey[ijk] = Eynew;
+      Ez[ijk] = Eznew;
+
+      if (r < ri) {
+        Bx[ijk] = bxn;
+        By[ijk] = byn;
+        Bz[ijk] = bzn;
+        Ex[ijk] = exn;
+        Ey[ijk] = eyn;
+        Ez[ijk] = ezn;
+      }
+    }
+  }
+}
+
+__global__ void
 kernel_compute_skymap(Scalar *skymap, int Nth, int Nph,
                       const Scalar *Jx, const Scalar *Jy,
                       const Scalar *Jz, const Scalar *Bx,
@@ -639,6 +837,15 @@ field_solver_EZ::boundary_pulsar(Scalar t) {
 }
 
 void
+field_solver_EZ::boundary_alfven(Scalar t) {
+  kernel_boundary_alfven<<<blockGroupSize, blockSize>>>(
+      m_data.E.dev_ptr(0), m_data.E.dev_ptr(1), m_data.E.dev_ptr(2),
+      m_data.B.dev_ptr(0), m_data.B.dev_ptr(1), m_data.B.dev_ptr(2),
+      m_data.P.dev_ptr(), t, m_env.params().shift_ghost);
+  CudaCheckError();
+}
+
+void
 field_solver_EZ::boundary_absorbing() {
   kernel_boundary_absorbing_EZ_thread<<<blockGroupSize, blockSize>>>(
       Etmp.dev_ptr(0), Etmp.dev_ptr(1), Etmp.dev_ptr(2),
@@ -697,6 +904,8 @@ field_solver_EZ::evolve_fields(Scalar time) {
 
     if (m_env.params().problem == 1)
       boundary_pulsar(time + cs[i] * m_env.params().dt);
+    else if (m_env.params().problem == 2)
+      boundary_alfven(time + cs[i] * m_env.params().dt);
     else if (m_env.params().problem == 4)
       boundary_outgoing_z();
     if (i == 4) boundary_absorbing();
@@ -719,8 +928,10 @@ field_solver_EZ::evolve_fields(Scalar time) {
   if (m_env.params().check_egb) check_eGTb();
   if (m_env.params().problem == 1)
     boundary_pulsar(time + m_env.params().dt);
+  else if (m_env.params().problem == 2)
+    boundary_alfven(time + m_env.params().dt);
   else if (m_env.params().problem == 4)
-      boundary_outgoing_z();
+    boundary_outgoing_z();
   CudaSafeCall(cudaDeviceSynchronize());
   m_env.send_guard_cells(m_data);
   // m_env.send_guard_cell_array(P);
