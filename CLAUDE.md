@@ -26,6 +26,20 @@ Vendored deps in `deps/`: Catch2, cpptoml, cxxopt, vectorclass.
 
 Executables land in `build/bin/`, library in `lib/libCoffee.a`.
 
+### Physics GPU server
+
+Parallel HDF5 must be specified explicitly. CUDA architecture is 89 (Ada Lovelace).
+
+```bash
+# GPU build
+cmake .. -Duse_cuda=1 -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=89 -DHDF5_hdf5_LIBRARY_RELEASE=/usr/lib64/openmpi/lib/libhdf5.so
+
+# CPU build
+cmake .. -Duse_cuda=0 -DCMAKE_BUILD_TYPE=Release -DHDF5_hdf5_LIBRARY_RELEASE=/usr/lib64/openmpi/lib/libhdf5.so
+```
+
+Add `-Duse_double=1` for double precision.
+
 ## Architecture
 
 ### Data Layer (`src/data/`)
