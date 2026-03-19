@@ -213,21 +213,26 @@ field_solver_EZ::rk_step(Scalar As, Scalar Bs) {
         // dEy[ijk] = As * dEy[ijk] + params.dt * (rotBy - Jy);
         // dEz[ijk] = As * dEz[ijk] + params.dt * (rotBz - Jz);
 
-        if (params.problem == 1 || params.problem == 2) {
-          Vec_f_t x = vec_inc * grid.delta[0] + grid.pos(0, i, 1);
-          Scalar y = grid.pos(1, j, 1);
-          Scalar z = grid.pos(2, k, 1);
-          Vec_f_t r = sqrt(x * x + y * y + z * z);
-          Vec_f_t s = 0.5 * (1.0 - tanh((r - 3.0) / 0.5));
+        // if (params.problem == 1 || params.problem == 2) {
+        //   Vec_f_t x = vec_inc * grid.delta[0] + grid.pos(0, i, 1);
+        //   Scalar y = grid.pos(1, j, 1);
+        //   Scalar z = grid.pos(2, k, 1);
+        //   Vec_f_t r = sqrt(x * x + y * y + z * z);
+        //   Vec_f_t s = 0.5 * (1.0 - tanh((r - 3.0) / 0.5));
 
-          dbxvec = dbxvec * As - (rotEx + Px * s) * params.dt;
-          dbyvec = dbyvec * As - (rotEy + Py * s) * params.dt;
-          dbzvec = dbzvec * As - (rotEz + Pz * s) * params.dt;
-        } else {
-          dbxvec = dbxvec * As - (rotEx + Px) * params.dt;
-          dbyvec = dbyvec * As - (rotEy + Py) * params.dt;
-          dbzvec = dbzvec * As - (rotEz + Pz) * params.dt;
-        }
+        //   dbxvec = dbxvec * As - (rotEx + Px * s) * params.dt;
+        //   dbyvec = dbyvec * As - (rotEy + Py * s) * params.dt;
+        //   dbzvec = dbzvec * As - (rotEz + Pz * s) * params.dt;
+        // } else {
+        //   dbxvec = dbxvec * As - (rotEx + Px) * params.dt;
+        //   dbyvec = dbyvec * As - (rotEy + Py) * params.dt;
+        //   dbzvec = dbzvec * As - (rotEz + Pz) * params.dt;
+        // }
+
+        dbxvec = dbxvec * As - (rotEx + Px) * params.dt;
+        dbyvec = dbyvec * As - (rotEy + Py) * params.dt;
+        dbzvec = dbzvec * As - (rotEz + Pz) * params.dt;
+
         dbxvec.store(dBx.host_ptr() + ijk);
         dbyvec.store(dBy.host_ptr() + ijk);
         dbzvec.store(dBz.host_ptr() + ijk);
